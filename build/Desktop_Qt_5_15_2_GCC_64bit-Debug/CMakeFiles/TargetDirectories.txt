@@ -1,9 +1,0 @@
-/home/oleksii/проєктікі/ugnsm/ugnsm/build/Desktop_Qt_5_15_2_GCC_64bit-Debug/CMakeFiles/ugnsm.dir
-/home/oleksii/проєктікі/ugnsm/ugnsm/build/Desktop_Qt_5_15_2_GCC_64bit-Debug/CMakeFiles/edit_cache.dir
-/home/oleksii/проєктікі/ugnsm/ugnsm/build/Desktop_Qt_5_15_2_GCC_64bit-Debug/CMakeFiles/rebuild_cache.dir
-/home/oleksii/проєктікі/ugnsm/ugnsm/build/Desktop_Qt_5_15_2_GCC_64bit-Debug/CMakeFiles/list_install_components.dir
-/home/oleksii/проєктікі/ugnsm/ugnsm/build/Desktop_Qt_5_15_2_GCC_64bit-Debug/CMakeFiles/install.dir
-/home/oleksii/проєктікі/ugnsm/ugnsm/build/Desktop_Qt_5_15_2_GCC_64bit-Debug/CMakeFiles/install/local.dir
-/home/oleksii/проєктікі/ugnsm/ugnsm/build/Desktop_Qt_5_15_2_GCC_64bit-Debug/CMakeFiles/install/strip.dir
-/home/oleksii/проєктікі/ugnsm/ugnsm/build/Desktop_Qt_5_15_2_GCC_64bit-Debug/CMakeFiles/ugnsm_autogen_timestamp_deps.dir
-/home/oleksii/проєктікі/ugnsm/ugnsm/build/Desktop_Qt_5_15_2_GCC_64bit-Debug/CMakeFiles/ugnsm_autogen.dir
