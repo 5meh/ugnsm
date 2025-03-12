@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QtNetwork/QNetworkInterface>
 
+QT_FORWARD_DECLARE_CLASS(NetworkInfoView);
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -11,5 +13,8 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+private:
+    QList<NetworkInfoView*> netInfoViews;
 };
 #endif // MAINWINDOW_H
