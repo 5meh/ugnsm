@@ -8,8 +8,8 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-
-    setLayout(new QHBoxLayout(this));
+    setCentralWidget(new QWidget(this));
+    centralWidget()->setLayout(new QHBoxLayout(this));
 
 
     bool ethernetConnected = false;
@@ -21,22 +21,28 @@ MainWindow::MainWindow(QWidget *parent)
 
     for(const QNetworkInterface &interface : interfaces)
     {
-        //QNetworkInterface::
         // Skip loopback and non-ethernet interfaces
         if(interface.type() != QNetworkInterface::Ethernet ||
             interface.flags().testFlag(QNetworkInterface::IsLoopBack))
         {
             continue;
         }
-        netInfoViews.emplaceBack(this);
-        netInfoViews.back()->insertRow(0);
-        qInfo() << "Interface:" << interface.humanReadableName();
-        qInfo() << "  MAC:" << interface.hardwareAddress();
-        qInfo() << "  Type: Ethernet";
+        netInfoViews.emplaceBack(new NetworkInfoView(this));
+        netInfoViews.back()->addKeyValue(QPair<QString,QString>("Interface:", interface.humanReadableName()));
+        netInfoViews.back()->addKeyValue(QPair<QString,QString>("MAC:", interface.hardwareAddress()));
+        netInfoViews.back()->addKeyValue(QPair<QString,QString>("Type:", "Ethernet"));
+
+        //TODO:mb later us eit for logs.
+        //qInfo() << "Interface:" << interface.humanReadableName();
+        //qInfo() << "  MAC:" << interface.hardwareAddress();
+        //qInfo() << "  Type: Ethernet";
 
         // Check interface status flags
         const bool isUp = interface.flags().testFlag(QNetworkInterface::IsUp);
         const bool isRunning = interface.flags().testFlag(QNetworkInterface::IsRunning);
+
+        netInfoViews.back()->addKeyValue(QPair<QString,QString>("is Up:", isUp ? "True" : "False"));
+        netInfoViews.back()->addKeyValue(QPair<QString,QString>("is Running:", isRunning ? "True" : "False"));
 
         // qInfo() << "  Status:"
         //         << (isUp ? "Up" : "Down")
@@ -51,18 +57,23 @@ MainWindow::MainWindow(QWidget *parent)
             if(entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
             {
                 hasIpv4 = true;
-                qInfo() << "  IPv4:" << entry.ip().toString();
-                qInfo() << "  Netmask:" << entry.netmask().toString();
-                qInfo() << "  Broadcast:" << entry.broadcast().toString();
+
+                netInfoViews.back()->addKeyValue(QPair<QString,QString>("IPv4:", entry.ip().toString()));
+                netInfoViews.back()->addKeyValue(QPair<QString,QString>("Netmask:", entry.netmask().toString()));
+                netInfoViews.back()->addKeyValue(QPair<QString,QString>("Broadcast:", entry.broadcast().toString()));
+                // qInfo() << "  IPv4:" << entry.ip().toString();
+                // qInfo() << "  Netmask:" << entry.netmask().toString();
+                // qInfo() << "  Broadcast:" << entry.broadcast().toString();
             }
         }
 
         if(isUp && isRunning && hasIpv4)
         {
             ethernetConnected = true;
-            qInfo() << "  --> ACTIVE ETHERNET CONNECTION DETECTED";
+            netInfoViews.back()->addKeyValue(QPair<QString,QString>("ethernet Connected:", ethernetConnected ? "True" : "False"));
+            //qInfo() << "  --> ACTIVE ETHERNET CONNECTION DETECTED";
         }
-
+        centralWidget()->layout()->addWidget(netInfoViews.back());
         //qInfo() << "----------------------------------------";
     }
 

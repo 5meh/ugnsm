@@ -5,16 +5,20 @@
 #include <QWidget>
 //#include <QTableWidget>
 QT_FORWARD_DECLARE_CLASS(QTableView)
+QT_FORWARD_DECLARE_CLASS(QStandardItemModel);
 
 class NetworkInfoView: public QWidget
 {
     Q_OBJECT
 public:
-    NetworkInfoView();
+    explicit NetworkInfoView(QWidget* parent = nullptr);
+    ~NetworkInfoView();
+    void addKeyValue(QPair<QString, QString>);
 private:
-    QTableView* _keyValueTbl;
-    QTableView* _indicatoRInfoTbl;
-
+    void resizeKeyValTable();
+    QTableView* keyValueTbl;
+    QStandardItemModel* keyValModel;
+    QTableView* indicatorInfoTbl;
 };
 
 #endif // NETWORKINFOVIEW_H
