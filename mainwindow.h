@@ -13,8 +13,8 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-
 private:
+    void getAllAvailableNetworksInfo();
     QList<NetworkInfoView*> netInfoViews;
 };
 #endif // MAINWINDOW_H

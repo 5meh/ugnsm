@@ -10,11 +10,15 @@ MainWindow::MainWindow(QWidget *parent)
 {
     setCentralWidget(new QWidget(this));
     centralWidget()->setLayout(new QHBoxLayout(this));
+    getAllAvailableNetworksInfo();
+}
 
+MainWindow::~MainWindow() {}
 
+void MainWindow::getAllAvailableNetworksInfo()
+{
     bool ethernetConnected = false;
 
-    // Get all network interfaces
     const QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
 
     //qInfo() << "Checking network interfaces...\n";
@@ -37,7 +41,6 @@ MainWindow::MainWindow(QWidget *parent)
         //qInfo() << "  MAC:" << interface.hardwareAddress();
         //qInfo() << "  Type: Ethernet";
 
-        // Check interface status flags
         const bool isUp = interface.flags().testFlag(QNetworkInterface::IsUp);
         const bool isRunning = interface.flags().testFlag(QNetworkInterface::IsRunning);
 
@@ -49,7 +52,6 @@ MainWindow::MainWindow(QWidget *parent)
         //         << "|"
         //         << (isRunning ? "Running" : "Not Running");
 
-        // Check for IPv4 connectivity
         bool hasIpv4 = false;
         const QList<QNetworkAddressEntry> entries = interface.addressEntries();
         for(const QNetworkAddressEntry &entry : entries)
@@ -77,7 +79,7 @@ MainWindow::MainWindow(QWidget *parent)
         //qInfo() << "----------------------------------------";
     }
 
+
+
     qInfo() << "\nEthernet connection available:" << (ethernetConnected ? "Yes" : "No");
 }
-
-MainWindow::~MainWindow() {}

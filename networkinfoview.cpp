@@ -6,6 +6,9 @@
 #include <QStandardItemModel>
 #include <QHeaderView>
 
+#include "ledindicator.h"
+#include "ledindicatordelegate.h"
+
 NetworkInfoView::NetworkInfoView(QWidget* parent):
     QWidget(parent),
     keyValueTbl(new QTableView(this)),
@@ -17,16 +20,10 @@ NetworkInfoView::NetworkInfoView(QWidget* parent):
     keyValueTbl->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     keyValueTbl->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     keyValueTbl->setFrameShape(QFrame::NoFrame);
-
-
-
-
-    //keyValueTbl->resizeColumnsToContents();
-    //keyValueTbl->resizeRowsToContents();
-
     keyValueTbl->horizontalHeader()->setVisible(false);
     keyValueTbl->verticalHeader()->setVisible(false);
     keyValueTbl->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    keyValueTbl->setItemDelegateForColumn(3, new LedIndicatorDelegate(this));
 
 
     indicatorInfoTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -34,6 +31,7 @@ NetworkInfoView::NetworkInfoView(QWidget* parent):
     indicatorInfoTbl->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     indicatorInfoTbl->horizontalHeader()->setVisible(false);
     indicatorInfoTbl->verticalHeader()->setVisible(false);
+    indicatorInfoTbl->setItemDelegate(new LedIndicatorDelegate(this));
 
 
     keyValModel = new QStandardItemModel(this);
@@ -44,7 +42,7 @@ NetworkInfoView::NetworkInfoView(QWidget* parent):
     layout()->addWidget(keyValueTbl);
     layout()->addWidget(indicatorInfoTbl);
     //TODO: remove later
-    indicatorInfoTbl->hide();
+    //indicatorInfoTbl->hide();
 }
 
 NetworkInfoView::~NetworkInfoView()
@@ -55,7 +53,15 @@ NetworkInfoView::~NetworkInfoView()
 void NetworkInfoView::addKeyValue(QPair<QString, QString> keyVal)
 {
     QList<QStandardItem*> newRow;
-    newRow << new QStandardItem(QString(keyVal.first)) << new QStandardItem(QString(keyVal.second));
+    if(keyVal.first == "is Up:" || keyVal.first == "is Running:")
+    {
+
+
+        newRow << new QStandardItem(QString(keyVal.first)) << new QStandardItem(QString(keyVal.second)) <<
+            new QStandardItem();
+    }
+    else
+        newRow << new QStandardItem(QString(keyVal.first)) << new QStandardItem(QString(keyVal.second));
     keyValModel->appendRow(newRow);
     resizeKeyValTable();
 }
