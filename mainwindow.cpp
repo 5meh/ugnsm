@@ -31,6 +31,8 @@ void MainWindow::getAllAvailableNetworksInfo()
         {
             continue;
         }
+
+        //TODO:make grid with widgets
         netInfoViews.emplaceBack(new NetworkInfoView(this));
         netInfoViews.back()->addKeyValue(QPair<QString,QString>("Interface:", interface.humanReadableName()));
         netInfoViews.back()->addKeyValue(QPair<QString,QString>("MAC:", interface.hardwareAddress()));
@@ -78,8 +80,6 @@ void MainWindow::getAllAvailableNetworksInfo()
         centralWidget()->layout()->addWidget(netInfoViews.back());
         //qInfo() << "----------------------------------------";
     }
-
-
 
     qInfo() << "\nEthernet connection available:" << (ethernetConnected ? "Yes" : "No");
 }

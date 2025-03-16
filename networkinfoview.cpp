@@ -6,7 +6,7 @@
 #include <QStandardItemModel>
 #include <QHeaderView>
 
-#include "ledindicator.h"
+//#include "ledindicator.h"
 #include "ledindicatordelegate.h"
 
 NetworkInfoView::NetworkInfoView(QWidget* parent):
@@ -53,6 +53,7 @@ void NetworkInfoView::addKeyValue(QPair<QString, QString> keyVal)
     QList<QStandardItem*> newRow;
     if(keyVal.first == "is Up:" || keyVal.first == "is Running:")
     {
+
         newRow << new QStandardItem(QString(keyVal.first)) << new QStandardItem(QString(keyVal.second)) <<
             new QStandardItem(Qt::UserRole);
     }
@@ -82,5 +83,5 @@ void NetworkInfoView::resizeKeyValTable()
     }
 
     // Set fixed size based on calculated dimensions
-    keyValueTbl->setFixedSize(totalWidth*2, totalHeight);
+    keyValueTbl->setFixedSize(totalWidth * 2, totalHeight);
 }

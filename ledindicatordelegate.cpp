@@ -23,42 +23,34 @@ void LedIndicatorDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 {
     if (index.column() == 2)
     {
-        QModelIndex firstColIndex = index.sibling(index.row(), 0);
-        QVariant value = firstColIndex.data(Qt::DisplayRole);
+        QModelIndex firstColIndex = index.sibling(index.row(),0);
+        QModelIndex secondColIndex = index.sibling(index.row(),1);
+        QVariant key = firstColIndex.data(Qt::DisplayRole);
+        QVariant value = secondColIndex.data(Qt::DisplayRole);
 
-        // Only draw if we have valid data
-        if (value.isValid())
+        if (key.isValid() && value.isValid())
         {
-            // Convert first column's value to LED state
-            int state = determineStateFromValue(value);
-
-            QColor color = getColorForState(state);
-
-            // Apply animation if needed
-            if (state == 1)// Yellow state
+            if(key.toString().compare("is Up:") == 0 || key.toString().compare("is Running:") == 0)
             {
-                animateColor(color);
-            }
+                int state = determineStateFromValue(value);
+                QColor color = getColorForState(state);
 
-            drawLED(painter, option, color);
-            // Animation logic for yellow state
-            if (state == 1)
-            {
-                qint64 ms = QDateTime::currentMSecsSinceEpoch();
-                qreal progress = (ms % 1000) / 1000.0;
-                qreal alpha = 0.5 + 0.5 * qSin(progress * 2 * M_PI);
-                color.setAlphaF(alpha);
-            }
+                if (state == 1)// Yellow state
+                {
+                    animateColor(color);
+                }
 
-            // Draw LED
-            painter->save();
-            painter->setRenderHint(QPainter::Antialiasing);
-            painter->setPen(Qt::NoPen);
-            painter->setBrush(color);
-            painter->drawEllipse(option.rect.center(),
-                                 option.rect.height()/2 - 2,
-                                 option.rect.height()/2 - 2);
-            painter->restore();
+                drawLED(painter, option, color);
+
+                // Animation logic for yellow state
+                if (state == 1)
+                {
+                    qint64 ms = QDateTime::currentMSecsSinceEpoch();
+                    qreal progress = (ms % 1000) / 1000.0;
+                    qreal alpha = 0.5 + 0.5 * qSin(progress * 2 * M_PI);
+                    color.setAlphaF(alpha);
+                }
+            }
         }
         else
         {
@@ -73,26 +65,28 @@ QSize LedIndicatorDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
 {
     if (index.column() == 2)
     {
-        return QSize(40, 20); // Fixed size for LED column
+        return QSize(40, 20);
     }
     return QStyledItemDelegate::sizeHint(option, index);
 }
 
 int LedIndicatorDelegate::determineStateFromValue(const QVariant &value) const
 {
-    //TODO: make proper check
-    QString numericValue(value.toString());
-    return 1;
+    //TODO: mb later add yellow processing
+    QString valueStr(value.toString());
+    if(valueStr.compare("True") == 0)
+        return 2;
+    return 0;
 }
 
 QColor LedIndicatorDelegate::getColorForState(int state) const
 {
     switch (state)
     {
-    case 0:  return Qt::red;
-    case 1:  return Qt::yellow;
-    case 2:  return Qt::green;
-    default: return Qt::gray;
+        case 0:  return Qt::red;
+        case 1:  return Qt::yellow;
+        case 2:  return Qt::green;
+        default: return Qt::gray;
     }
 }
 
@@ -110,8 +104,9 @@ void LedIndicatorDelegate::drawLED(QPainter *painter, const QStyleOptionViewItem
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
     painter->setBrush(color);
-    painter->drawEllipse(option.rect.center(),
-                         option.rect.height()/2 - 2,
-                         option.rect.height()/2 - 2);
+    painter->drawRect(option.rect);
+    // painter->drawEllipse(option.rect.center(),
+    //                      option.rect.height()/2 - 2,
+    //                      option.rect.height()/2 - 2);
     painter->restore();
 }
