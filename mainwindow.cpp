@@ -8,12 +8,22 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    setCentralWidget(new QWidget(this));
-    centralWidget()->setLayout(new QHBoxLayout(this));
     getAllAvailableNetworksInfo();
+    setupUI();
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow()
+{
+
+}
+
+void MainWindow::setupUI()
+{
+    setCentralWidget(new QWidget(this));
+    centralWidget()->setLayout(new QHBoxLayout(this));
+    for(NetworkInfoView* widget: netInfoViews)
+        centralWidget()->layout()->addWidget(widget);
+}
 
 void MainWindow::getAllAvailableNetworksInfo()
 {
@@ -77,7 +87,7 @@ void MainWindow::getAllAvailableNetworksInfo()
             netInfoViews.back()->addKeyValue(QPair<QString,QString>("ethernet Connected:", ethernetConnected ? "True" : "False"));
             //qInfo() << "  --> ACTIVE ETHERNET CONNECTION DETECTED";
         }
-        centralWidget()->layout()->addWidget(netInfoViews.back());
+
         //qInfo() << "----------------------------------------";
     }
 

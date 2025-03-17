@@ -26,7 +26,8 @@ set(PROJECT_SOURCES
 
 # Create the executable (desktop only)
 qt_add_executable(ugnsm ${PROJECT_SOURCES}
-    ledindicatordelegate.h ledindicatordelegate.cpp)
+    ledindicatordelegate.h ledindicatordelegate.cpp
+    networkinfo.h networkinfo.cpp)
 
 # Link the necessary Qt6 libraries
 target_link_libraries(ugnsm PRIVATE Qt6::Widgets Qt6::Network)

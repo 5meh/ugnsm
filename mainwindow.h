@@ -14,6 +14,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 private:
+    void setupUI();
     void getAllAvailableNetworksInfo();
     QList<NetworkInfoView*> netInfoViews;
 };

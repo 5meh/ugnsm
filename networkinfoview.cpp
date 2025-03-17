@@ -2,9 +2,13 @@
 #include <QLabel>
 #include <QTableView>
 #include <QVBoxLayout>
-#include <QAbstractTableModel>
+//#include <QAbstractTableModel>
 #include <QStandardItemModel>
 #include <QHeaderView>
+#include <QMouseEvent>
+#include <QDrag>
+#include <QMimeData>
+#include <QApplication>
 
 //#include "ledindicator.h"
 #include "ledindicatordelegate.h"
@@ -14,6 +18,13 @@ NetworkInfoView::NetworkInfoView(QWidget* parent):
     keyValueTbl(new QTableView(this)),
     indicatorInfoTbl(new QTableView(this))
 {
+    setAcceptDrops(true);
+    // setSelectionMode(QAbstractItemView::NoSelection);
+    // setDragDropMode(QAbstractItemView::DragDrop);
+    // setDragEnabled(true);
+    // setDropIndicatorShown(true);
+    // setDefaultDropAction(Qt::MoveAction);
+
     setLayout(new QVBoxLayout(this));
     keyValueTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
     //keyValueTbl->resizeColumnsToContents();
@@ -30,7 +41,6 @@ NetworkInfoView::NetworkInfoView(QWidget* parent):
     indicatorInfoTbl->horizontalHeader()->setVisible(false);
     indicatorInfoTbl->verticalHeader()->setVisible(false);
     indicatorInfoTbl->setItemDelegate(new LedIndicatorDelegate(this));
-
 
     keyValModel = new QStandardItemModel(this);
     keyValueTbl->setModel(keyValModel);
@@ -61,6 +71,46 @@ void NetworkInfoView::addKeyValue(QPair<QString, QString> keyVal)
         newRow << new QStandardItem(QString(keyVal.first)) << new QStandardItem(QString(keyVal.second)) << new QStandardItem("");
     keyValModel->appendRow(newRow);
     resizeKeyValTable();
+}
+
+void NetworkInfoView::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton)
+        dragStartPos = event->pos();
+    QWidget::mousePressEvent(event);
+}
+
+void NetworkInfoView::mouseMoveEvent(QMouseEvent *event)
+{
+    if (!(event->buttons() & Qt::LeftButton)) return;
+    if ((event->pos() - dragStartPos).manhattanLength() < QApplication::startDragDistance()) return;
+
+    QDrag *drag = new QDrag(this);
+    QMimeData *mime = new QMimeData;
+    mime->setData("application/x-dualwidget", QByteArray());
+    drag->setMimeData(mime);
+
+    QPixmap pixmap(size());
+    render(&pixmap);
+    drag->setPixmap(pixmap);
+    drag->setHotSpot(event->pos());
+    drag->exec(Qt::MoveAction);
+}
+
+void NetworkInfoView::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasFormat("application/x-dualwidget"))
+        event->acceptProposedAction();
+}
+
+void NetworkInfoView::dropEvent(QDropEvent *event)
+{
+    if (event->mimeData()->hasFormat("application/x-dualwidget")) {
+        event->acceptProposedAction();
+        QWidget *source = qobject_cast<QWidget*>(event->source());
+        if (source && source != this)
+            emit swapRequested(source, this);
+    }
 }
 
 void NetworkInfoView::resizeKeyValTable()
