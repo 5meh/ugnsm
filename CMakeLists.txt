@@ -18,6 +18,8 @@ set(PROJECT_SOURCES
     main.cpp
     mainwindow.cpp
     mainwindow.h
+    networkinfoviewwidget.h
+    networkinfoviewwidget.cpp
     networkinfoview.h
     networkinfoview.cpp
     ledindicator.h
@@ -27,15 +29,13 @@ set(PROJECT_SOURCES
 # Create the executable (desktop only)
 qt_add_executable(ugnsm ${PROJECT_SOURCES}
     ledindicatordelegate.h ledindicatordelegate.cpp
-    networkinfo.h networkinfo.cpp)
+    networkinfo.h networkinfo.cpp
+    networkinfoview.h networkinfoview.cpp)
 
-# Link the necessary Qt6 libraries
 target_link_libraries(ugnsm PRIVATE Qt6::Widgets Qt6::Network)
 
-# Install target
 install(TARGETS ugnsm
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-# Finalize the executable (Qt6-specific step)
 qt_finalize_executable(ugnsm)

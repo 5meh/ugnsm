@@ -1,137 +1,154 @@
 #include "networkinfoview.h"
-#include <QLabel>
-#include <QTableView>
-#include <QVBoxLayout>
-//#include <QAbstractTableModel>
-#include <QStandardItemModel>
-#include <QHeaderView>
-#include <QMouseEvent>
-#include <QDrag>
-#include <QMimeData>
-#include <QApplication>
+#include "networkinfo.h"
 
-//#include "ledindicator.h"
-#include "ledindicatordelegate.h"
+#include <QTimer>
+#include <QNetworkInterface>
 
-NetworkInfoView::NetworkInfoView(QWidget* parent):
-    QWidget(parent),
-    keyValueTbl(new QTableView(this)),
-    indicatorInfoTbl(new QTableView(this))
+NetworkInfoView::NetworkInfoView(QObject* parent)
+    :QObject(parent)
 {
-    setAcceptDrops(true);
-    // setSelectionMode(QAbstractItemView::NoSelection);
-    // setDragDropMode(QAbstractItemView::DragDrop);
-    // setDragEnabled(true);
-    // setDropIndicatorShown(true);
-    // setDefaultDropAction(Qt::MoveAction);
-
-    setLayout(new QVBoxLayout(this));
-    keyValueTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    //keyValueTbl->resizeColumnsToContents();
-    keyValueTbl->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    keyValueTbl->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    keyValueTbl->setFrameShape(QFrame::NoFrame);
-    keyValueTbl->horizontalHeader()->setVisible(false);
-    keyValueTbl->verticalHeader()->setVisible(false);
-    keyValueTbl->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-
-    indicatorInfoTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    indicatorInfoTbl->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    indicatorInfoTbl->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    indicatorInfoTbl->horizontalHeader()->setVisible(false);
-    indicatorInfoTbl->verticalHeader()->setVisible(false);
-    indicatorInfoTbl->setItemDelegate(new LedIndicatorDelegate(this));
-
-    keyValModel = new QStandardItemModel(this);
-    keyValueTbl->setModel(keyValModel);
-    keyValueTbl->setItemDelegateForColumn(2, new LedIndicatorDelegate(this));
-    //TODO:add indicator inicialization
-
-    layout()->addWidget(keyValueTbl);
-    layout()->addWidget(indicatorInfoTbl);
-    //TODO: remove later
-    indicatorInfoTbl->hide();
+    m_timer = new QTimer(this);
+    connect(m_timer, &QTimer::timeout, this, &NetworkInfoView::refresh);
+    m_timer->start(5000);
 }
 
-NetworkInfoView::~NetworkInfoView()
+void NetworkInfoView::refresh()
 {
+    const auto qtInterfaces = QNetworkInterface::allInterfaces();
+    QHash<QString, NetworkInfo*> currentInterfaces;
 
-}
-
-void NetworkInfoView::addKeyValue(QPair<QString, QString> keyVal)
-{
-    QList<QStandardItem*> newRow;
-    if(keyVal.first == "is Up:" || keyVal.first == "is Running:")
+    for(const auto& interface : qtInterfaces)
     {
+        if(interface.type() == QNetworkInterface::Ethernet)
+        {
+            const QString mac = interface.hardwareAddress();
+            currentInterfaces[mac] = createOrUpdateInfo(interface, mac);
+        }
+    }
 
-        newRow << new QStandardItem(QString(keyVal.first)) << new QStandardItem(QString(keyVal.second)) <<
-            new QStandardItem(Qt::UserRole);
+    checkRemovedInfo(currentInterfaces);
+}
+
+NetworkInfo *NetworkInfoView::createOrUpdateInfo(const QNetworkInterface &interface, const QString &mac)
+{
+    NetworkInfo* info = m_networkInfos.value(mac, nullptr);
+    const QDateTime now = QDateTime::currentDateTime();
+    const bool isUp = interface.flags().testFlag(QNetworkInterface::IsUp);
+    const bool isRunning = interface.flags().testFlag(QNetworkInterface::IsRunning);
+
+    // Get network address information
+    QString ipv4, netmask, broadcast;
+    bool hasIpv4 = false;
+
+    const QList<QNetworkAddressEntry> entries = interface.addressEntries();
+    for(const QNetworkAddressEntry &entry : entries)
+    {
+        if(entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
+        {
+            hasIpv4 = true;
+            ipv4 = entry.ip().toString();
+            netmask = entry.netmask().toString();
+            broadcast = entry.broadcast().toString();
+            break; // Use first IPv4 entry
+        }
+    }
+
+    if(!info)
+    {
+        // Create new NetworkInfo
+        info = new NetworkInfo(
+            interface.humanReadableName(),
+            mac,
+            5,  // Use actual speed
+            isUp,
+            now,
+            this
+            );
+
+        // Set additional network info
+        if(hasIpv4)
+        {
+            info->setIpv4(ipv4);
+            info->setNetmask(netmask);
+            info->setBroadcast(broadcast);
+        }
+        info->setIsRunning(isRunning);
+
+        m_networkInfos.insert(mac, info);
+        emit networkInfoAdded(info);
     }
     else
-        newRow << new QStandardItem(QString(keyVal.first)) << new QStandardItem(QString(keyVal.second)) << new QStandardItem("");
-    keyValModel->appendRow(newRow);
-    resizeKeyValTable();
-}
-
-void NetworkInfoView::mousePressEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::LeftButton)
-        dragStartPos = event->pos();
-    QWidget::mousePressEvent(event);
-}
-
-void NetworkInfoView::mouseMoveEvent(QMouseEvent *event)
-{
-    if (!(event->buttons() & Qt::LeftButton)) return;
-    if ((event->pos() - dragStartPos).manhattanLength() < QApplication::startDragDistance()) return;
-
-    QDrag *drag = new QDrag(this);
-    QMimeData *mime = new QMimeData;
-    mime->setData("application/x-dualwidget", QByteArray());
-    drag->setMimeData(mime);
-
-    QPixmap pixmap(size());
-    render(&pixmap);
-    drag->setPixmap(pixmap);
-    drag->setHotSpot(event->pos());
-    drag->exec(Qt::MoveAction);
-}
-
-void NetworkInfoView::dragEnterEvent(QDragEnterEvent *event)
-{
-    if (event->mimeData()->hasFormat("application/x-dualwidget"))
-        event->acceptProposedAction();
-}
-
-void NetworkInfoView::dropEvent(QDropEvent *event)
-{
-    if (event->mimeData()->hasFormat("application/x-dualwidget")) {
-        event->acceptProposedAction();
-        QWidget *source = qobject_cast<QWidget*>(event->source());
-        if (source && source != this)
-            emit swapRequested(source, this);
-    }
-}
-
-void NetworkInfoView::resizeKeyValTable()
-{
-    //TODO:fix calculation of size
-    int totalWidth = 0;
-    // Add width of vertical header even if hidden (it may contribute if not set to 0)
-    totalWidth += keyValueTbl->verticalHeader()->width();
-    for (int col = 0; col < keyValModel->columnCount(); ++col)
     {
-        totalWidth += keyValueTbl->columnWidth(col);
-    }
+        bool changed = false;
 
-    int totalHeight = 0;
-    // Add height of horizontal header even if hidden
-    totalHeight += keyValueTbl->horizontalHeader()->height();
-    for (int row = 0; row < keyValModel->rowCount(); ++row)
+        if(info->getName() != interface.humanReadableName())
+        {
+            info->setName(interface.humanReadableName());
+            changed = true;
+        }
+
+        if(info->getIsUp() != isUp)
+        {
+            info->setIsUp(isUp);
+            changed = true;
+        }
+
+        // Check and update speed
+        // if(info->getSpeed() != interface.speed()) {
+        //     info->setSpeed(interface.speed());
+        //     changed = true;
+        // }
+
+        if(info->isRunning() != isRunning)
+        {
+            info->setIsRunning(isRunning);
+            changed = true;
+        }
+
+        if(hasIpv4)
+        {
+            if(info->ipv4() != ipv4)
+            {
+                info->setIpv4(ipv4);
+                changed = true;
+            }
+            if(info->netmask() != netmask)
+            {
+                info->setNetmask(netmask);
+                changed = true;
+            }
+            if(info->broadcast() != broadcast)
+            {
+                info->setBroadcast(broadcast);
+                changed = true;
+            }
+        }
+
+        info->setTimestamp(now);
+
+        if(changed)
+        {
+            emit networkInfoUpdated(info);
+        }
+    }
+    return info;
+}
+
+void NetworkInfoView::checkRemovedInfo(const QHash<QString, NetworkInfo *> &current)
+{
+    QSet<QString> removed;
+    for(auto it = m_networkInfos.begin(); it != m_networkInfos.end(); ++it)
     {
-        totalHeight += keyValueTbl->rowHeight(row);
+        if(!current.contains(it.key()))
+        {
+            removed.insert(it.key());
+        }
     }
 
-    // Set fixed size based on calculated dimensions
-    keyValueTbl->setFixedSize(totalWidth * 2, totalHeight);
+    for(const QString &mac : removed)
+    {
+        NetworkInfo* info = m_networkInfos.take(mac);
+        emit networkInfoRemoved(mac);
+        info->deleteLater();
+    }
 }

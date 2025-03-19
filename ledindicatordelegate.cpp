@@ -30,7 +30,7 @@ void LedIndicatorDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 
         if (key.isValid() && value.isValid())
         {
-            if(key.toString().compare("is Up:") == 0 || key.toString().compare("is Running:") == 0)
+            if(key.toString().compare("Is Up:") == 0 || key.toString().compare("Is Running:") == 0)
             {
                 int state = determineStateFromValue(value);
                 QColor color = getColorForState(state);
