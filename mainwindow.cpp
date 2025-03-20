@@ -13,11 +13,13 @@ MainWindow::MainWindow(QWidget *parent)
     getAllAvailableNetworksInfo();
     setupUI();
     setGeometry(200,200,1000,800);
+
+    connect(this, &MainWindow::widgetsSwapped, this, &MainWindow::handleWidgetsSwap);
 }
 
 MainWindow::~MainWindow()
 {
-
+    qDeleteAll(m_netInfoViewWidgets);
 }
 
 void MainWindow::setupUI()
@@ -26,6 +28,8 @@ void MainWindow::setupUI()
     m_grid = new QGridLayout(central);
     central->setLayout(m_grid);
     setCentralWidget(central);
+    m_grid->setSpacing(15);
+    m_grid->setContentsMargins(10, 10, 10, 10);
     addAllNetworkInfoViewWidgets();
 }
 
@@ -34,57 +38,37 @@ void MainWindow::getAllAvailableNetworksInfo()
     m_viewInfo = new NetworkInfoView(this);
     const QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
 
-    for(const QNetworkInterface &interface : interfaces)
+
+    for(const auto &interface : interfaces)
     {
-        if(interface.type() != QNetworkInterface::Ethernet ||
-            interface.flags().testFlag(QNetworkInterface::IsLoopBack))
+        if(interface.type() == QNetworkInterface::Ethernet &&
+            !interface.flags().testFlag(QNetworkInterface::IsLoopBack))
         {
-            continue;
+            m_viewInfo->createOrUpdateInfo(interface, interface.hardwareAddress());
         }
-
-
-        m_viewInfo->createOrUpdateInfo(interface, interface.hardwareAddress());
-
-
-        //TODO:mb later us eit for logs.
-        //qInfo() << "Interface:" << interface.humanReadableName();
-        //qInfo() << "  MAC:" << interface.hardwareAddress();
-        //qInfo() << "  Type: Ethernet";
-
-        //     const bool isUp = interface.flags().testFlag(QNetworkInterface::IsUp);
-        //     const bool isRunning = interface.flags().testFlag(QNetworkInterface::IsRunning);
-
-        //     //netInfoViews.back()->addKeyValue(QPair<QString,QString>("is Up:", isUp ? "True" : "False"));
-        //     //netInfoViews.back()->addKeyValue(QPair<QString,QString>("is Running:", isRunning ? "True" : "False"));
-
-        //     bool hasIpv4 = false;
-        //     const QList<QNetworkAddressEntry> entries = interface.addressEntries();
-        //     for(const QNetworkAddressEntry &entry : entries)
-        //     {
-        //         if(entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
-        //         {
-        //             hasIpv4 = true;
-
-        //             //netInfoViewWidgets.back()->addKeyValue(QPair<QString,QString>("IPv4:", entry.ip().toString()));
-        //             //netInfoViewWidgets.back()->addKeyValue(QPair<QString,QString>("Netmask:", entry.netmask().toString()));
-        //             //netInfoViewWidgets.back()->addKeyValue(QPair<QString,QString>("Broadcast:", entry.broadcast().toString()));
-        //             // qInfo() << "  IPv4:" << entry.ip().toString();
-        //             // qInfo() << "  Netmask:" << entry.netmask().toString();
-        //             // qInfo() << "  Broadcast:" << entry.broadcast().toString();
-        //         }
-        //     }
-
-        //     if(isUp && isRunning && hasIpv4)
-        //     {
-        //         ethernetConnected = true;
-        //         //netInfoViewWidgets.back()->addKeyValue(QPair<QString,QString>("ethernet Connected:", ethernetConnected ? "True" : "False"));
-        //         //qInfo() << "  --> ACTIVE ETHERNET CONNECTION DETECTED";
-        //     }
-        //     //netInfoViewWidgets.emplaceBack(new NetworkInfoViewWidget(this));
-        //     //qInfo() << "----------------------------------------";
     }
 
-    //qInfo() << "\nEthernet connection available:" << (ethernetConnected ? "Yes" : "No");
+    //TODO:mb later us eit for logs.
+    //qInfo() << "Interface:" << interface.humanReadableName();
+    //qInfo() << "  MAC:" << interface.hardwareAddress();
+    //qInfo() << "  Type: Ethernet";
+}
+
+void MainWindow::handleWidgetsSwap(QWidget *source, QWidget *target)
+{
+    NetworkInfoViewWidget* srcWidget = qobject_cast<NetworkInfoViewWidget*>(source);
+    NetworkInfoViewWidget* tgtWidget = qobject_cast<NetworkInfoViewWidget*>(target);
+
+    if(!srcWidget || !tgtWidget) return;
+
+    const int srcIdx = m_visualOrder.indexOf(srcWidget);
+    const int tgtIdx = m_visualOrder.indexOf(tgtWidget);
+
+    if(srcIdx != -1 && tgtIdx != -1)
+    {
+        m_visualOrder.swapItemsAt(srcIdx, tgtIdx);
+        arrangeGrid();
+    }
 }
 
 void MainWindow::addInfoViewWidget(NetworkInfo* info)
@@ -93,6 +77,11 @@ void MainWindow::addInfoViewWidget(NetworkInfo* info)
     {
         NetworkInfoViewWidget* netInfoWdgt = new NetworkInfoViewWidget(info, this);
         m_netInfoViewWidgets.insert(info->getMac(), netInfoWdgt);
+        m_visualOrder.append(netInfoWdgt);
+
+        connect(netInfoWdgt, &NetworkInfoViewWidget::swapRequested,
+                this, &MainWindow::handleWidgetsSwap);
+
         m_grid->addWidget(m_netInfoViewWidgets.value(info->getMac()));
         arrangeGrid();
     }
@@ -111,48 +100,37 @@ void MainWindow::removeInfoViewWidge(const QString &mac)
 void MainWindow::arrangeGrid()
 {
     QLayoutItem* item;
-    while ((item = m_grid->takeAt(0)) != nullptr)
-    {
-        delete item; // Delete layout item, not the widget
-    }
+    while((item = m_grid->takeAt(0))) delete item;
 
-    // Get sorted list of network interfaces
-    QList<NetworkInfoViewWidget*> widgets = m_netInfoViewWidgets.values();
-
-    // Sort widgets by MAC address (or other preferred property)
-    // std::sort(widgets.begin(), widgets.end(), [](NetworkInfoViewWidget* a, NetworkInfoViewWidget* b) {
-    //     return a->m() < b->macAddress(); // Use actual getter method
-    // });
-
-
-    const int minColumnWidth = 300; //TODO: calculate properly
+    const int minColumnWidth = 300;
     const int columnCount = qMax(1, width() / minColumnWidth);
-
     int row = 0, col = 0;
-    for (NetworkInfoViewWidget* widget : widgets)
+
+    for(NetworkInfoViewWidget* widget : m_visualOrder)
     {
         m_grid->addWidget(widget, row, col);
-        if (++col >= columnCount)
+        widget->setMinimumSize(280, 150);
+        widget->show();
+
+        if(++col >= columnCount)
         {
             col = 0;
             row++;
         }
     }
 
-    // if (col != 0)
-    // {
-    //     m_grid->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum),
-    //                     row, col, 1, columnCount - col);
-    // }
+    if(col != 0)
+    {
+        m_grid->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum),
+                        row, col, 1, columnCount - col);
+    }
 }
 
 void MainWindow::addAllNetworkInfoViewWidgets()
 {
     if(!m_viewInfo) return;
 
-    const auto &infos = m_viewInfo->getNetworkInfos();
-
-    for(NetworkInfo* netInfo : infos)
+    for(NetworkInfo* netInfo : m_viewInfo->getNetworkInfos())
     {
         addInfoViewWidget(netInfo);
     }

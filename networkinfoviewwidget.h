@@ -16,6 +16,7 @@ public:
     explicit NetworkInfoViewWidget(QWidget* parent = nullptr);
     NetworkInfoViewWidget(NetworkInfo* info, QWidget* parent = nullptr);
     ~NetworkInfoViewWidget();
+    QString getMac() const;
 signals:
     void swapRequested(QWidget *source, QWidget *target);
 
@@ -24,6 +25,7 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
+    void dragLeaveEvent(QDragLeaveEvent *event) override;
 private:
     void resizeKeyValTable();
     void setupUI();

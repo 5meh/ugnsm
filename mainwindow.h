@@ -15,9 +15,14 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+signals:
+    void widgetsSwapped(QWidget* source, QWidget* target);
 private:
     void setupUI();
     void getAllAvailableNetworksInfo();
+
+    void handleWidgetsSwap(QWidget *source, QWidget *target);
 
     void addInfoViewWidget(NetworkInfo *info);
     void updateInfoViewWidgee(NetworkInfo *info);
@@ -29,5 +34,6 @@ private:
     QGridLayout *m_grid;
     NetworkInfoView* m_viewInfo;
     QHash<QString, NetworkInfoViewWidget*> m_netInfoViewWidgets;
+    QList<NetworkInfoViewWidget*> m_visualOrder;
 };
 #endif // MAINWINDOW_H
