@@ -45,6 +45,49 @@ QString NetworkInfoViewWidget::getMac() const
     return m_info ? m_info->getMac() : QString();
 }
 
+bool NetworkInfoViewWidget::eventFilter(QObject *watched, QEvent *event)
+{
+    QTableView* table = qobject_cast<QTableView*>(watched->parent());
+    if (table && (table == keyValueTbl || table == indicatorInfoTbl))
+    {
+        switch (event->type())
+        {
+            case QEvent::MouseButtonPress:
+            {
+                QMouseEvent* me = static_cast<QMouseEvent*>(event);
+                if (me->button() == Qt::LeftButton)
+                {
+                    dragStartPos = me->pos();
+                }
+                return true; // Consume the event
+            }
+            case QEvent::MouseMove:
+            {
+                QMouseEvent* me = static_cast<QMouseEvent*>(event);
+                if ((me->buttons() & Qt::LeftButton) &&
+                    (me->pos() - dragStartPos).manhattanLength() >= QApplication::startDragDistance())
+                {
+                    // Forward the drag event to the widget
+                    QMouseEvent* newEvent = new QMouseEvent(
+                        QEvent::MouseMove,
+                        me->localPos(),
+                        me->windowPos(),
+                        me->screenPos(),
+                        me->button(),
+                        me->buttons(),
+                        me->modifiers()
+                        );
+                    QApplication::postEvent(this, newEvent);
+                }
+                return true; // Consume the event
+            }
+            default:
+                return false;
+        }
+    }
+    return QWidget::eventFilter(watched, event);
+}
+
 void NetworkInfoViewWidget::addKeyValue(QPair<QString, QString> keyVal)
 {
     QList<QStandardItem*> newRow;
@@ -69,8 +112,12 @@ void NetworkInfoViewWidget::addKeyValue(QPair<QString, QString> keyVal)
 
 void NetworkInfoViewWidget::mousePressEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton)
+    if (event->button() == Qt::LeftButton &&
+          !keyValueTbl->geometry().contains(event->pos()) &&
+          !indicatorInfoTbl->geometry().contains(event->pos()))
+    {
         dragStartPos = event->pos();
+    }
     QWidget::mousePressEvent(event);
 }
 
@@ -180,6 +227,15 @@ void NetworkInfoViewWidget::setupUI()
     keyValueTbl->horizontalHeader()->setVisible(false);
     keyValueTbl->verticalHeader()->setVisible(false);
     keyValueTbl->horizontalHeader()->setStretchLastSection(true);
+
+    keyValueTbl->setSelectionMode(QAbstractItemView::NoSelection);
+    keyValueTbl->setFocusPolicy(Qt::NoFocus);
+    keyValueTbl->setStyleSheet(
+        "QTableView { selection-background-color: transparent; }"
+        "QTableView::item:selected { background: transparent; }"
+        );
+    keyValueTbl->viewport()->installEventFilter(this);
+
     //keyValueTbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     //keyValueTbl->setSizeAdjustPolicy(QAbstractScrollArea::SizeAdjustPolicy::AdjustToContentsOnFirstShow);
 
@@ -190,6 +246,15 @@ void NetworkInfoViewWidget::setupUI()
     indicatorInfoTbl->verticalHeader()->setVisible(false);
     indicatorInfoTbl->setItemDelegate(new LedIndicatorDelegate(this));
 
+    indicatorInfoTbl->setSelectionMode(QAbstractItemView::NoSelection);
+    indicatorInfoTbl->setFocusPolicy(Qt::NoFocus);
+    indicatorInfoTbl->setStyleSheet(
+        "QTableView { selection-background-color: transparent; }"
+        "QTableView::item:selected { background: transparent; }"
+        );
+
+
+    indicatorInfoTbl->viewport()->installEventFilter(this);
     //TODO: remove later
     indicatorInfoTbl->hide();
 

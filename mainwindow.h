@@ -31,6 +31,8 @@ private:
     void arrangeGrid();
     void addAllNetworkInfoViewWidgets();
 
+    int m_gridSpacing = 15;
+    int m_gridMargins = 10;
     QGridLayout *m_grid;
     NetworkInfoView* m_viewInfo;
     QHash<QString, NetworkInfoViewWidget*> m_netInfoViewWidgets;

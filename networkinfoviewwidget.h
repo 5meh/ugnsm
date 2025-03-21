@@ -21,6 +21,7 @@ signals:
     void swapRequested(QWidget *source, QWidget *target);
 
 protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
@@ -31,6 +32,9 @@ private:
     void setupUI();
     void setKeyValueTbl();
     void addKeyValue(QPair<QString, QString>);
+
+    bool m_isTableDragging = false;
+    QPoint m_tableDragStartPos;
     NetworkInfo* m_info;
     QTableView* keyValueTbl;
     QStandardItemModel* keyValModel;
