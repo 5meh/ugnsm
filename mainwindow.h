@@ -16,7 +16,7 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    MainWindow(QWidget *parent = nullptr);
+    MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
 signals:
@@ -27,16 +27,14 @@ protected:
 
 private:
     void setupUI();
-    void getAllAvailableNetworksInfo();
     void initializeGrid();
     void updateGridDisplay();
 
-    void handleWidgetsSwap(QWidget *source, QWidget *target);
+    void handleWidgetsSwap(QWidget* source, QWidget* target);
     void handleDropOnPlaceholder(QWidget* source, int row, int col);
-
-    void addInfoViewWidget(NetworkInfo *info);
-    void updateInfoViewWidgee(NetworkInfo *info);
-    void removeInfoViewWidge(const QString &mac);
+    void addInfoViewWidget(NetworkInfo* info);
+    //void updateInfoViewWidgee(NetworkInfo *info);
+    //void removeInfoViewWidge(const QString &mac);
 
     QWidget* createPlaceholderWidget();
     void arrangeGrid();
@@ -45,7 +43,7 @@ private:
     static constexpr int GRID_SIZE = 3;
     QVector<QVector<NetworkInfoViewWidget*>> m_gridSlots;
 
-    QGridLayout *m_grid;
+    QGridLayout* m_grid;
     NetworkInfoView* m_viewInfo;
 
     const QSize m_widgetSize = QSize(300, 180);//TODO:replace with widget size

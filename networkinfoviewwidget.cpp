@@ -9,8 +9,8 @@
 #include <QDrag>
 #include <QMimeData>
 #include <QPainter>
+#include <QList>
 #include <QApplication>
-#include <qpainter.h>
 
 #include "ledindicatordelegate.h"
 #include "networkinfo.h"
@@ -21,23 +21,33 @@ NetworkInfoViewWidget::NetworkInfoViewWidget(QWidget* parent)
     indicatorInfoTbl(new QTableView(this))
 {
     setupUI();
+    if(m_info)
+    {
+        connect(m_info, &NetworkInfo::ipv4Changed, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        connect(m_info, &NetworkInfo::netmaskChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        connect(m_info, &NetworkInfo::broadcastChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        connect(m_info, &NetworkInfo::isRunningChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        connect(m_info, &NetworkInfo::rxSpeedChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        connect(m_info, &NetworkInfo::txSpeedChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    }
     setAttribute(Qt::WA_StaticContents);
     setMouseTracking(true);
 }
 
-NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfo *info, QWidget* parent)
+NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfo* info, QWidget* parent)
     :m_info(info),
     QFrame(parent),
     keyValueTbl(new QTableView(this)),
     indicatorInfoTbl(new QTableView(this))
 {
     setupUI();
+    setAttribute(Qt::WA_StaticContents);
     setKeyValueTbl();
 }
 
 NetworkInfoViewWidget::~NetworkInfoViewWidget()
 {
-     if(keyValModel) keyValModel->deleteLater();
+    if(keyValModel) keyValModel->deleteLater();
 }
 
 QString NetworkInfoViewWidget::getMac() const
@@ -45,7 +55,56 @@ QString NetworkInfoViewWidget::getMac() const
     return m_info ? m_info->getMac() : QString();
 }
 
-bool NetworkInfoViewWidget::eventFilter(QObject *watched, QEvent *event)
+void NetworkInfoViewWidget::setStyleWhenSelected()
+{
+    setStyleSheet("QFrame {border: 4px solid rgb(0, 255, 128); }");
+}
+
+void NetworkInfoViewWidget::unsetStyleWhenSelected()
+{
+     setStyleSheet("QFrame {}");
+}
+
+void NetworkInfoViewWidget::updateNetworkInfoDisplay()
+{
+    if(!m_info) return;
+
+    setUpdatesEnabled(false);
+    keyValueTbl->setUpdatesEnabled(false);
+
+    //keyValModel->clear();
+    QList<QPair<QString, QString>> currentData = m_info->getAllKeyValuesAsList();
+
+    for(int row = 0; row < keyValModel->rowCount(); ++row)
+    {
+        QStandardItem* paramItem = keyValModel->item(row, 0);
+        QStandardItem* valueItem = keyValModel->item(row, 1);
+        QStandardItem* statusItem = keyValModel->item(row, 2);
+
+        auto it = std::find_if(currentData.begin(), currentData.end(),
+                               [&](const QPair<QString, QString>& item)
+                                {
+                                    return item.first == paramItem->text();
+                                });
+
+        if(it != currentData.end())
+        {
+            valueItem->setText(it->second);
+            updateStatusIndicator(statusItem, it->first, it->second);
+            currentData.erase(it);
+        }
+        else
+        {
+            keyValModel->removeRow(row--);
+        }
+    }
+
+    setUpdatesEnabled(true);
+    keyValueTbl->setUpdatesEnabled(true);
+    resizeKeyValTable();
+}
+
+bool NetworkInfoViewWidget::eventFilter(QObject* watched, QEvent* event)
 {
     QTableView* table = qobject_cast<QTableView*>(watched->parent());
     if (table && (table == keyValueTbl || table == indicatorInfoTbl))
@@ -110,7 +169,7 @@ void NetworkInfoViewWidget::addKeyValue(QPair<QString, QString> keyVal)
     keyValModel->appendRow(newRow);
 }
 
-void NetworkInfoViewWidget::mousePressEvent(QMouseEvent *event)
+void NetworkInfoViewWidget::mousePressEvent(QMouseEvent* event)
 {
     if (event->button() == Qt::LeftButton &&
           !keyValueTbl->geometry().contains(event->pos()) &&
@@ -121,25 +180,23 @@ void NetworkInfoViewWidget::mousePressEvent(QMouseEvent *event)
     QWidget::mousePressEvent(event);
 }
 
-void NetworkInfoViewWidget::mouseMoveEvent(QMouseEvent *event)
+void NetworkInfoViewWidget::mouseMoveEvent(QMouseEvent* event)
 {
     if (!(event->buttons() & Qt::LeftButton)) return;
     if ((event->pos() - dragStartPos).manhattanLength() < QApplication::startDragDistance()) return;
 
-    QDrag *drag = new QDrag(this);
-    QMimeData *mime = new QMimeData;
+    QDrag* drag = new QDrag(this);
+    QMimeData* mime = new QMimeData;
 
     // Set both standard and custom MIME data
     mime->setText("NetworkInfoWidget");
     mime->setData("application/x-networkinfoviewwidget", QByteArray());
     mime->setProperty("widget", QVariant::fromValue<QWidget*>(this));
 
-    // Create drag pixmap with visual feedback
     QPixmap pixmap(size());
     pixmap.fill(Qt::transparent);
     render(&pixmap);
 
-    // Add drop target indicator
     QPainter painter(&pixmap);
     painter.setBrush(QColor(0, 255, 0, 50)); // Green placeholder
     painter.drawRect(rect());
@@ -151,7 +208,7 @@ void NetworkInfoViewWidget::mouseMoveEvent(QMouseEvent *event)
     Qt::DropAction result = drag->exec(Qt::MoveAction);
 }
 
-void NetworkInfoViewWidget::dragEnterEvent(QDragEnterEvent *event)
+void NetworkInfoViewWidget::dragEnterEvent(QDragEnterEvent* event)
 {
     if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget") &&
         event->source() != this)
@@ -162,15 +219,15 @@ void NetworkInfoViewWidget::dragEnterEvent(QDragEnterEvent *event)
     }
 }
 
-void NetworkInfoViewWidget::dropEvent(QDropEvent *event)
+void NetworkInfoViewWidget::dropEvent(QDropEvent* event)
 {
     setStyleSheet(""); // Reset visual feedback
     update();
 
     if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
     {
-        QWidget *sourceWidget = qobject_cast<QWidget*>(event->source());
-        NetworkInfoViewWidget *source = qobject_cast<NetworkInfoViewWidget*>(
+        QWidget* sourceWidget = qobject_cast<QWidget*>(event->source());
+        NetworkInfoViewWidget* source = qobject_cast<NetworkInfoViewWidget*>(
             event->mimeData()->property("widget").value<QWidget*>()
             );
 
@@ -193,22 +250,37 @@ void NetworkInfoViewWidget::dragLeaveEvent(QDragLeaveEvent *event)
     QWidget::dragLeaveEvent(event);
 }
 
+void NetworkInfoViewWidget::updateStatusIndicator(QStandardItem *item, const QString &key, const QString &value)
+{
+    if(key == "Is Up:" || key == "Is Running:")
+    {
+        bool state = (value.compare("True", Qt::CaseInsensitive) == 0);
+        item->setData(state ? 1 : 0, Qt::UserRole);
+    }
+    else
+    {
+        item->setData(-1, Qt::UserRole);
+    }
+}
+
 void NetworkInfoViewWidget::resizeKeyValTable()
 {
-    keyValueTbl->resizeColumnsToContents();
-    keyValueTbl->resizeRowsToContents();
+    //TODO:make proper table calculation
+    // keyValueTbl->resizeColumnsToContents();
+    // keyValueTbl->resizeRowsToContents();
 
-    QSize sizeHint = keyValueTbl->sizeHint();
+    // QSize sizeHint = keyValueTbl->sizeHint();
 
-    if (keyValueTbl->horizontalHeader()->isHidden())
-    {
-        sizeHint.setHeight(sizeHint.height() - keyValueTbl->horizontalHeader()->height());
-    }
-    if (keyValueTbl->verticalScrollBar()->isVisible())
-    {
-        sizeHint.setWidth(sizeHint.width() + keyValueTbl->verticalScrollBar()->width());
-    }
-    keyValueTbl->setFixedSize(sizeHint);
+    // if (keyValueTbl->horizontalHeader()->isHidden())
+    // {
+    //     sizeHint.setHeight(sizeHint.height() - keyValueTbl->horizontalHeader()->height());
+    // }
+    // if (keyValueTbl->verticalScrollBar()->isVisible())
+    // {
+    //     sizeHint.setWidth(sizeHint.width() + keyValueTbl->verticalScrollBar()->width());
+    // }
+    // keyValueTbl->setFixedSize(sizeHint);
+    //keyValueTbl->setFixedSize(m_widgetSize);
 }
 
 void NetworkInfoViewWidget::setupUI()
@@ -216,8 +288,14 @@ void NetworkInfoViewWidget::setupUI()
     setAcceptDrops(true);
     setLayout(new QVBoxLayout(this));
 
-    keyValModel = new QStandardItemModel(this);
+    QPixmap pixmap(":/resources/crown.png");
+    crownLbl.setPixmap(pixmap);
+    crownLbl.setScaledContents(true);
+    crownLbl.setFixedWidth(50);
+    crownLbl.setFixedHeight(50);
+    //layout()->addWidget(&crownLbl);
 
+    keyValModel = new QStandardItemModel(this);
     keyValueTbl->setModel(keyValModel);
     keyValueTbl->setItemDelegateForColumn(2, new LedIndicatorDelegate(this));
     keyValueTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -227,7 +305,6 @@ void NetworkInfoViewWidget::setupUI()
     keyValueTbl->horizontalHeader()->setVisible(false);
     keyValueTbl->verticalHeader()->setVisible(false);
     keyValueTbl->horizontalHeader()->setStretchLastSection(true);
-
     keyValueTbl->setSelectionMode(QAbstractItemView::NoSelection);
     keyValueTbl->setFocusPolicy(Qt::NoFocus);
     keyValueTbl->setStyleSheet(
@@ -235,9 +312,7 @@ void NetworkInfoViewWidget::setupUI()
         "QTableView::item:selected { background: transparent; }"
         );
     keyValueTbl->viewport()->installEventFilter(this);
-
-    //keyValueTbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    //keyValueTbl->setSizeAdjustPolicy(QAbstractScrollArea::SizeAdjustPolicy::AdjustToContentsOnFirstShow);
+    layout()->addWidget(keyValueTbl);
 
     indicatorInfoTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
     indicatorInfoTbl->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
@@ -245,18 +320,18 @@ void NetworkInfoViewWidget::setupUI()
     indicatorInfoTbl->horizontalHeader()->setVisible(false);
     indicatorInfoTbl->verticalHeader()->setVisible(false);
     indicatorInfoTbl->setItemDelegate(new LedIndicatorDelegate(this));
-
     indicatorInfoTbl->setSelectionMode(QAbstractItemView::NoSelection);
     indicatorInfoTbl->setFocusPolicy(Qt::NoFocus);
     indicatorInfoTbl->setStyleSheet(
         "QTableView { selection-background-color: transparent; }"
         "QTableView::item:selected { background: transparent; }"
         );
-
-
     indicatorInfoTbl->viewport()->installEventFilter(this);
+    //layout()->addWidget(indicatorInfoTbl);
+
     //TODO: remove later
     indicatorInfoTbl->hide();
+    //crownLbl.hide();
 
     setStyleSheet(R"(
             NetworkView
@@ -267,11 +342,17 @@ void NetworkInfoViewWidget::setupUI()
             }
             QLabel { color: #333; }
         )");
+    layout()->setSpacing(0);
 }
 
 void NetworkInfoViewWidget::setKeyValueTbl()
 {
-    for(const QPair<QString, QString>& keyVal: m_info->getAllKeyValuesAsList())
-        addKeyValue(keyVal);
+    if(m_info)
+    {
+        for(const auto& keyVal : m_info->getAllKeyValuesAsList())
+        {
+            addKeyValue(keyVal);
+        }
+    }
     resizeKeyValTable();
 }
