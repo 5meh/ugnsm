@@ -31,6 +31,9 @@ void NetworkInfoView::refresh()
 
 NetworkInfo *NetworkInfoView::createOrUpdateInfo(const QNetworkInterface &interface, const QString &mac)
 {
+    qDebug() << "Processing interface:" << interface.name()
+             << "MAC:" << mac;
+    //<< "Exists:" << (info ? "Yes" : "No");
     NetworkInfo* info = m_networkInfos.value(mac, nullptr);
     const QDateTime now = QDateTime::currentDateTime();
     const bool isUp = interface.flags().testFlag(QNetworkInterface::IsUp);

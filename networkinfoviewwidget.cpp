@@ -59,7 +59,7 @@ bool NetworkInfoViewWidget::eventFilter(QObject *watched, QEvent *event)
                 {
                     dragStartPos = me->pos();
                 }
-                return true; // Consume the event
+                return true;
             }
             case QEvent::MouseMove:
             {
@@ -70,16 +70,16 @@ bool NetworkInfoViewWidget::eventFilter(QObject *watched, QEvent *event)
                     // Forward the drag event to the widget
                     QMouseEvent* newEvent = new QMouseEvent(
                         QEvent::MouseMove,
-                        me->localPos(),
-                        me->windowPos(),
-                        me->screenPos(),
+                        me->position(),
+                        me->scenePosition(),
+                        me->globalPosition(),
                         me->button(),
                         me->buttons(),
                         me->modifiers()
                         );
                     QApplication::postEvent(this, newEvent);
                 }
-                return true; // Consume the event
+                return true;
             }
             default:
                 return false;
