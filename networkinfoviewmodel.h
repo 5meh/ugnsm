@@ -1,0 +1,42 @@
+#ifndef NETWORKINFOVIEWMODEL_H
+#define NETWORKINFOVIEWMODEL_H
+
+#include <QObject>
+class NetworkInfo;
+
+class NetworkInfoViewModel : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QString name READ getName NOTIFY nameChanged)
+    Q_PROPERTY(QString mac READ getMac NOTIFY macChanged)
+    Q_PROPERTY(QString ipAddress READ getIpAddress NOTIFY ipAddressChanged)
+    Q_PROPERTY(QString netmask READ getNetmask NOTIFY netmaskChanged)
+    Q_PROPERTY(quint64 downloadSpeed READ getDownloadSpeed NOTIFY speedChanged)
+    Q_PROPERTY(quint64 uploadSpeed READ getUploadSpeed NOTIFY speedChanged)
+
+public:
+    explicit NetworkInfoViewModel(NetworkInfo* model, QObject* parent = nullptr);
+
+    QList<QPair<QString, QString>> getAllKeyValuesAsList() const;
+
+    QString getName() const;
+    QString getMac() const;
+    QString getIpAddress() const;
+    QString getNetmask() const;
+    quint64 getDownloadSpeed() const;
+    quint64 getUploadSpeed() const;
+
+signals:
+    void nameChanged(const QString& name);
+    void macChanged(const QString& mac);
+    void ipAddressChanged(const QString& ip);
+    void netmaskChanged(const QString& netmask);
+    void speedChanged(quint64 download, quint64 upload);
+
+private:
+    QString formatSpeed(quint64 bytes) const;
+    void connectModelSignals();
+    NetworkInfo* m_model;
+};
+
+#endif // NETWORKINFOVIEWMODEL_H

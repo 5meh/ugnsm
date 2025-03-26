@@ -13,67 +13,39 @@
 #include <QApplication>
 
 #include "ledindicatordelegate.h"
-#include "networkinfo.h"
+//#include "networkinfo.h"
+#include "networkinfoviewmodel.h"
 
-NetworkInfoViewWidget::NetworkInfoViewWidget(QWidget* parent)
-    : QFrame(parent),
-    keyValueTbl(new QTableView(this)),
-    indicatorInfoTbl(new QTableView(this))
+NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfoViewModel *viewModel, QWidget *parent)
+    : QFrame(parent), m_viewModel(viewModel)
 {
+    setFixedSize(400, 300);
     setupUI();
-    if(m_info)
-    {
-        connect(m_info, &NetworkInfo::ipv4Changed, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        connect(m_info, &NetworkInfo::netmaskChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        connect(m_info, &NetworkInfo::broadcastChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        connect(m_info, &NetworkInfo::isRunningChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        connect(m_info, &NetworkInfo::rxSpeedChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        connect(m_info, &NetworkInfo::txSpeedChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    }
-    setAttribute(Qt::WA_StaticContents);
-    setMouseTracking(true);
+    setStyleSheet("background-color: white; border-radius: 8px;");
 }
 
-NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfo* info, QWidget* parent)
-    :m_info(info),
-    QFrame(parent),
-    keyValueTbl(new QTableView(this)),
-    indicatorInfoTbl(new QTableView(this))
-{
-    setupUI();
-    setAttribute(Qt::WA_StaticContents);
-    setKeyValueTbl();
-}
 
 NetworkInfoViewWidget::~NetworkInfoViewWidget()
 {
-    if(keyValModel) keyValModel->deleteLater();
+    if(keyValModel)
+        keyValModel->deleteLater();
 }
 
 QString NetworkInfoViewWidget::getMac() const
 {
-    return m_info ? m_info->getMac() : QString();
-}
-
-void NetworkInfoViewWidget::setStyleWhenSelected()
-{
-    setStyleSheet("QFrame {border: 4px solid rgb(0, 255, 128); }");
-}
-
-void NetworkInfoViewWidget::unsetStyleWhenSelected()
-{
-     setStyleSheet("QFrame {}");
+    return m_viewModel->getMac();
 }
 
 void NetworkInfoViewWidget::updateNetworkInfoDisplay()
 {
-    if(!m_info) return;
+    if(!m_viewModel)
+        return;
 
     setUpdatesEnabled(false);
     keyValueTbl->setUpdatesEnabled(false);
 
     //keyValModel->clear();
-    QList<QPair<QString, QString>> currentData = m_info->getAllKeyValuesAsList();
+    QList<QPair<QString, QString>> currentData = m_viewModel->getAllKeyValuesAsList();
 
     for(int row = 0; row < keyValModel->rowCount(); ++row)
     {
@@ -101,51 +73,51 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
 
     setUpdatesEnabled(true);
     keyValueTbl->setUpdatesEnabled(true);
-    resizeKeyValTable();
+    //resizeKeyValTable();
 }
 
-bool NetworkInfoViewWidget::eventFilter(QObject* watched, QEvent* event)
-{
-    QTableView* table = qobject_cast<QTableView*>(watched->parent());
-    if (table && (table == keyValueTbl || table == indicatorInfoTbl))
-    {
-        switch (event->type())
-        {
-            case QEvent::MouseButtonPress:
-            {
-                QMouseEvent* me = static_cast<QMouseEvent*>(event);
-                if (me->button() == Qt::LeftButton)
-                {
-                    dragStartPos = me->pos();
-                }
-                return true;
-            }
-            case QEvent::MouseMove:
-            {
-                QMouseEvent* me = static_cast<QMouseEvent*>(event);
-                if ((me->buttons() & Qt::LeftButton) &&
-                    (me->pos() - dragStartPos).manhattanLength() >= QApplication::startDragDistance())
-                {
-                    // Forward the drag event to the widget
-                    QMouseEvent* newEvent = new QMouseEvent(
-                        QEvent::MouseMove,
-                        me->position(),
-                        me->scenePosition(),
-                        me->globalPosition(),
-                        me->button(),
-                        me->buttons(),
-                        me->modifiers()
-                        );
-                    QApplication::postEvent(this, newEvent);
-                }
-                return true;
-            }
-            default:
-                return false;
-        }
-    }
-    return QWidget::eventFilter(watched, event);
-}
+// bool NetworkInfoViewWidget::eventFilter(QObject* watched, QEvent* event)
+// {
+//     QTableView* table = qobject_cast<QTableView*>(watched->parent());
+//     if (table && (table == keyValueTbl))
+//     {
+//         switch (event->type())
+//         {
+//             case QEvent::MouseButtonPress:
+//             {
+//                 QMouseEvent* me = static_cast<QMouseEvent*>(event);
+//                 if (me->button() == Qt::LeftButton)
+//                 {
+//                     dragStartPos = me->pos();
+//                 }
+//                 return true;
+//             }
+//             case QEvent::MouseMove:
+//             {
+//                 QMouseEvent* me = static_cast<QMouseEvent*>(event);
+//                 if ((me->buttons() & Qt::LeftButton) &&
+//                     (me->pos() - dragStartPos).manhattanLength() >= QApplication::startDragDistance())
+//                 {
+//                     // Forward the drag event to the widget
+//                     QMouseEvent* newEvent = new QMouseEvent(
+//                         QEvent::MouseMove,
+//                         me->position(),
+//                         me->scenePosition(),
+//                         me->globalPosition(),
+//                         me->button(),
+//                         me->buttons(),
+//                         me->modifiers()
+//                         );
+//                     QApplication::postEvent(this, newEvent);
+//                 }
+//                 return true;
+//             }
+//             default:
+//                 return false;
+//         }
+//     }
+//     return QWidget::eventFilter(watched, event);
+// }
 
 void NetworkInfoViewWidget::addKeyValue(QPair<QString, QString> keyVal)
 {
@@ -162,85 +134,162 @@ void NetworkInfoViewWidget::addKeyValue(QPair<QString, QString> keyVal)
     }
     else
     {
-        ledItem->setData(-1, Qt::UserRole); // No indicator
+        ledItem->setData(-1, Qt::UserRole);
     }
 
     newRow << ledItem;
     keyValModel->appendRow(newRow);
 }
 
+void NetworkInfoViewWidget::setupTableView()
+{
+    keyValueTbl = new QTableView(this);
+    keyValModel = new QStandardItemModel(this);
+
+    keyValueTbl->setModel(keyValModel);
+    keyValueTbl->setItemDelegateForColumn(2, new LedIndicatorDelegate(this));
+    keyValueTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    keyValueTbl->setSelectionMode(QAbstractItemView::NoSelection);
+    keyValueTbl->verticalHeader()->hide();
+    keyValueTbl->horizontalHeader()->setStretchLastSection(true);
+    keyValueTbl->setShowGrid(false);
+    //keyValModel->setHorizontalHeaderLabels({"Property", "Value"});
+    setKeyValueTbl();
+    connectViewModel();
+    keyValueTbl->viewport()->installEventFilter(this);
+    layout()->addWidget(keyValueTbl);
+}
+
+void NetworkInfoViewWidget::connectViewModel()
+{
+    connect(m_viewModel, &NetworkInfoViewModel::nameChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel, &NetworkInfoViewModel::macChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel, &NetworkInfoViewModel::ipAddressChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel, &NetworkInfoViewModel::netmaskChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel, &NetworkInfoViewModel::speedChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+}
+
+QString NetworkInfoViewWidget::formatSpeed(quint64 bytes) const
+{
+    const QStringList units = {"B/s", "KB/s", "MB/s", "GB/s"};
+    int unitIndex = 0;
+    double speed = bytes;
+
+    while (speed >= 1024 && unitIndex < units.size() - 1)
+    {
+        speed /= 1024;
+        unitIndex++;
+    }
+
+    return QString("%1 %2").arg(speed, 0, 'f', unitIndex > 0 ? 2 : 0).arg(units[unitIndex]);
+}
+
 void NetworkInfoViewWidget::mousePressEvent(QMouseEvent* event)
 {
     if (event->button() == Qt::LeftButton &&
-          !keyValueTbl->geometry().contains(event->pos()) &&
-          !indicatorInfoTbl->geometry().contains(event->pos()))
+          !keyValueTbl->geometry().contains(event->pos()))
     {
         dragStartPos = event->pos();
+        m_isDragging = false;
     }
     QWidget::mousePressEvent(event);
 }
 
 void NetworkInfoViewWidget::mouseMoveEvent(QMouseEvent* event)
 {
-    if (!(event->buttons() & Qt::LeftButton)) return;
-    if ((event->pos() - dragStartPos).manhattanLength() < QApplication::startDragDistance()) return;
+    if (!(event->buttons() & Qt::LeftButton))
+        return;
+    if ((event->pos() - dragStartPos).manhattanLength() < QApplication::startDragDistance())
+        return;
+
+
+
+    m_isDragging = true;
+    update();
 
     QDrag* drag = new QDrag(this);
-    QMimeData* mime = new QMimeData;
-
-    // Set both standard and custom MIME data
-    mime->setText("NetworkInfoWidget");
-    mime->setData("application/x-networkinfoviewwidget", QByteArray());
-    mime->setProperty("widget", QVariant::fromValue<QWidget*>(this));
+    QMimeData* mimeData = new QMimeData;
+    mimeData->setData("application/x-networkwidget", QByteArray());
+    drag->setMimeData(mimeData);
 
     QPixmap pixmap(size());
-    pixmap.fill(Qt::transparent);
     render(&pixmap);
-
-    QPainter painter(&pixmap);
-    painter.setBrush(QColor(0, 255, 0, 50)); // Green placeholder
-    painter.drawRect(rect());
-
     drag->setPixmap(pixmap);
-    drag->setHotSpot(event->pos() - rect().topLeft());
-    drag->setMimeData(mime);
+    drag->setHotSpot(event->pos());
 
-    Qt::DropAction result = drag->exec(Qt::MoveAction);
+    emit dragInitiated(this);
+    drag->exec(Qt::MoveAction);
+    m_isDragging = false;
+    update();
+
+    // QDrag* drag = new QDrag(this);
+    // QMimeData* mime = new QMimeData;
+
+    // // Set both standard and custom MIME data
+    // mime->setText("NetworkInfoWidget");
+    // mime->setData("application/x-networkinfoviewwidget", QByteArray());
+    // mime->setProperty("widget", QVariant::fromValue<QWidget*>(this));
+
+    // QPixmap pixmap(size());
+    // pixmap.fill(Qt::transparent);
+    // render(&pixmap);
+
+    // QPainter painter(&pixmap);
+    // painter.setBrush(QColor(0, 255, 0, 50)); // Green placeholder
+    // painter.drawRect(rect());
+
+    // drag->setPixmap(pixmap);
+    // drag->setHotSpot(event->pos() - rect().topLeft());
+    // drag->setMimeData(mime);
+
+    // Qt::DropAction result = drag->exec(Qt::MoveAction);
 }
 
 void NetworkInfoViewWidget::dragEnterEvent(QDragEnterEvent* event)
 {
-    if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget") &&
-        event->source() != this)
+    if (event->mimeData()->hasFormat("application/x-networkwidget"))
     {
         event->acceptProposedAction();
-        setStyleSheet("background-color: rgba(0, 255, 0, 50); border: 2px dashed darkgreen;");
         update();
     }
+
+    // if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget") &&
+    //     event->source() != this)
+    // {
+    //     event->acceptProposedAction();
+    //     setStyleSheet("background-color: rgba(0, 255, 0, 50); border: 2px dashed darkgreen;");
+    //     update();
+    // }
 }
 
 void NetworkInfoViewWidget::dropEvent(QDropEvent* event)
 {
+
+    if (event->mimeData()->hasFormat("application/x-networkwidget"))
+    {
+        emit dropReceived(this);
+        event->acceptProposedAction();
+    }
     setStyleSheet(""); // Reset visual feedback
     update();
 
-    if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
-    {
-        QWidget* sourceWidget = qobject_cast<QWidget*>(event->source());
-        NetworkInfoViewWidget* source = qobject_cast<NetworkInfoViewWidget*>(
-            event->mimeData()->property("widget").value<QWidget*>()
-            );
+    // if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
+    // {
+    //     QWidget* sourceWidget = qobject_cast<QWidget*>(event->source());
+    //     NetworkInfoViewWidget* source = qobject_cast<NetworkInfoViewWidget*>(
+    //         event->mimeData()->property("widget").value<QWidget*>()
+    //         );
 
-        if (source && source != this)
-        {
-            // Validate MAC address before swap
-            if (!source->getMac().isEmpty() && !this->getMac().isEmpty())
-            {
-                emit swapRequested(source, this);
-                event->acceptProposedAction();
-            }
-        }
-    }
+    //     if (source && source != this)
+    //     {
+    //         // Validate MAC address before swap
+    //         if (!source->getMac().isEmpty() && !this->getMac().isEmpty())
+    //         {
+    //             emit swapRequested(source, this);
+    //             event->acceptProposedAction();
+    //         }
+    //     }
+    // }
 }
 
 void NetworkInfoViewWidget::dragLeaveEvent(QDragLeaveEvent *event)
@@ -248,6 +297,18 @@ void NetworkInfoViewWidget::dragLeaveEvent(QDragLeaveEvent *event)
     setStyleSheet("");
     update();
     QWidget::dragLeaveEvent(event);
+}
+
+void NetworkInfoViewWidget::paintEvent(QPaintEvent *event)
+{
+    QFrame::paintEvent(event);
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    QPen pen(m_isDragging ? m_dragBorder : m_normalBorder, 2);
+    painter.setPen(pen);
+    painter.drawRoundedRect(rect().adjusted(1, 1, -1, -1), 8, 8);
 }
 
 void NetworkInfoViewWidget::updateStatusIndicator(QStandardItem *item, const QString &key, const QString &value)
@@ -263,96 +324,51 @@ void NetworkInfoViewWidget::updateStatusIndicator(QStandardItem *item, const QSt
     }
 }
 
-void NetworkInfoViewWidget::resizeKeyValTable()
-{
-    //TODO:make proper table calculation
-    // keyValueTbl->resizeColumnsToContents();
-    // keyValueTbl->resizeRowsToContents();
+// void NetworkInfoViewWidget::resizeKeyValTable()
+// {
+//     //TODO:make proper table calculation
+//     // keyValueTbl->resizeColumnsToContents();
+//     // keyValueTbl->resizeRowsToContents();
 
-    // QSize sizeHint = keyValueTbl->sizeHint();
+//     // QSize sizeHint = keyValueTbl->sizeHint();
 
-    // if (keyValueTbl->horizontalHeader()->isHidden())
-    // {
-    //     sizeHint.setHeight(sizeHint.height() - keyValueTbl->horizontalHeader()->height());
-    // }
-    // if (keyValueTbl->verticalScrollBar()->isVisible())
-    // {
-    //     sizeHint.setWidth(sizeHint.width() + keyValueTbl->verticalScrollBar()->width());
-    // }
-    // keyValueTbl->setFixedSize(sizeHint);
-    //keyValueTbl->setFixedSize(m_widgetSize);
-}
+//     // if (keyValueTbl->horizontalHeader()->isHidden())
+//     // {
+//     //     sizeHint.setHeight(sizeHint.height() - keyValueTbl->horizontalHeader()->height());
+//     // }
+//     // if (keyValueTbl->verticalScrollBar()->isVisible())
+//     // {
+//     //     sizeHint.setWidth(sizeHint.width() + keyValueTbl->verticalScrollBar()->width());
+//     // }
+//     // keyValueTbl->setFixedSize(sizeHint);
+//     //keyValueTbl->setFixedSize(m_widgetSize);
+// }
 
 void NetworkInfoViewWidget::setupUI()
 {
     setAcceptDrops(true);
     setLayout(new QVBoxLayout(this));
-
-    QPixmap pixmap(":/resources/crown.png");
-    crownLbl.setPixmap(pixmap);
-    crownLbl.setScaledContents(true);
-    crownLbl.setFixedWidth(50);
-    crownLbl.setFixedHeight(50);
+    setupTableView();
+    // QPixmap pixmap(":/resources/crown.png");
+    // crownLbl.setPixmap(pixmap);
+    // crownLbl.setScaledContents(true);
+    // crownLbl.setFixedWidth(50);
+    // crownLbl.setFixedHeight(50);
     //layout()->addWidget(&crownLbl);
 
-    keyValModel = new QStandardItemModel(this);
-    keyValueTbl->setModel(keyValModel);
-    keyValueTbl->setItemDelegateForColumn(2, new LedIndicatorDelegate(this));
-    keyValueTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    keyValueTbl->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    keyValueTbl->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    keyValueTbl->setFrameShape(QFrame::Box);
-    keyValueTbl->horizontalHeader()->setVisible(false);
-    keyValueTbl->verticalHeader()->setVisible(false);
-    keyValueTbl->horizontalHeader()->setStretchLastSection(true);
-    keyValueTbl->setSelectionMode(QAbstractItemView::NoSelection);
-    keyValueTbl->setFocusPolicy(Qt::NoFocus);
-    keyValueTbl->setStyleSheet(
-        "QTableView { selection-background-color: transparent; }"
-        "QTableView::item:selected { background: transparent; }"
-        );
     keyValueTbl->viewport()->installEventFilter(this);
-    layout()->addWidget(keyValueTbl);
 
-    indicatorInfoTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    indicatorInfoTbl->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    indicatorInfoTbl->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    indicatorInfoTbl->horizontalHeader()->setVisible(false);
-    indicatorInfoTbl->verticalHeader()->setVisible(false);
-    indicatorInfoTbl->setItemDelegate(new LedIndicatorDelegate(this));
-    indicatorInfoTbl->setSelectionMode(QAbstractItemView::NoSelection);
-    indicatorInfoTbl->setFocusPolicy(Qt::NoFocus);
-    indicatorInfoTbl->setStyleSheet(
-        "QTableView { selection-background-color: transparent; }"
-        "QTableView::item:selected { background: transparent; }"
-        );
-    indicatorInfoTbl->viewport()->installEventFilter(this);
-    //layout()->addWidget(indicatorInfoTbl);
-
-    //TODO: remove later
-    indicatorInfoTbl->hide();
-    //crownLbl.hide();
-
-    setStyleSheet(R"(
-            NetworkView
-            {
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                background-color: #f8f8f8;
-            }
-            QLabel { color: #333; }
-        )");
     layout()->setSpacing(0);
 }
 
 void NetworkInfoViewWidget::setKeyValueTbl()
 {
-    if(m_info)
+    if(m_viewModel)
     {
-        for(const auto& keyVal : m_info->getAllKeyValuesAsList())
+        for(const auto& keyVal : m_viewModel->getAllKeyValuesAsList())
         {
             addKeyValue(keyVal);
         }
     }
-    resizeKeyValTable();
+    //resizeKeyValTable();
 }

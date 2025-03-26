@@ -19,7 +19,7 @@ public:
     bool operator==(const NetworkInfo& other) const;
     bool operator!=(const NetworkInfo& other) const;
 
-    QList<QPair<QString, QString>> getAllKeyValuesAsList();
+    QList<QPair<QString, QString>> getAllKeyValuesAsList() const;
 
     QString getName() const { return m_name; }
     QString getMac() const { return m_mac; }
@@ -32,15 +32,15 @@ public:
     void setIsUp(bool isUp);
     void setTimestamp(const QDateTime &timestamp);
 
-    QString ipv4() const;
+    QString getIpv4() const;
     void setIpv4(const QString& newIpv4);
     void resetIpv4();
 
-    QString netmask() const;
+    QString getNetmask() const;
     void setNetmask(const QString& newNetmask);
     void resetNetmask();
 
-    QString broadcast() const;
+    QString getBroadcast() const;
     void setBroadcast(const QString& newBroadcast);
     void resetBroadcast();
 
@@ -48,23 +48,23 @@ public:
     void setIsRunning(bool newIsRunning);
     void resetIsRunning();
 
-    quint64 lastRxBytes() const;
+    quint64 getLastRxBytes() const;
     void setLastRxBytes(quint64 newLastRxBytes);
     void resetLastRxBytes();
 
-    quint64 lastTxBytes() const;
+    quint64 getLastTxBytes() const;
     void setLastTxBytes(quint64 newLastTxBytes);
     void resetLastTxBytes();
 
-    qint64 lastUpdateTime() const;
+    qint64 getLastUpdateTime() const;
     void setLastUpdateTime(qint64 newLastUpdateTime);
     void resetLastUpdateTime();
 
-    qint64 rxSpeed() const;
+    qint64 getRxSpeed() const;
     void setRxSpeed(qint64 newRxSpeed);
     void resetRxSpeed();
 
-    qint64 txSpeed() const;
+    qint64 getTxSpeed() const;
     void setTxSpeed(qint64 newTxSpeed);
     void resetTxSpeed();
 
@@ -88,15 +88,15 @@ private:
     Q_PROPERTY(QString mac READ getMac WRITE setMac NOTIFY macChanged)
     Q_PROPERTY(bool isUp READ getIsUp WRITE setIsUp NOTIFY isUpChanged)
     Q_PROPERTY(QDateTime timestamp READ getTimestamp WRITE setTimestamp NOTIFY timestampChanged)
-    Q_PROPERTY(QString ipv4 READ ipv4 WRITE setIpv4 RESET resetIpv4 NOTIFY ipv4Changed FINAL)
-    Q_PROPERTY(QString netmask READ netmask WRITE setNetmask RESET resetNetmask NOTIFY netmaskChanged FINAL)
-    Q_PROPERTY(QString broadcast READ broadcast WRITE setBroadcast RESET resetBroadcast NOTIFY broadcastChanged FINAL)
+    Q_PROPERTY(QString ipv4 READ getIpv4 WRITE setIpv4 RESET resetIpv4 NOTIFY ipv4Changed FINAL)
+    Q_PROPERTY(QString netmask READ getNetmask WRITE setNetmask RESET resetNetmask NOTIFY netmaskChanged FINAL)
+    Q_PROPERTY(QString broadcast READ getBroadcast WRITE setBroadcast RESET resetBroadcast NOTIFY broadcastChanged FINAL)
     Q_PROPERTY(bool isRunning READ isRunning WRITE setIsRunning RESET resetIsRunning NOTIFY isRunningChanged FINAL)
-    Q_PROPERTY(quint64 lastRxBytes READ lastRxBytes WRITE setLastRxBytes RESET resetLastRxBytes NOTIFY lastRxBytesChanged FINAL)
-    Q_PROPERTY(quint64 lastTxBytes READ lastTxBytes WRITE setLastTxBytes RESET resetLastTxBytes NOTIFY lastTxBytesChanged FINAL)
-    Q_PROPERTY(qint64 lastUpdateTime READ lastUpdateTime WRITE setLastUpdateTime RESET resetLastUpdateTime NOTIFY lastUpdateTimeChanged FINAL)
-    Q_PROPERTY(qint64 rxSpeed READ rxSpeed WRITE setRxSpeed RESET resetRxSpeed NOTIFY rxSpeedChanged FINAL)
-    Q_PROPERTY(qint64 txSpeed READ txSpeed WRITE setTxSpeed RESET resetTxSpeed NOTIFY txSpeedChanged FINAL)
+    Q_PROPERTY(quint64 lastRxBytes READ getLastRxBytes WRITE setLastRxBytes RESET resetLastRxBytes NOTIFY lastRxBytesChanged FINAL)
+    Q_PROPERTY(quint64 lastTxBytes READ getLastTxBytes WRITE setLastTxBytes RESET resetLastTxBytes NOTIFY lastTxBytesChanged FINAL)
+    Q_PROPERTY(qint64 lastUpdateTime READ getLastUpdateTime WRITE setLastUpdateTime RESET resetLastUpdateTime NOTIFY lastUpdateTimeChanged FINAL)
+    Q_PROPERTY(qint64 rxSpeed READ getRxSpeed WRITE setRxSpeed RESET resetRxSpeed NOTIFY rxSpeedChanged FINAL)
+    Q_PROPERTY(qint64 txSpeed READ getTxSpeed WRITE setTxSpeed RESET resetTxSpeed NOTIFY txSpeedChanged FINAL)
 
     QString m_name;
     QString m_mac;

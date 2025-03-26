@@ -74,7 +74,7 @@ void NetworkInfo::setTimestamp(const QDateTime& timestamp)
     }
 }
 
-QString NetworkInfo::ipv4() const
+QString NetworkInfo::getIpv4() const
 {
     return m_ipv4;
 }
@@ -92,7 +92,7 @@ void NetworkInfo::resetIpv4()
     setIpv4({}); // TODO: Adapt to use your actual default value
 }
 
-QString NetworkInfo::netmask() const
+QString NetworkInfo::getNetmask() const
 {
     return m_netmask;
 }
@@ -110,7 +110,7 @@ void NetworkInfo::resetNetmask()
     setNetmask({}); // TODO: Adapt to use your actual default value
 }
 
-QString NetworkInfo::broadcast() const
+QString NetworkInfo::getBroadcast() const
 {
     return m_broadcast;
 }
@@ -146,7 +146,7 @@ void NetworkInfo::resetIsRunning()
     setIsRunning({}); // TODO: Adapt to use your actual default value
 }
 
-QList<QPair<QString, QString> > NetworkInfo::getAllKeyValuesAsList()
+QList<QPair<QString, QString> > NetworkInfo::getAllKeyValuesAsList() const
 {
     QList<QPair<QString, QString>> list;
     list.append(qMakePair("Interface:", m_name));
@@ -164,7 +164,7 @@ QList<QPair<QString, QString> > NetworkInfo::getAllKeyValuesAsList()
     return list;
 }
 
-quint64 NetworkInfo::lastRxBytes() const
+quint64 NetworkInfo::getLastRxBytes() const
 {
     return m_lastRxBytes;
 }
@@ -182,7 +182,7 @@ void NetworkInfo::resetLastRxBytes()
     setLastRxBytes({}); // TODO: Adapt to use your actual default value
 }
 
-quint64 NetworkInfo::lastTxBytes() const
+quint64 NetworkInfo::getLastTxBytes() const
 {
     return m_lastTxBytes;
 }
@@ -200,7 +200,7 @@ void NetworkInfo::resetLastTxBytes()
     setLastTxBytes({}); // TODO: Adapt to use your actual default value
 }
 
-qint64 NetworkInfo::lastUpdateTime() const
+qint64 NetworkInfo::getLastUpdateTime() const
 {
     return m_lastUpdateTime;
 }
@@ -218,7 +218,7 @@ void NetworkInfo::resetLastUpdateTime()
     setLastUpdateTime({}); // TODO: Adapt to use your actual default value
 }
 
-qint64 NetworkInfo::rxSpeed() const
+qint64 NetworkInfo::getRxSpeed() const
 {
     return m_rxSpeed;
 }
@@ -236,7 +236,7 @@ void NetworkInfo::resetRxSpeed()
     setRxSpeed({}); // TODO: Adapt to use your actual default value
 }
 
-qint64 NetworkInfo::txSpeed() const
+qint64 NetworkInfo::getTxSpeed() const
 {
     return m_txSpeed;
 }

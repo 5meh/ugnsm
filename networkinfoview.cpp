@@ -64,7 +64,7 @@ void NetworkInfoView::updateSpeeds()
 
         qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
 
-        if(data.lastUpdateTime() == 0)
+        if(data.getLastUpdateTime() == 0)
         {
             data.setLastRxBytes(currentRx);
             data.setLastTxBytes(currentTx);
@@ -72,19 +72,17 @@ void NetworkInfoView::updateSpeeds()
             continue;
         }
 
-        qint64 timeDelta = currentTime - data.lastUpdateTime();
-
+        qint64 timeDelta = currentTime - data.getLastUpdateTime();
 
         if(timeDelta > 0)
         {
+            quint64 rxDelta = (currentRx >= data.getLastRxBytes())
+            ? (currentRx - data.getLastRxBytes())
+            : (ULONG_LONG_MAX - data.getLastRxBytes() + currentRx + 1);
 
-            quint64 rxDelta = (currentRx >= data.lastRxBytes())
-            ? (currentRx - data.lastRxBytes())
-            : (ULONG_LONG_MAX - data.lastRxBytes() + currentRx + 1);
-
-            quint64 txDelta = (currentTx >= data.lastTxBytes())
-                                  ? (currentTx - data.lastTxBytes())
-                                  : (ULONG_LONG_MAX - data.lastTxBytes() + currentTx + 1);
+            quint64 txDelta = (currentTx >= data.getLastTxBytes())
+                                  ? (currentTx - data.getLastTxBytes())
+                                  : (ULONG_LONG_MAX - data.getLastTxBytes() + currentTx + 1);
 
             quint64 rxSpeed = (rxDelta * 1000) / timeDelta;
             quint64 txSpeed = (txDelta * 1000) / timeDelta;
@@ -114,7 +112,7 @@ QString NetworkInfoView::selectBestInterface()
 
     for(const QPair<QString, NetworkInfo*>& pair : m_networkInfos.asKeyValueRange())
     {
-        quint64 total = pair.second->lastRxBytes() + pair.second->lastTxBytes();
+        quint64 total = pair.second->getLastRxBytes() + pair.second->getLastTxBytes();
         if (total > maxTotal)
         {
             maxTotal = total;
@@ -165,7 +163,6 @@ NetworkInfo *NetworkInfoView::createOrUpdateInfo(const QNetworkInterface& interf
         }
         info->setIsRunning(isRunning);
 
-
         quint64 rx, tx;
         if(!getInterfaceStats(interface.humanReadableName(), rx, tx))
         {
@@ -203,17 +200,17 @@ NetworkInfo *NetworkInfoView::createOrUpdateInfo(const QNetworkInterface& interf
 
         if(hasIpv4)
         {
-            if(info->ipv4() != ipv4)
+            if(info->getIpv4() != ipv4)
             {
                 info->setIpv4(ipv4);
                 changed = true;
             }
-            if(info->netmask() != netmask)
+            if(info->getNetmask() != netmask)
             {
                 info->setNetmask(netmask);
                 changed = true;
             }
-            if(info->broadcast() != broadcast)
+            if(info->getBroadcast() != broadcast)
             {
                 info->setBroadcast(broadcast);
                 changed = true;
@@ -223,12 +220,12 @@ NetworkInfo *NetworkInfoView::createOrUpdateInfo(const QNetworkInterface& interf
         quint64 rx, tx;
         if(getInterfaceStats(interface.humanReadableName(), rx, tx))
         {
-            if(info->lastRxBytes() != rx)
+            if(info->getLastRxBytes() != rx)
             {
                 info->setLastRxBytes(rx);
                 changed = true;
             }
-            if(info->lastTxBytes() != tx)
+            if(info->getLastTxBytes() != tx)
             {
                 info->setLastTxBytes(tx);
                 changed = true;
@@ -236,7 +233,7 @@ NetworkInfo *NetworkInfoView::createOrUpdateInfo(const QNetworkInterface& interf
         }
 
         qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
-        if(info->lastUpdateTime() != currentTime)
+        if(info->getLastUpdateTime() != currentTime)
         {
             info->setLastUpdateTime(currentTime);
             changed = true;

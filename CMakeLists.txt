@@ -30,6 +30,10 @@ set(PROJECT_SOURCES
     networkinfo.cpp
     networkinfoview.h
     networkinfoview.cpp
+    networkinfoviewmodel.h
+    networkinfoviewmodel.cpp
+    networkdashboard.h
+    networkdashboard.cpp
     resources.qrc
 )
 
