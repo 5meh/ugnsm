@@ -7,7 +7,6 @@
 QT_FORWARD_DECLARE_CLASS(QTableView)
 QT_FORWARD_DECLARE_CLASS(QStandardItemModel);
 QT_FORWARD_DECLARE_CLASS(QStandardItem)
-//class NetworkInfo;
 class NetworkInfoViewModel;
 
 class NetworkInfoViewWidget: public QFrame

@@ -10,7 +10,20 @@ NetworkInfoViewModel::NetworkInfoViewModel(NetworkInfo *model, QObject *parent)
 
 QList<QPair<QString, QString> > NetworkInfoViewModel::getAllKeyValuesAsList() const
 {
-    return m_model->getAllKeyValuesAsList();
+    QList<QPair<QString, QString>> list;
+    list.append(qMakePair("Interface:", getName()));
+    list.append(qMakePair("MAC:", getMac()));
+    list.append(qMakePair("IPV4:", getIpAddress()));
+    list.append(qMakePair("Netmask:", getNetmask()));
+    list.append(qMakePair("Is Up:", QString(m_isUp ? "True" : "False")));
+    list.append(qMakePair("Is Running:", QString(m_isRunning ? "True" : "False")));
+    list.append(qMakePair("Date/time:", m_timestamp.toString()));
+    list.append(qMakePair("Last Rx bytes:", QString::number(m_lastRxBytes)));
+    list.append(qMakePair("Last Tx bytes:", QString::number(m_lastTxBytes)));
+    list.append(qMakePair("Rx speed:", QString::number(m_rxSpeed)));
+    list.append(qMakePair("Tx speed:", QString::number(m_txSpeed)));
+
+    return list;
 }
 
 QString NetworkInfoViewModel::getName() const
@@ -33,14 +46,30 @@ QString NetworkInfoViewModel::getNetmask() const
     return m_model->getNetmask();
 }
 
-quint64 NetworkInfoViewModel::getDownloadSpeed() const
+QString NetworkInfoViewModel::getDownloadSpeed() const
 {
-    return m_model->getRxSpeed();
+    return formatSpeed(m_model->getRxSpeed());
 }
 
-quint64 NetworkInfoViewModel::getUploadSpeed() const
+QString NetworkInfoViewModel::getUploadSpeed() const
 {
-    return m_model->getTxSpeed();
+    return formatSpeed(m_model->getTxSpeed());
+}
+
+QDateTime NetworkInfoViewModel::getTimestamp() const
+{
+    return m_model->getTimestamp();
+}
+
+qint64 NetworkInfoViewModel::getLastUpdateTime() const
+{
+    return m_model->getLastUpdateTime();
+}
+
+void NetworkInfoViewModel::updateFromModel()
+{
+    //emit nameChanged();
+    //emit ipAddressChanged();
 }
 
 QString NetworkInfoViewModel::formatSpeed(quint64 bytes) const

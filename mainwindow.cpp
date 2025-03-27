@@ -192,7 +192,8 @@ void MainWindow::initializeNetworkDashboard()
 {
     const auto interfaces = QNetworkInterface::allInterfaces();
 
-    for(const auto& interface : interfaces) {
+    for(const auto& interface : interfaces)
+    {
         if(interface.type() == QNetworkInterface::Ethernet &&
             !interface.flags().testFlag(QNetworkInterface::IsLoopBack))
         {

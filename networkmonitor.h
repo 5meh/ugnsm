@@ -23,7 +23,8 @@ private slots:
     void refreshStats();
 
 private:
-    struct InterfaceStats {
+    struct InterfaceStats
+    {
         quint64 rxBytes = 0;
         quint64 txBytes = 0;
         qint64 lastUpdate = 0;
