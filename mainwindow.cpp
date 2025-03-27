@@ -13,22 +13,28 @@
 #include <QDebug>
 #include "networkdashboard.h"
 #include "networkinfoviewwidget.h"
+#include "networkmonitor.h"
 #include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
     m_dashboard(new NetworkDashboard(this)),
-    m_gridLayout(new QGridLayout())
+    m_gridLayout(new QGridLayout()),
+    m_speedMonitor(new NetworkMonitor(this))
 {
     setupUI();
     connect(m_dashboard, &NetworkDashboard::layoutChanged,
             this, &MainWindow::handleLayoutChanged);
 
-    // Test data - replace with actual network info
-    // QTimer::singleShot(1000, [this]() {
-    //     auto* info = new NetworkInfo("eth0", "00:11:22:33:44:55", true, QDateTime::currentDateTime());
-    //     addNetworkInfo(info);
-    // });
+    connect(m_speedMonitor, &NetworkMonitor::statsUpdated,
+            this, [this](const QString& interface, quint64 rx, quint64 tx) {
+                foreach(auto* widget, m_widgets) {
+                    if(widget->interfaceName() == interface) {
+                        widget->viewModel()->updateSpeeds(rx, tx);
+                    }
+                }
+            });
+    m_speedMonitor->startMonitoring(1000);
 }
 
 MainWindow::~MainWindow()
@@ -180,6 +186,20 @@ void MainWindow::setupUI()
     // initializeGrid();
     // addAllNetworkInfoViewWidgets();
     // arrangeGrid();
+}
+
+void MainWindow::initializeNetworkDashboard()
+{
+    const auto interfaces = QNetworkInterface::allInterfaces();
+
+    for(const auto& interface : interfaces) {
+        if(interface.type() == QNetworkInterface::Ethernet &&
+            !interface.flags().testFlag(QNetworkInterface::IsLoopBack))
+        {
+            addOrUpdateNetworkWidget(interface);
+        }
+    }
+    updateGridDisplay();
 }
 
 void MainWindow::clearGrid()
@@ -481,6 +501,110 @@ QPair<int, int> MainWindow::gridPosition(QWidget *widget) const
         return {row, col};
     }
     return {-1, -1};
+}
+
+void MainWindow::addOrUpdateNetworkWidget(const QNetworkInterface &interface)
+{
+    QString mac = interface.hardwareAddress();
+    bool isUp = interface.flags().testFlag(QNetworkInterface::IsUp);
+    bool isRunning = interface.flags().testFlag(QNetworkInterface::IsRunning);
+
+    if(!m_widgets.contains(mac))
+    {
+        NetworkInfo* netInfo = new NetworkInfo(
+            interface.name(),
+            mac,
+            isUp,
+            isRunning,
+            QDateTime::currentDateTime(),
+            this
+            );
+
+        NetworkInfoViewModel* viewModel = new NetworkInfoViewModel(netInfo, this);
+        NetworkInfoViewWidget* widget = new NetworkInfoViewWidget(viewModel, this);
+
+        connect(widget, &NetworkInfoViewWidget::dragInitiated,
+                this, &MainWindow::handleDragInitiated);
+        connect(widget, &NetworkInfoViewWidget::dropReceived,
+                this, &MainWindow::handleDropReceived);
+
+        m_widgets.insert(mac, widget);
+        m_dashboard->addNetwork(viewModel);
+    }
+    else
+    {
+        bool changed = false;
+
+        if(viewModel-> != interface.humanReadableName())
+        {
+            info->setName(interface.humanReadableName());
+            changed = true;
+        }
+
+        if(info->getIsUp() != isUp)
+        {
+            info->setIsUp(isUp);
+            changed = true;
+        }
+
+        if(info->isRunning() != isRunning)
+        {
+            info->setIsRunning(isRunning);
+            changed = true;
+        }
+
+        if(hasIpv4)
+        {
+            if(info->getIpv4() != ipv4)
+            {
+                info->setIpv4(ipv4);
+                changed = true;
+            }
+            if(info->getNetmask() != netmask)
+            {
+                info->setNetmask(netmask);
+                changed = true;
+            }
+            if(info->getBroadcast() != broadcast)
+            {
+                info->setBroadcast(broadcast);
+                changed = true;
+            }
+        }
+
+        quint64 rx, tx;
+        if(getInterfaceStats(interface.humanReadableName(), rx, tx))
+        {
+            if(info->getLastRxBytes() != rx)
+            {
+                info->setLastRxBytes(rx);
+                changed = true;
+            }
+            if(info->getLastTxBytes() != tx)
+            {
+                info->setLastTxBytes(tx);
+                changed = true;
+            }
+        }
+
+        qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+        if(info->getLastUpdateTime() != currentTime)
+        {
+            info->setLastUpdateTime(currentTime);
+            changed = true;
+        }
+
+        info->setTimestamp(now);
+
+        if(changed)
+        {
+            emit networkInfoUpdated(info);
+        }
+    }
+    // NetworkInfoViewWidget* widget = m_widgets[mac];
+    // widget->viewModel()->setName(interface.name());
+    // widget->viewModel()->setIsUp(interface.isUp());
+    // Update other properties as needed
 }
 
 // void MainWindow::arrangeGrid()

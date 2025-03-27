@@ -34,6 +34,8 @@ set(PROJECT_SOURCES
     networkinfoviewmodel.cpp
     networkdashboard.h
     networkdashboard.cpp
+    networkmonitor.h
+    networkmonitor.cpp
     resources.qrc
 )
 

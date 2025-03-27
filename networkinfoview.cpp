@@ -151,6 +151,7 @@ NetworkInfo *NetworkInfoView::createOrUpdateInfo(const QNetworkInterface& interf
             interface.humanReadableName(),
             mac,
             isUp,
+            isRunning,
             now,
             this
             );

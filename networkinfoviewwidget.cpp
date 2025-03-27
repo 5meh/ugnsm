@@ -73,7 +73,6 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
 
     setUpdatesEnabled(true);
     keyValueTbl->setUpdatesEnabled(true);
-    //resizeKeyValTable();
 }
 
 // bool NetworkInfoViewWidget::eventFilter(QObject* watched, QEvent* event)

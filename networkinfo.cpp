@@ -4,12 +4,20 @@ NetworkInfo::NetworkInfo(QObject* parent)
     : QObject{parent}
 {}
 
-NetworkInfo::NetworkInfo(const QString& name, const QString& mac, bool isUp, const QDateTime& timestamp, QObject* parent)
-    : QObject(parent)
-    , m_name(name)
-    , m_mac(mac)
-    , m_isUp(isUp)
-    , m_timestamp(timestamp)
+NetworkInfo::NetworkInfo(const QString& mac, QObject* parent)
+    :m_mac(mac),
+    QObject(parent)
+{
+
+}
+
+NetworkInfo::NetworkInfo(const QString& name, const QString& mac, bool isUp, bool isRuning, const QDateTime& timestamp, QObject* parent)
+    : QObject(parent),
+    m_name(name),
+    m_mac(mac),
+    m_isUp(isUp),
+    m_isRunning(isRuning),
+    m_timestamp(timestamp)
 {
 
 }
@@ -35,7 +43,7 @@ bool NetworkInfo::operator==(const NetworkInfo& other) const
 
 bool NetworkInfo::operator!=(const NetworkInfo& other) const
 {
-      return !(*this == other);
+    return !(*this == other);
 }
 
 void NetworkInfo::setName(const QString& name)

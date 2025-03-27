@@ -11,8 +11,8 @@ class NetworkDashboard : public QObject
 public:
     explicit NetworkDashboard(QObject* parent = nullptr);
 
-    void addInterface(NetworkInfoViewModel* viewModel);
-    void moveInterface(const QString& mac, int row, int col);
+    void addNetwork(NetworkInfoViewModel* viewModel);
+    void moveNetwork(const QString& mac, int row, int col);
     QVector<QVector<NetworkInfoViewModel*>> currentLayout() const;
     NetworkInfoViewModel* viewModelAt(int row, int col) const;
 

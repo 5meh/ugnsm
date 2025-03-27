@@ -19,13 +19,11 @@ public:
     QString getMac() const;
 signals:
     void swapRequested(QWidget* source, QWidget* target);
-
     void dragInitiated(QWidget* source);
     void dropReceived(QWidget* target);
 public slots:
     void updateNetworkInfoDisplay();
 protected:
-    //bool eventFilter(QObject* watched, QEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event) override;
@@ -47,12 +45,11 @@ private:
     const QSize m_widgetSize = QSize(300, 180);
     bool m_isTableDragging = false;
     QPoint m_tableDragStartPos;
-    //NetworkInfo* m_info;
     NetworkInfoViewModel* m_viewModel;
 
     QTableView* keyValueTbl;
     QStandardItemModel* keyValModel;
-    //QTableView* indicatorInfoTbl;
+
     QLabel crownLbl;
     bool m_isDragging = false;
     QPoint dragStartPos;

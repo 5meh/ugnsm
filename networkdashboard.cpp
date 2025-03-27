@@ -15,13 +15,14 @@ void NetworkDashboard::initializeGrid()
     }
 }
 
-void NetworkDashboard::addInterface(NetworkInfoViewModel* viewModel)
+void NetworkDashboard::addNetwork(NetworkInfoViewModel* viewModel)
 {
     for(int row = 0; row < GRID_SIZE; ++row)
     {
         for(int col = 0; col < GRID_SIZE; ++col)
         {
-            if(!m_grid[row][col]) {
+            if(!m_grid[row][col])
+            {
                 m_grid[row][col] = viewModel;
                 emit layoutChanged();
                 return;
@@ -30,7 +31,7 @@ void NetworkDashboard::addInterface(NetworkInfoViewModel* viewModel)
     }
 }
 
-void NetworkDashboard::moveInterface(const QString& mac, int newRow, int newCol)
+void NetworkDashboard::moveNetwork(const QString& mac, int newRow, int newCol)
 {
     if(newRow < 0 || newRow >= GRID_SIZE || newCol < 0 || newCol >= GRID_SIZE)
         return;

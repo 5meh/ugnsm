@@ -9,12 +9,13 @@ class NetworkInfo : public QObject
     Q_OBJECT
 public:
     explicit NetworkInfo(QObject* parent = nullptr);
-
+    NetworkInfo(const QString& mac, QObject* parent = nullptr);//TODO:mb no need
     NetworkInfo(const QString& name,
-                         const QString& mac,
-                         bool isUp,
-                         const QDateTime& timestamp,
-                         QObject* parent = nullptr);
+                const QString& mac,
+                bool isUp,
+                bool isRunning,
+                const QDateTime& timestamp,
+                QObject* parent = nullptr);
     NetworkInfo(const NetworkInfo& obj);
     bool operator==(const NetworkInfo& other) const;
     bool operator!=(const NetworkInfo& other) const;
