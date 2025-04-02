@@ -6,6 +6,7 @@
 #include "networkmonitor.h"
 
 #include <QLayoutItem>
+#include <QGridLayout>
 #include <QFrame>
 
 NetworkDashboardManager::NetworkDashboardManager(QGridLayout* gridLayout, QObject* parent)
@@ -61,25 +62,26 @@ void NetworkDashboardManager::handleWidgetDropped(const QString& sourceMac, cons
     emit widgetPositionsUpdated(getCurrentPositions());
 }
 
-QPair<int, int> NetworkDashboardManager::findAvailableGridPosition() const
+QPoint NetworkDashboardManager::findAvailableGridPosition() const
 {
     const int GRID_SIZE = 3;
     for(int row = 0; row < GRID_SIZE; ++row)
     {
         for(int col = 0; col < GRID_SIZE; ++col)
         {
-            QPair<int, int> pos(row, col);
-            if(!m_positionMap.contains(pos)) return pos;
+            QPoint pos(row, col);
+            if(!m_positionMap.contains(pos))
+                return pos;
         }
     }
-    return QPair<int, int>(-1, -1); // Grid full
+    return QPoint(-1, -1); // Grid full
 }
 
 void NetworkDashboardManager::setupWidgetConnections(NetworkInfoViewWidget* widget)
 {
     connect(widget, &NetworkInfoViewWidget::dragInitiated, this, [this](QWidget* w)
             {
-                auto viewWidget = qobject_cast<NetworkInfoViewWidget*>(w);
+                NetworkInfoViewWidget* viewWidget = qobject_cast<NetworkInfoViewWidget*>(w);
                 viewWidget->setProperty("originalPosition", m_items[viewWidget->getMac()].gridPosition);
             });
 
@@ -97,6 +99,7 @@ void NetworkDashboardManager::setupWidgetConnections(NetworkInfoViewWidget* widg
 
 void NetworkDashboardManager::updateGridLayout()
 {
+    //TODO:refactor to remove blinking
     // Clear existing layout
     while(QLayoutItem* item = m_gridLayout->takeAt(0))
     {
@@ -104,12 +107,11 @@ void NetworkDashboardManager::updateGridLayout()
         delete item;
     }
 
-    // Rebuild layout
     for(const auto& [mac, item] : m_items.asKeyValueRange())
     {
         m_gridLayout->addWidget(item.widget,
-                                item.gridPosition.first,
-                                item.gridPosition.second);
+                                item.gridPosition.x(),
+                                item.gridPosition.y());
     }
 
     emit gridLayoutChanged();

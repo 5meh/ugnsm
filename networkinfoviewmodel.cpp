@@ -72,6 +72,12 @@ void NetworkInfoViewModel::updateFromModel()
     //emit ipAddressChanged();
 }
 
+void NetworkInfoViewModel::updateSpeeds(quint64 rx, quint64 tx)
+{
+    m_model->setRxSpeed(rx);
+    m_model->setTxSpeed(tx);
+}
+
 QString NetworkInfoViewModel::formatSpeed(quint64 bytes) const
 {
     const QStringList units = {"B/s", "KB/s", "MB/s", "GB/s"};

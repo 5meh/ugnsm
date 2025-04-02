@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget* parent)
     m_networkMonitor(new NetworkMonitor(this))
 {
     setupUI();
-    connect(m_dashboard, &NetworkDashboard::layoutChanged,
+    connect(m_dashboardManager, &NetworkDashboard::layoutChanged,
             this, &MainWindow::handleLayoutChanged);
 
     connect(m_networkMonitor, &NetworkMonitor::statsUpdated,
