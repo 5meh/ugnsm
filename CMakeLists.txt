@@ -40,7 +40,8 @@ set(PROJECT_SOURCES
 )
 
 # Create the executable (desktop only)
-qt_add_executable(ugnsm ${PROJECT_SOURCES})
+qt_add_executable(ugnsm ${PROJECT_SOURCES}
+    networkdashboardmanager.h networkdashboardmanager.cpp)
 
 target_link_libraries(ugnsm PRIVATE Qt6::Widgets Qt6::Network)
 

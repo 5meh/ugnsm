@@ -15,6 +15,21 @@ void NetworkDashboard::initializeGrid()
     }
 }
 
+QPair<int, int> NetworkDashboard::findViewModel(NetworkInfoViewModel *viewModel) const
+{
+    for(int row = 0; row < GRID_SIZE; ++row)
+    {
+        for(int col = 0; col < GRID_SIZE; ++col)
+        {
+
+            if(m_grid[row][col]->getMac() ==  viewModel->getMac())
+            {
+                return QPair<int, int>(row, col);
+            }
+        }
+    }
+}
+
 void NetworkDashboard::addNetwork(NetworkInfoViewModel* viewModel)
 {
     for(int row = 0; row < GRID_SIZE; ++row)

@@ -14,6 +14,7 @@ class NetworkInfo;
 class NetworkInfoViewModel;
 class NetworkDashboard;
 class NetworkMonitor;
+class NetworkDashboardManager;
 
 class MainWindow : public QMainWindow
 {
@@ -34,7 +35,7 @@ signals:
     void widgetsSwapped(QWidget* source, QWidget* target);    
 private:
     void setupUI();
-    void initializeNetworkDashboard();
+    void initializeNetworkDashboardManager();
     void clearGrid();
     QWidget* createPlaceholder();
     void updateGridDisplay();
@@ -43,8 +44,11 @@ private:
     void addOrUpdateNetworkWidget(const QNetworkInterface& interface);
     void addAllNetworkInfoViewWidgets();
 
-    NetworkDashboard* m_dashboard;
-    NetworkMonitor* m_speedMonitor;
+
+
+    NetworkDashboardManager* m_dashboardManager;
+    //NetworkDashboard* m_dashboard;
+    NetworkMonitor* m_networkMonitor;
     QGridLayout* m_gridLayout;
     QHash<QString, NetworkInfoViewWidget*> m_widgets;
     QWidget* m_draggedWidget = nullptr;

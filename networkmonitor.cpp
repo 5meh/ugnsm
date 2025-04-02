@@ -3,6 +3,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QDateTime>
+#include "networkinfoviewwidget.h"
 
 #ifdef Q_OS_WIN
 #include <winsock2.h>
@@ -39,6 +40,17 @@ void NetworkMonitor::refreshStats()
     if(getInterfaceStats(currentStats))
     {
         calculateSpeeds(currentStats);
+    }
+}
+
+void NetworkMonitor::onNetworkStatsUpdated(const QString& mac, quint64 rx, quint64 tx)
+{
+    for(NetworkInfoViewWidget* widget : m_widgets)
+    {
+        if(widget->getMac() == mac)
+        {
+            widget->viewModel()->updateSpeeds(rx, tx);
+        }
     }
 }
 

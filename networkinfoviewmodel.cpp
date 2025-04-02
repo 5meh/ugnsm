@@ -15,13 +15,13 @@ QList<QPair<QString, QString> > NetworkInfoViewModel::getAllKeyValuesAsList() co
     list.append(qMakePair("MAC:", getMac()));
     list.append(qMakePair("IPV4:", getIpAddress()));
     list.append(qMakePair("Netmask:", getNetmask()));
-    list.append(qMakePair("Is Up:", QString(m_isUp ? "True" : "False")));
-    list.append(qMakePair("Is Running:", QString(m_isRunning ? "True" : "False")));
-    list.append(qMakePair("Date/time:", m_timestamp.toString()));
-    list.append(qMakePair("Last Rx bytes:", QString::number(m_lastRxBytes)));
-    list.append(qMakePair("Last Tx bytes:", QString::number(m_lastTxBytes)));
-    list.append(qMakePair("Rx speed:", QString::number(m_rxSpeed)));
-    list.append(qMakePair("Tx speed:", QString::number(m_txSpeed)));
+    list.append(qMakePair("Is Up:", QString(m_model->getIsUp() ? "True" : "False")));
+    list.append(qMakePair("Is Running:", QString(true ? "True" : "False")));
+    list.append(qMakePair("Date/time:", m_model->getTimestamp().toString()));
+    list.append(qMakePair("Last Rx bytes:", QString::number(m_model->getLastRxBytes())));
+    list.append(qMakePair("Last Tx bytes:", QString::number(m_model->getLastTxBytes())));
+    list.append(qMakePair("Rx speed:", QString::number(m_model->getRxSpeed())));
+    list.append(qMakePair("Tx speed:", QString::number(m_model->getTxSpeed())));
 
     return list;
 }

@@ -92,7 +92,7 @@ private:
     Q_PROPERTY(QString ipv4 READ getIpv4 WRITE setIpv4 RESET resetIpv4 NOTIFY ipv4Changed FINAL)
     Q_PROPERTY(QString netmask READ getNetmask WRITE setNetmask RESET resetNetmask NOTIFY netmaskChanged FINAL)
     Q_PROPERTY(QString broadcast READ getBroadcast WRITE setBroadcast RESET resetBroadcast NOTIFY broadcastChanged FINAL)
-    Q_PROPERTY(bool isRunning READ isRunning WRITE setIsRunning RESET resetIsRunning NOTIFY isRunningChanged FINAL)
+    Q_PROPERTY(bool isRunning READ getIsRunning WRITE setIsRunning RESET resetIsRunning NOTIFY isRunningChanged FINAL)
     Q_PROPERTY(quint64 lastRxBytes READ getLastRxBytes WRITE setLastRxBytes RESET resetLastRxBytes NOTIFY lastRxBytesChanged FINAL)
     Q_PROPERTY(quint64 lastTxBytes READ getLastTxBytes WRITE setLastTxBytes RESET resetLastTxBytes NOTIFY lastTxBytesChanged FINAL)
     Q_PROPERTY(qint64 lastUpdateTime READ getLastUpdateTime WRITE setLastUpdateTime RESET resetLastUpdateTime NOTIFY lastUpdateTimeChanged FINAL)

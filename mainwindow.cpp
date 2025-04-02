@@ -14,27 +14,21 @@
 #include "networkdashboard.h"
 #include "networkinfoviewwidget.h"
 #include "networkmonitor.h"
+#include "networkdashboardmanager.h"
 #include <QTimer>
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent),
-    m_dashboard(new NetworkDashboard(this)),
-    m_gridLayout(new QGridLayout()),
-    m_speedMonitor(new NetworkMonitor(this))
+MainWindow::MainWindow(QWidget* parent)
+    :m_gridLayout(new QGridLayout),
+    m_dashboardManager(new NetworkDashboardManager(m_gridLayout)),
+    m_networkMonitor(new NetworkMonitor(this))
 {
     setupUI();
     connect(m_dashboard, &NetworkDashboard::layoutChanged,
             this, &MainWindow::handleLayoutChanged);
 
-    connect(m_speedMonitor, &NetworkMonitor::statsUpdated,
-            this, [this](const QString& interface, quint64 rx, quint64 tx) {
-                foreach(auto* widget, m_widgets) {
-                    if(widget->interfaceName() == interface) {
-                        widget->viewModel()->updateSpeeds(rx, tx);
-                    }
-                }
-            });
-    m_speedMonitor->startMonitoring(1000);
+    connect(m_networkMonitor, &NetworkMonitor::statsUpdated,
+            this, &MainWindow::onNetworkStatsUpdated);
+    m_networkMonitor->startMonitoring(1000);
 }
 
 MainWindow::~MainWindow()
@@ -159,21 +153,30 @@ void MainWindow::addNetworkInfo(NetworkInfo *info)
 
 void MainWindow::setupUI()
 {
-    QWidget* centralWidget = new QWidget(this);
+
+    QWidget* centralWidget = new QWidget;
     centralWidget->setLayout(m_gridLayout);
     setCentralWidget(centralWidget);
+
+    m_dashboardManager->initialize(m_speedMonitor);
+    connect(m_dashboardManager, &DashboardManager::gridLayoutChanged,
+            this, [this] { centralWidget->updateGeometry(); });
+    /////////////////////////////////
+    // QWidget* centralWidget = new QWidget(this);
+    // centralWidget->setLayout(m_gridLayout);
+    // setCentralWidget(centralWidget);
 
     m_gridLayout->setSpacing(15);
     m_gridLayout->setContentsMargins(20, 20, 20, 20);
 
     // Initialize grid with placeholders
-    for(int row = 0; row < GRID_SIZE; ++row)
-    {
-        for(int col = 0; col < GRID_SIZE; ++col)
-        {
-            m_gridLayout->addWidget(createPlaceholder(), row, col);
-        }
-    }
+    // for(int row = 0; row < GRID_SIZE; ++row)
+    // {
+    //     for(int col = 0; col < GRID_SIZE; ++col)
+    //     {
+    //         m_gridLayout->addWidget(createPlaceholder(), row, col);
+    //     }
+    // }
     /////////////////////
     // QWidget *central = new QWidget(this);
     // central->setLayout(m_grid);
@@ -186,6 +189,19 @@ void MainWindow::setupUI()
     // initializeGrid();
     // addAllNetworkInfoViewWidgets();
     // arrangeGrid();
+}
+
+void MainWindow::initializeNetworkDashboardManager()
+{
+    QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
+    for(const QNetworkInterface& interface: interfaces)
+    {
+        if(interface.type() == QNetworkInterface::Ethernet &&
+            !interface.flags().testFlag(QNetworkInterface::IsLoopBack))
+        {
+            NetworkInfo* netInfo = new NetworkInfo(interface, this);
+            m_dashboardManager->addNetworkInfo(netInfo);
+        }
 }
 
 void MainWindow::initializeNetworkDashboard()
@@ -421,7 +437,7 @@ void MainWindow::updateGridDisplay()
         {
             if(NetworkInfoViewModel* vm = m_dashboard->viewModelAt(row, col))
             {
-                if(!m_widgets.contains(vm->getMac()))
+                if(!)//m_widgets.contains(vm->getMac()))
                 {
                     auto* widget = new NetworkInfoViewWidget(vm, this);
                     m_widgets[vm->getMac()] = widget;
@@ -492,18 +508,6 @@ void MainWindow::updateGridDisplay()
     // arrangeGrid();
 }
 
-QPair<int, int> MainWindow::gridPosition(QWidget *widget) const
-{
-    int index = m_gridLayout->indexOf(widget);
-    if(index != -1)
-    {
-        int row, col, rowSpan, colSpan;
-        m_gridLayout->getItemPosition(index, &row, &col, &rowSpan, &colSpan);
-        return {row, col};
-    }
-    return {-1, -1};
-}
-
 void MainWindow::addOrUpdateNetworkWidget(const QNetworkInterface &interface)
 {
     QString mac = interface.hardwareAddress();
@@ -529,7 +533,7 @@ void MainWindow::addOrUpdateNetworkWidget(const QNetworkInterface &interface)
         connect(widget, &NetworkInfoViewWidget::dropReceived,
                 this, &MainWindow::handleDropReceived);
 
-        m_widgets.insert(mac, widget);
+        //m_widgets.insert(mac, widget);
         m_dashboard->addNetwork(viewModel);
     }
     else
