@@ -11,7 +11,7 @@ QT_FORWARD_DECLARE_CLASS(NetworkInfoView)
 QT_FORWARD_DECLARE_CLASS(QGridLayout)
 QT_FORWARD_DECLARE_CLASS(QWidget)
 class NetworkInfo;
-class NetworkInfoViewModel;
+class NetworkInfoModel;
 class NetworkDashboard;
 class NetworkMonitor;
 class NetworkDashboardManager;

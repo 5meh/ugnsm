@@ -69,6 +69,8 @@ public:
     void setTxSpeed(qint64 newTxSpeed);
     void resetTxSpeed();
 
+    quint64 getTotalSpeed() const;
+
 signals:
     void nameChanged(const QString&);
     void macChanged(const QString&);
@@ -84,6 +86,8 @@ signals:
     void rxSpeedChanged();
     void txSpeedChanged();
 
+    void speedChanged();
+
 private:
     Q_PROPERTY(QString name READ getName WRITE setName NOTIFY nameChanged)
     Q_PROPERTY(QString mac READ getMac WRITE setMac NOTIFY macChanged)
@@ -98,6 +102,7 @@ private:
     Q_PROPERTY(qint64 lastUpdateTime READ getLastUpdateTime WRITE setLastUpdateTime RESET resetLastUpdateTime NOTIFY lastUpdateTimeChanged FINAL)
     Q_PROPERTY(qint64 rxSpeed READ getRxSpeed WRITE setRxSpeed RESET resetRxSpeed NOTIFY rxSpeedChanged FINAL)
     Q_PROPERTY(qint64 txSpeed READ getTxSpeed WRITE setTxSpeed RESET resetTxSpeed NOTIFY txSpeedChanged FINAL)
+    Q_PROPERTY(quint64 totalSpeed READ getTotalSpeed NOTIFY speedChanged)
 
     QString m_name;
     QString m_mac;
@@ -112,6 +117,7 @@ private:
     qint64 m_rxSpeed;
     qint64 m_txSpeed;
     qint64 m_lastUpdateTime;
+    //quint64 m_totalSpeed;
 };
 
 #endif // NETWORKINFO_H

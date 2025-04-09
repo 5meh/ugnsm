@@ -1,11 +1,11 @@
-#ifndef NETWORKINFOVIEWMODEL_H
-#define NETWORKINFOVIEWMODEL_H
+#ifndef NETWORKINFOMODEL_H
+#define NETWORKINFOMODEL_H
 
 #include <QObject>
 
 class NetworkInfo;
 
-class NetworkInfoViewModel : public QObject
+class NetworkInfoModel : public QObject
 {
     Q_OBJECT
 
@@ -15,9 +15,10 @@ class NetworkInfoViewModel : public QObject
     Q_PROPERTY(QString netmask READ getNetmask NOTIFY netmaskChanged)
     Q_PROPERTY(QString downloadSpeed READ getDownloadSpeed WRITE setDownloadSpeed NOTIFY speedChanged)
     Q_PROPERTY(QString uploadSpeed READ getUploadSpeed WRITE setUploadSpeed NOTIFY speedChanged)
+    Q_PROPERTY(quint64 totalSpeed READ getTotalSpeed NOTIFY speedChanged)
 
 public:
-    explicit NetworkInfoViewModel(NetworkInfo* model, QObject* parent = nullptr);
+    explicit NetworkInfoModel(NetworkInfo* model, QObject* parent = nullptr);
 
     QList<QPair<QString, QString>> getAllKeyValuesAsList() const;
     QString getName() const;
@@ -26,11 +27,12 @@ public:
     QString getNetmask() const;
     QString getDownloadSpeed() const;
     QString getUploadSpeed() const;
+    QString getTotalSpeed() const;
     QDateTime getTimestamp() const;
     qint64 getLastUpdateTime() const;
 
-    void updateFromModel();
-
+    //void updateFromModel();
+public slots:
     void updateSpeeds(quint64 rx, quint64 tx);
 
 signals:
@@ -38,13 +40,15 @@ signals:
     void macChanged(const QString& mac);
     void ipAddressChanged(const QString& ip);
     void netmaskChanged(const QString& netmask);
-    void speedChanged(quint64 download, quint64 upload);
+    void speedChanged(qint64, qint64);
+//    void speedChanged(quint64 download, quint64 upload);
 
 private:
     QString formatSpeed(quint64 bytes) const;
     void connectModelSignals();
+
     NetworkInfo* m_model;
-    QString m_uploadSpeed;
+    //QString m_uploadSpeed;
 };
 
-#endif // NETWORKINFOVIEWMODEL_H
+#endif // NETWORKINFOMODEL_H

@@ -261,3 +261,8 @@ void NetworkInfo::resetTxSpeed()
 {
     setTxSpeed({}); // TODO: Adapt to use your actual default value
 }
+
+quint64 NetworkInfo::getTotalSpeed() const
+{
+    return m_rxSpeed + m_txSpeed;;
+}

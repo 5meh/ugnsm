@@ -3,18 +3,19 @@
 
 #include <QObject>
 #include <QVector>
-#include "networkinfoviewmodel.h"
+#include "networkinfomodel.h"
 
 class NetworkDashboard : public QObject
 {
     Q_OBJECT
+
 public:
     explicit NetworkDashboard(QObject* parent = nullptr);
 
-    void addNetwork(NetworkInfoViewModel* viewModel);
+    void addNetwork(NetworkInfoModel* viewModel);
     void moveNetwork(const QString& mac, int row, int col);
-    QVector<QVector<NetworkInfoViewModel*>> currentLayout() const;
-    NetworkInfoViewModel* viewModelAt(int row, int col) const;
+    QVector<QVector<NetworkInfoModel*>> currentLayout() const;
+    NetworkInfoModel* viewModelAt(int row, int col) const;
 
 signals:
     void layoutChanged();
@@ -24,10 +25,10 @@ public slots:
 
 private:
     void initializeGrid();
-    QPair<int, int> findViewModel(NetworkInfoViewModel* viewModel) const;
+    QPair<int, int> findViewModel(NetworkInfoModel* viewModel) const;
 
     static constexpr int GRID_SIZE = 3;
-    QVector<QVector<NetworkInfoViewModel*>> m_grid;
+    QVector<QVector<NetworkInfoModel*>> m_grid;
 };
 
 #endif // NETWORKDASHBOARD_H

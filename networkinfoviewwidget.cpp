@@ -14,9 +14,9 @@
 
 #include "ledindicatordelegate.h"
 //#include "networkinfo.h"
-#include "networkinfoviewmodel.h"
+#include "networkinfomodel.h"
 
-NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfoViewModel *viewModel, QWidget *parent)
+NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfoModel *viewModel, QWidget *parent)
     : QFrame(parent), m_viewModel(viewModel)
 {
     setFixedSize(400, 300);
@@ -161,11 +161,11 @@ void NetworkInfoViewWidget::setupTableView()
 
 void NetworkInfoViewWidget::connectViewModel()
 {
-    connect(m_viewModel, &NetworkInfoViewModel::nameChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    connect(m_viewModel, &NetworkInfoViewModel::macChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    connect(m_viewModel, &NetworkInfoViewModel::ipAddressChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    connect(m_viewModel, &NetworkInfoViewModel::netmaskChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    connect(m_viewModel, &NetworkInfoViewModel::speedChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel, &NetworkInfoModel::nameChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel, &NetworkInfoModel::macChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel, &NetworkInfoModel::ipAddressChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel, &NetworkInfoModel::netmaskChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel, &NetworkInfoModel::speedChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
 }
 
 QString NetworkInfoViewWidget::formatSpeed(quint64 bytes) const

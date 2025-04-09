@@ -15,7 +15,7 @@ void NetworkDashboard::initializeGrid()
     }
 }
 
-QPair<int, int> NetworkDashboard::findViewModel(NetworkInfoViewModel *viewModel) const
+QPair<int, int> NetworkDashboard::findViewModel(NetworkInfoModel *viewModel) const
 {
     for(int row = 0; row < GRID_SIZE; ++row)
     {
@@ -30,7 +30,7 @@ QPair<int, int> NetworkDashboard::findViewModel(NetworkInfoViewModel *viewModel)
     }
 }
 
-void NetworkDashboard::addNetwork(NetworkInfoViewModel* viewModel)
+void NetworkDashboard::addNetwork(NetworkInfoModel* viewModel)
 {
     for(int row = 0; row < GRID_SIZE; ++row)
     {
@@ -57,7 +57,7 @@ void NetworkDashboard::moveNetwork(const QString& mac, int newRow, int newCol)
         {
             if(m_grid[row][col] && m_grid[row][col]->getMac() == mac)
             {
-                NetworkInfoViewModel* temp = m_grid[newRow][newCol];
+                NetworkInfoModel* temp = m_grid[newRow][newCol];
                 m_grid[newRow][newCol] = m_grid[row][col];
                 m_grid[row][col] = temp;
                 emit layoutChanged();
@@ -67,12 +67,12 @@ void NetworkDashboard::moveNetwork(const QString& mac, int newRow, int newCol)
     }
 }
 
-QVector<QVector<NetworkInfoViewModel*>> NetworkDashboard::currentLayout() const
+QVector<QVector<NetworkInfoModel*>> NetworkDashboard::currentLayout() const
 {
     return m_grid;
 }
 
-NetworkInfoViewModel* NetworkDashboard::viewModelAt(int row, int col) const
+NetworkInfoModel* NetworkDashboard::viewModelAt(int row, int col) const
 {
     if(row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE)
         return m_grid[row][col];

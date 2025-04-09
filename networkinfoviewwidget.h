@@ -7,13 +7,13 @@
 QT_FORWARD_DECLARE_CLASS(QTableView)
 QT_FORWARD_DECLARE_CLASS(QStandardItemModel);
 QT_FORWARD_DECLARE_CLASS(QStandardItem)
-class NetworkInfoViewModel;
+class NetworkInfoModel;
 
 class NetworkInfoViewWidget: public QFrame
 {
     Q_OBJECT
 public:
-    explicit NetworkInfoViewWidget(NetworkInfoViewModel* viewModel, QWidget* parent = nullptr);
+    explicit NetworkInfoViewWidget(NetworkInfoModel* viewModel, QWidget* parent = nullptr);
     ~NetworkInfoViewWidget();
     QString getMac() const;
 signals:
@@ -44,7 +44,7 @@ private:
     const QSize m_widgetSize = QSize(300, 180);
     bool m_isTableDragging = false;
     QPoint m_tableDragStartPos;
-    NetworkInfoViewModel* m_viewModel;
+    NetworkInfoModel* m_viewModel;
 
     QTableView* keyValueTbl;
     QStandardItemModel* keyValModel;

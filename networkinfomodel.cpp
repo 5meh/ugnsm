@@ -1,14 +1,14 @@
-#include "networkinfoviewmodel.h"
+#include "networkinfomodel.h"
 
 #include "networkinfo.h"
 
-NetworkInfoViewModel::NetworkInfoViewModel(NetworkInfo *model, QObject *parent)
+NetworkInfoModel::NetworkInfoModel(NetworkInfo *model, QObject *parent)
     :QObject(parent), m_model(model)
 {
     connectModelSignals();
 }
 
-QList<QPair<QString, QString> > NetworkInfoViewModel::getAllKeyValuesAsList() const
+QList<QPair<QString, QString> > NetworkInfoModel::getAllKeyValuesAsList() const
 {
     QList<QPair<QString, QString>> list;
     list.append(qMakePair("Interface:", getName()));
@@ -26,59 +26,64 @@ QList<QPair<QString, QString> > NetworkInfoViewModel::getAllKeyValuesAsList() co
     return list;
 }
 
-QString NetworkInfoViewModel::getName() const
+QString NetworkInfoModel::getName() const
 {
     return m_model->getName();
 }
 
-QString NetworkInfoViewModel::getMac() const
+QString NetworkInfoModel::getMac() const
 {
     return m_model->getMac();
 }
 
-QString NetworkInfoViewModel::getIpAddress() const
+QString NetworkInfoModel::getIpAddress() const
 {
     return m_model->getIpv4();
 }
 
-QString NetworkInfoViewModel::getNetmask() const
+QString NetworkInfoModel::getNetmask() const
 {
     return m_model->getNetmask();
 }
 
-QString NetworkInfoViewModel::getDownloadSpeed() const
+QString NetworkInfoModel::getDownloadSpeed() const
 {
     return formatSpeed(m_model->getRxSpeed());
 }
 
-QString NetworkInfoViewModel::getUploadSpeed() const
+QString NetworkInfoModel::getUploadSpeed() const
 {
     return formatSpeed(m_model->getTxSpeed());
 }
 
-QDateTime NetworkInfoViewModel::getTimestamp() const
+QString NetworkInfoModel::getTotalSpeed() const
+{
+    return formatSpeed(m_model->getTotalSpeed());//TODO: move total speed to model
+}
+
+QDateTime NetworkInfoModel::getTimestamp() const
 {
     return m_model->getTimestamp();
 }
 
-qint64 NetworkInfoViewModel::getLastUpdateTime() const
+qint64 NetworkInfoModel::getLastUpdateTime() const
 {
     return m_model->getLastUpdateTime();
 }
 
-void NetworkInfoViewModel::updateFromModel()
-{
-    //emit nameChanged();
-    //emit ipAddressChanged();
-}
+// void NetworkInfoModel::updateFromModel()
+// {
+//     //emit nameChanged();
+//     //emit ipAddressChanged();
+// }
 
-void NetworkInfoViewModel::updateSpeeds(quint64 rx, quint64 tx)
+void NetworkInfoModel::updateSpeeds(quint64 rx, quint64 tx)
 {
     m_model->setRxSpeed(rx);
     m_model->setTxSpeed(tx);
 }
 
-QString NetworkInfoViewModel::formatSpeed(quint64 bytes) const
+QString NetworkInfoModel::formatSpeed(quint64 bytes) const
 {
     const QStringList units = {"B/s", "KB/s", "MB/s", "GB/s"};
     int unitIndex = 0;
@@ -93,7 +98,7 @@ QString NetworkInfoViewModel::formatSpeed(quint64 bytes) const
     return QString("%1 %2").arg(speed, 0, 'f', unitIndex > 0 ? 2 : 0).arg(units[unitIndex]);
 }
 
-void NetworkInfoViewModel::connectModelSignals()
+void NetworkInfoModel::connectModelSignals()
 {
     connect(m_model, &NetworkInfo::nameChanged, this, [this](const QString& name)
             {

@@ -30,8 +30,8 @@ set(PROJECT_SOURCES
     networkinfo.cpp
     networkinfoview.h
     networkinfoview.cpp
-    networkinfoviewmodel.h
-    networkinfoviewmodel.cpp
+    networkinfomodel.h
+    networkinfomodel.cpp
     networkdashboard.h
     networkdashboard.cpp
     networkmonitor.h
@@ -41,7 +41,12 @@ set(PROJECT_SOURCES
 
 # Create the executable (desktop only)
 qt_add_executable(ugnsm ${PROJECT_SOURCES}
-    networkdashboardmanager.h networkdashboardmanager.cpp)
+    networkdashboardmanager.h networkdashboardmanager.cpp
+
+    gridmodelmanager.h gridmodelmanager.cpp
+    gridviewmanager.h gridviewmanager.cpp
+
+)
 
 target_link_libraries(ugnsm PRIVATE Qt6::Widgets Qt6::Network)
 
