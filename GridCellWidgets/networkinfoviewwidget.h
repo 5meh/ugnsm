@@ -1,33 +1,29 @@
 #ifndef NETWORKINFOVIEWWIDGET_H
 #define NETWORKINFOVIEWWIDGET_H
 
+#include "gridcellwidget.h"
+
 #include <QFrame>
 #include <QLabel>
 
 QT_FORWARD_DECLARE_CLASS(QTableView)
-QT_FORWARD_DECLARE_CLASS(QStandardItemModel);
+//QT_FORWARD_DECLARE_CLASS(QStandardItemModel);
 QT_FORWARD_DECLARE_CLASS(QStandardItem)
 class NetworkInfoModel;
 
-class NetworkInfoViewWidget: public QFrame
+class NetworkInfoViewWidget: public GridCellWidget
 {
     Q_OBJECT
 public:
-    explicit NetworkInfoViewWidget(NetworkInfoModel* viewModel, QWidget* parent = nullptr);
+    explicit NetworkInfoViewWidget(NetworkInfoModel* viewModel, QFrame* parent = nullptr);
     ~NetworkInfoViewWidget();
+
+    QString cellId() const override;
     QString getMac() const;
-signals:
-    void swapRequested(QWidget* source, QWidget* target);
-    void dragInitiated(QWidget* source);
-    void dropReceived(QWidget* target);
+
 public slots:
     void updateNetworkInfoDisplay();
 protected:
-    void mousePressEvent(QMouseEvent* event) override;
-    void mouseMoveEvent(QMouseEvent* event) override;
-    void dragEnterEvent(QDragEnterEvent* event) override;
-    void dropEvent(QDropEvent* event) override;
-    void dragLeaveEvent(QDragLeaveEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
 private:
     void updateStatusIndicator(QStandardItem* item, const QString& key,
@@ -39,19 +35,17 @@ private:
     void setupTableView();
     void connectViewModel();
 
-    QString formatSpeed(quint64 bytes) const;
-
-    const QSize m_widgetSize = QSize(300, 180);
-    bool m_isTableDragging = false;
-    QPoint m_tableDragStartPos;
+    const QSize m_widgetSize = QSize(400, 300);//TODO: mb remove constants
+    //bool m_isTableDragging = false;
+    //QPoint m_tableDragStartPos;
     NetworkInfoModel* m_viewModel;
 
     QTableView* keyValueTbl;
     QStandardItemModel* keyValModel;
 
     QLabel crownLbl;
-    bool m_isDragging = false;
-    QPoint dragStartPos;
+    //bool m_isDragging = false;
+    //QPoint dragStartPos;
     const QColor m_normalBorder = QColor(200, 200, 200);
     const QColor m_dragBorder = QColor(100, 150, 250);
 };

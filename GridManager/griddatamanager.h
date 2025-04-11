@@ -1,15 +1,15 @@
-#ifndef GRIDMODELMANAGER_H
-#define GRIDMODELMANAGER_H
+#ifndef GRIDDATAMANAGER_H
+#define GRIDDATAMANAGER_H
 
 #include <QObject>
 
 class NetworkInfoModel;
 
-class GridModelManager : public QObject
+class GridDataManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit GridModelManager(int rows, int cols, QObject* parent = nullptr);
+    explicit GridDataManager(int rows, int cols, QObject* parent = nullptr);
 
     NetworkInfoModel* cellData(int row, int col) const;
 
@@ -24,6 +24,8 @@ public:
 public slots:
     // Swap the data in two cells.
     void swapCellData(int row1, int col1, int row2, int col2);
+    void initializeData(int rows, int cols);
+    void refreshGrid();
 
 signals:
     void modelChanged();//TODO: mb rework to update certain cell
@@ -41,4 +43,4 @@ private:
     //int m_cols;
 };
 
-#endif // GRIDMODELMANAGER_H
+#endif // GRIDDATAMANAGER_H

@@ -1,12 +1,20 @@
-#include "gridmodelmanager.h"
+#include "griddatamanager.h"
 
-GridModelManager::GridModelManager(int rows, int cols, QObject* parent)
+#include "networkinfo.h"
+#include "networkinfomodel.h"
+
+#include <QNetworkInterface>
+#include <QTimer>
+
+GridDataManager::GridDataManager(int rows, int cols, QObject* parent)
     : QObject{parent}
 {
-
+    QTimer *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GridDataManager::refreshGrid);
+    timer->start(5000);
 }
 
-NetworkInfoModel* GridModelManager::cellData(int row, int col) const
+NetworkInfoModel* GridDataManager::cellData(int row, int col) const
 {
     if (row < 0 || row >= m_rows || col < 0 || col >= m_cols)
         return nullptr;
@@ -14,7 +22,7 @@ NetworkInfoModel* GridModelManager::cellData(int row, int col) const
     return m_data[row][col];
 }
 
-bool GridModelManager::setSize(int newRows, int newCols)
+bool GridDataManager::setSize(int newRows, int newCols)
 {
     if (newRows < 0 || newCols < 0)
     {
@@ -80,12 +88,12 @@ bool GridModelManager::setSize(int newRows, int newCols)
     return true;
 }
 
-int GridModelManager::getRows() const
+int GridDataManager::getRows() const
 {
     return m_data.size();
 }
 
-void GridModelManager::setRows(int newRows)
+void GridDataManager::setRows(int newRows)
 {
     if (m_rows == newRows)
         return;
@@ -94,12 +102,12 @@ void GridModelManager::setRows(int newRows)
     //emit rowsChanged();
 }
 
-int GridModelManager::getCols() const
+int GridDataManager::getCols() const
 {
     m_data.isEmpty() ? 0 : m_data.first().size();
 }
 
-void GridModelManager::setCols(int newCols)
+void GridDataManager::setCols(int newCols)
 {
     if (m_cols == newCols)
         return;
@@ -108,7 +116,7 @@ void GridModelManager::setCols(int newCols)
     // emit colsChanged();
 }
 
-void GridModelManager::swapCellData(int row1, int col1, int row2, int col2)
+void GridDataManager::swapCellData(int row1, int col1, int row2, int col2)
 {
     if (row1 < 0 || row1 >= m_rows || row2 < 0 || row2 >= m_rows ||
         col1 < 0 || col1 >= m_cols || col2 < 0 || col2 >= m_cols)
@@ -116,5 +124,60 @@ void GridModelManager::swapCellData(int row1, int col1, int row2, int col2)
     qSwap(m_data[row1][col1], m_data[row2][col2]);
     qDebug() << "LogicalManager: Swapped data between (" << row1 << "," << col1
              << ") and (" << row2 << "," << col2 << ")";
+    emit modelChanged();
+}
+
+void GridDataManager::initializeData(int rows, int cols)
+{
+    for (int i = 0; i < m_data.size(); ++i)
+    {
+        qDeleteAll(m_data[i]);
+    }
+    m_data.clear();
+
+    QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
+    QList<QNetworkInterface> ethernetInterfaces;
+    for (const QNetworkInterface& interface : interfaces)
+    {
+        if (interface.type() == QNetworkInterface::Ethernet &&
+            !interface.flags().testFlag(QNetworkInterface::IsLoopBack))
+        {
+            ethernetInterfaces.append(interface);
+        }
+    }
+    // For this example, we ignore the possibility that rows*cols might exceed the number of interfaces.
+    // We simply assign interfaces in order. If there are fewer interfaces than grid cells,
+    // remaining cells may be filled with dummy models.
+    m_data.resize(rows);
+    int interfaceIndex = 0;
+    for (int i = 0; i < rows; i++)
+    {
+        m_data[i].resize(cols);
+        for (int j = 0; j < cols; j++)
+        {
+            NetworkInfoModel* modelPtr = nullptr;
+            if (interfaceIndex < ethernetInterfaces.size())
+            {
+                // Create a NetworkInfo* from the interface.
+                // Assume that NetworkInfo has a constructor: NetworkInfo(const QNetworkInterface&, QObject *parent);
+                NetworkInfo* netInfo = new NetworkInfo(ethernetInterfaces.at(interfaceIndex), this);
+                modelPtr = new NetworkInfoModel(netInfo, this);
+                ++interfaceIndex;
+            }
+            else
+            {
+                // Create a dummy model if there is no interface available.
+                NetworkInfo* netInfo = new NetworkInfo(/* dummy parameters */ , this);
+                modelPtr = new NetworkInfoModel(netInfo, this);
+            }
+            m_data[i][j] = modelPtr;
+        }
+    }
+    qDebug() << "GridDataManager: Data initialized with" << rows << "rows and" << cols << "cols.";
+    emit modelChanged();
+}
+
+void GridDataManager::refreshGrid()
+{
     emit modelChanged();
 }

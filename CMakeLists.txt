@@ -10,42 +10,22 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find Qt6 Widgets and Network modules
 find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
 
-# List your source files (add any additional ones as needed)
-set(PROJECT_SOURCES
-    main.cpp
-    mainwindow.cpp
-    mainwindow.h
-    networkinfoviewwidget.h
-    networkinfoviewwidget.cpp
-    networkinfoview.h
-    networkinfoview.cpp
-    ledindicator.h
-    ledindicator.cpp
-    ledindicatordelegate.h
-    ledindicatordelegate.cpp
-    networkinfo.h
-    networkinfo.cpp
-    networkinfoview.h
-    networkinfoview.cpp
-    networkinfomodel.h
-    networkinfomodel.cpp
-    networkdashboard.h
-    networkdashboard.cpp
-    networkmonitor.h
-    networkmonitor.cpp
-    resources.qrc
+file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.qrc"
 )
 
 # Create the executable (desktop only)
-qt_add_executable(ugnsm ${PROJECT_SOURCES}
-    networkdashboardmanager.h networkdashboardmanager.cpp
+qt_add_executable(ugnsm ${PROJECT_SOURCES})
 
-    gridmodelmanager.h gridmodelmanager.cpp
-    gridviewmanager.h gridviewmanager.cpp
-
+target_include_directories(ugnsm PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/GridCellWidgets
+    ${CMAKE_CURRENT_SOURCE_DIR}/GridManager
+    ${CMAKE_CURRENT_SOURCE_DIR}/NetworkInformation
 )
 
 target_link_libraries(ugnsm PRIVATE Qt6::Widgets Qt6::Network)
@@ -53,5 +33,3 @@ target_link_libraries(ugnsm PRIVATE Qt6::Widgets Qt6::Network)
 install(TARGETS ugnsm
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-
-qt_finalize_executable(ugnsm)
