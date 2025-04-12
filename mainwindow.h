@@ -44,8 +44,6 @@ private:
     void addOrUpdateNetworkWidget(const QNetworkInterface& interface);
     void addAllNetworkInfoViewWidgets();
 
-
-
     NetworkDashboardManager* m_dashboardManager;
     //NetworkDashboard* m_dashboard;
     NetworkMonitor* m_networkMonitor;

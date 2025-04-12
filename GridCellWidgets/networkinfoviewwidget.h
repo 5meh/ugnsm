@@ -7,7 +7,7 @@
 #include <QLabel>
 
 QT_FORWARD_DECLARE_CLASS(QTableView)
-//QT_FORWARD_DECLARE_CLASS(QStandardItemModel);
+QT_FORWARD_DECLARE_CLASS(QStandardItemModel);
 QT_FORWARD_DECLARE_CLASS(QStandardItem)
 class NetworkInfoModel;
 
@@ -35,7 +35,7 @@ private:
     void setupTableView();
     void connectViewModel();
 
-    const QSize m_widgetSize = QSize(400, 300);//TODO: mb remove constants
+    //TODO: mb remove constants
     //bool m_isTableDragging = false;
     //QPoint m_tableDragStartPos;
     NetworkInfoModel* m_viewModel;

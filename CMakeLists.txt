@@ -22,10 +22,10 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
 qt_add_executable(ugnsm ${PROJECT_SOURCES})
 
 target_include_directories(ugnsm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/GridCellWidgets
-    ${CMAKE_CURRENT_SOURCE_DIR}/GridManager
-    ${CMAKE_CURRENT_SOURCE_DIR}/NetworkInformation
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/GridCellWidgets"
+    "${CMAKE_CURRENT_SOURCE_DIR}/GridManager"
+    "${CMAKE_CURRENT_SOURCE_DIR}/NetworkInformation"
 )
 
 target_link_libraries(ugnsm PRIVATE Qt6::Widgets Qt6::Network)

@@ -17,7 +17,7 @@
 #include "networkinfomodel.h"
 
 NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfoModel *viewModel, QFrame *parent)
-    : QFrame(parent), m_viewModel(viewModel)
+    : GridCellWidget(parent), m_viewModel(viewModel)
 {
     setFixedSize(m_widgetSize);
     setupUI();

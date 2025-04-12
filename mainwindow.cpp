@@ -428,33 +428,59 @@ void MainWindow::initializeNetworkDashboardManager()
 
     void MainWindow::updateGridDisplay()
     {
-        clearGrid();
+        // clearGrid();
 
-        const auto layout = m_dashboard->currentLayout();
+        // const auto layout = m_dashboard->currentLayout();
 
-        for(int row = 0; row < GRID_SIZE; ++row)
-        {
-            for(int col = 0; col < GRID_SIZE; ++col)
-            {
-                if(NetworkInfoModel* vm = m_dashboard->viewModelAt(row, col))
-                {
-                    if(!)//m_widgets.contains(vm->getMac()))
-                    {
-                        auto* widget = new NetworkInfoViewWidget(vm, this);
-                        m_widgets[vm->getMac()] = widget;
-                        connect(widget, &NetworkInfoViewWidget::dragInitiated,
-                                this, &MainWindow::handleDragInitiated);
-                        connect(widget, &NetworkInfoViewWidget::dropReceived,
-                                this, &MainWindow::handleDropReceived);
-                    }
-                    m_gridLayout->addWidget(m_widgets[vm->getMac()], row, col);
-                }
-                else
-                {
-                    m_gridLayout->addWidget(createPlaceholder(), row, col);
-                }
-            }
-        }
+        // for(int row = 0; row < GRID_SIZE; ++row)
+        // {
+        //     for(int col = 0; col < GRID_SIZE; ++col)
+        //     {
+        //         if(NetworkInfoModel* vm = m_dashboard->viewModelAt(row, col))
+        //         {
+        //             if(!)//m_widgets.contains(vm->getMac()))
+        //             {
+        //                 auto* widget = new NetworkInfoViewWidget(vm, this);
+        //                 m_widgets[vm->getMac()] = widget;
+        //                 connect(widget, &NetworkInfoViewWidget::dragInitiated,
+        //                         this, &MainWindow::handleDragInitiated);
+        //                 connect(widget, &NetworkInfoViewWidget::dropReceived,
+        //                         this, &MainWindow::handleDropReceived);        // clearGrid();
+
+        // const auto layout = m_dashboard->currentLayout();
+
+        // for(int row = 0; row < GRID_SIZE; ++row)
+        // {
+        //     for(int col = 0; col < GRID_SIZE; ++col)
+        //     {
+        //         if(NetworkInfoModel* vm = m_dashboard->viewModelAt(row, col))
+        //         {
+        //             if(!)//m_widgets.contains(vm->getMac()))
+        //             {
+        //                 auto* widget = new NetworkInfoViewWidget(vm, this);
+        //                 m_widgets[vm->getMac()] = widget;
+        //                 connect(widget, &NetworkInfoViewWidget::dragInitiated,
+        //                         this, &MainWindow::handleDragInitiated);
+        //                 connect(widget, &NetworkInfoViewWidget::dropReceived,
+        //                         this, &MainWindow::handleDropReceived);
+        //             }
+        //             m_gridLayout->addWidget(m_widgets[vm->getMac()], row, col);
+        //         }
+        //         else
+        //         {
+        //             m_gridLayout->addWidget(createPlaceholder(), row, col);
+        //         }
+        //     }
+        // }
+        //             }
+        //             m_gridLayout->addWidget(m_widgets[vm->getMac()], row, col);
+        //         }
+        //         else
+        //         {
+        //             m_gridLayout->addWidget(createPlaceholder(), row, col);
+        //         }
+        //     }
+        // }
         ///////////////////////////
         // setUpdatesEnabled(false);
 
