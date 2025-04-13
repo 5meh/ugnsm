@@ -11,7 +11,7 @@ LedIndicatorDelegate::LedIndicatorDelegate(QObject* parent) : QStyledItemDelegat
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, [this]()
             {
-                if (auto view = qobject_cast<QTableView*>(this->parent()))
+                if (QTableView* view = qobject_cast<QTableView*>(this->parent()))
                 {
                     view->viewport()->update();
                 }

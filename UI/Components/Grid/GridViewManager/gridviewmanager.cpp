@@ -10,7 +10,7 @@
 #include <QPainter>
 #include <QDebug>
 
-GridViewManager::GridViewManager(QWidget *parent)
+GridViewManager::GridViewManager(QWidget* parent)
     : QWidget(parent),
     m_gridLayout(new QGridLayout(this))
 {

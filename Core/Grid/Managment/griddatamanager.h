@@ -21,9 +21,9 @@ signals:
     void modelChanged();
 
 private:
-    QVector<QVector<NetworkInfoModel*>> m_data;
-
     QList<QNetworkInterface> getSortedInterfaces() const;
+
+    QVector<QVector<NetworkInfoModel*>> m_data;    
 };
 
 #endif // GRIDDATAMANAGER_H
