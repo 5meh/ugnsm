@@ -5,7 +5,7 @@
 QT_FORWARD_DECLARE_CLASS(QTimer)
 QT_FORWARD_DECLARE_CLASS(QNetworkInterface)
 QT_FORWARD_DECLARE_CLASS(NetworkSpeedMonitor)
-#include "networkinfo.h"
+#include "Core/Network/Information/networkinfo.h"
 
 class NetworkInfoView: public QObject
 {

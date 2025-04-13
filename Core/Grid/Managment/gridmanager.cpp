@@ -1,5 +1,5 @@
 #include "gridmanager.h"
-#include "gridviewmanager.h"
+#include "../../../UI/Components/Grid/GridViewManager/gridviewmanager.h"
 #include "griddatamanager.h"
 
 GridManager::GridManager(QObject *parent)

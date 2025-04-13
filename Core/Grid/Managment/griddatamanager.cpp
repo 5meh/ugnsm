@@ -1,7 +1,7 @@
 #include "griddatamanager.h"
 
-#include "networkinfo.h"
-#include "networkinfomodel.h"
+#include "../../Network/Information/networkinfo.h"
+#include "../../Network/Information/networkinfomodel.h"
 
 #include <QTimer>
 

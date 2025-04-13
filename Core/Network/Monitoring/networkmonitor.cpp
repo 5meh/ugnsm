@@ -3,7 +3,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QDateTime>
-#include "networkinfoviewwidget.h"
+#include "../../../UI/Components/Grid/GridCellWidgets/networkinfoviewwidget.h"
 
 #ifdef Q_OS_WIN
 #include <winsock2.h>

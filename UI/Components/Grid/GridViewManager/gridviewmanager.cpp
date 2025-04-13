@@ -1,7 +1,7 @@
 #include "gridviewmanager.h"
-#include "gridcellwidget.h"
-#include "networkinfoviewwidget.h"
-#include "placeholdercellwidget.h"
+#include "../GridCellWidgets/gridcellwidget.h"
+#include "../GridCellWidgets/networkinfoviewwidget.h"
+#include "../GridCellWidgets/placeholdercellwidget.h"
 
 #include <QMimeData>
 #include <QDrag>

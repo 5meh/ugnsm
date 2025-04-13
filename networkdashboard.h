@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QVector>
-#include "networkinfomodel.h"
+#include "Core/Network/Information/networkinfomodel.h"
 
 class NetworkDashboard : public QObject
 {

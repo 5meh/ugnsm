@@ -12,9 +12,9 @@
 #include <QList>
 #include <QApplication>
 
-#include "utils/ledindicatordelegate.h"
+#include "../../../../Utilities/Delegates/ledindicatordelegate.h"
 //#include "networkinfo.h"
-#include "networkinfomodel.h"
+#include "../../../../Core/Network/Information/networkinfomodel.h"
 
 NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfoModel *viewModel, QFrame *parent)
     : GridCellWidget(parent), m_viewModel(viewModel)
