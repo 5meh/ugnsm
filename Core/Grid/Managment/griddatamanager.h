@@ -6,12 +6,13 @@
 #include <QNetworkInterface>
 
 class NetworkInfoModel;
+class IParser;
 
 class GridDataManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit GridDataManager(QObject* parent = nullptr);
+    explicit GridDataManager(IParser* parser, QObject* parent = nullptr);
 
     NetworkInfoModel* cellData(int row, int col) const;
     void initializeData(int rows, int cols);
@@ -19,10 +20,13 @@ public:
 
 signals:
     void modelChanged();
+private slots:
+    void handleParsingCompleted(const QVariant& result);
 
 private:
     QList<QNetworkInterface> getSortedInterfaces() const;
 
+    IParser* m_parser;
     QVector<QVector<NetworkInfoModel*>> m_data;    
 };
 

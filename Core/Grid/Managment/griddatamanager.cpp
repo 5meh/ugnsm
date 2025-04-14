@@ -2,12 +2,17 @@
 
 #include "../../Network/Information/networkinfo.h"
 #include "../../Network/Information/networkinfomodel.h"
+#include "../Utilities/Parser/networkethernetparser.h"
+#include "../Network/NetworkSortingStrategies/speedsortstrategy.h"
 
 #include <QTimer>
 
-GridDataManager::GridDataManager(QObject* parent)
-    : QObject{parent}
+GridDataManager::GridDataManager(IParser *parser, INetworkSortStrategy *sorter, QObject *parent)
+    : m_parser(new NetworkEthernetParser(new SpeedSortStrategy(this)), this),
+    QObject{parent}
 {
+    connect(m_parser, &IParser::parsingCompleted,
+            this, &GridDataManager::handleParsingCompleted);
     QTimer* timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &GridDataManager::refreshGrid);
     timer->start(5000);
@@ -58,11 +63,7 @@ QList<QNetworkInterface> GridDataManager::getSortedInterfaces() const
         }
     }
 
-    // std::sort(ethernet.begin(), ethernet.end(),
-    //           [](const QNetworkInterface& a, const QNetworkInterface& b)
-    //           {
-    //               return a.speed() > b.speed();
-    //           });
+
 
     return ethernet.mid(0, 9); // Max 9 best interfaces
 }
@@ -70,4 +71,12 @@ QList<QNetworkInterface> GridDataManager::getSortedInterfaces() const
 void GridDataManager::refreshGrid()
 {
     initializeData(m_data.size(), m_data.isEmpty() ? 0 : m_data[0].size());
+}
+
+void GridDataManager::handleParsingCompleted(const QVariant &result)
+{
+    m_networkData = result.value<QList<NetworkInfo*>>();
+    if(m_sorter)
+        m_sorter->sort(m_networkData);
+    initializeGrid();
 }

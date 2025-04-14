@@ -8,7 +8,7 @@ class IParser : public QObject
 {
     Q_OBJECT
 public:
-    explicit IParser(QObject* parent = nullptr) = default;
+    explicit IParser(QObject* parent = nullptr);
     virtual ~IParser() = default;
 
     virtual void parse() = 0;

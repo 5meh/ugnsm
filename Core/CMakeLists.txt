@@ -16,4 +16,4 @@ target_include_directories(CoreLibrary PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/NetworkSortingStrategies
 )
 
-target_link_libraries(CoreLibrary PUBLIC Qt6::Core Qt6::Network Qt6::Widgets)
+target_link_libraries(CoreLibrary PUBLIC Qt6::Core Qt6::Network Qt6::Widgets UILibrary)#TODO:mb remove UILibrary
