@@ -1,28 +1,25 @@
 #include "networkinfomodel.h"
-
 #include "networkinfo.h"
 
 NetworkInfoModel::NetworkInfoModel(NetworkInfo *model, QObject *parent)
-    :QObject(parent), m_model(model)
+    : QObject(parent),
+    m_model(model)
 {
     connectModelSignals();
 }
 
-QList<QPair<QString, QString> > NetworkInfoModel::getAllKeyValuesAsList() const
+QList<QPair<QString, QString>> NetworkInfoModel::getAllKeyValuesAsList() const
 {
     QList<QPair<QString, QString>> list;
-    list.append(qMakePair("Interface:", getName()));
-    list.append(qMakePair("MAC:", getMac()));
-    list.append(qMakePair("IPV4:", getIpAddress()));
-    list.append(qMakePair("Netmask:", getNetmask()));
-    list.append(qMakePair("Is Up:", QString(m_model->getIsUp() ? "True" : "False")));
-    list.append(qMakePair("Is Running:", QString(true ? "True" : "False")));
-    list.append(qMakePair("Date/time:", m_model->getTimestamp().toString()));
-    list.append(qMakePair("Last Rx bytes:", QString::number(m_model->getLastRxBytes())));
-    list.append(qMakePair("Last Tx bytes:", QString::number(m_model->getLastTxBytes())));
-    list.append(qMakePair("Rx speed:", QString::number(m_model->getRxSpeed())));
-    list.append(qMakePair("Tx speed:", QString::number(m_model->getTxSpeed())));
-
+    list.append({"Interface", getName()});
+    list.append({"MAC Address", getMac()});
+    list.append({"IP Address", getIpAddress()});
+    list.append({"Netmask", getNetmask()});
+    list.append({"Status", getStatus()});
+    list.append({"Download Speed", getDownloadSpeed()});
+    list.append({"Upload Speed", getUploadSpeed()});
+    list.append({"Total Speed", getTotalSpeed()});
+    list.append({"Last Update", getLastUpdate()});
     return list;
 }
 
@@ -48,44 +45,46 @@ QString NetworkInfoModel::getNetmask() const
 
 QString NetworkInfoModel::getDownloadSpeed() const
 {
-    return formatSpeed(m_model->getRxSpeed());
+    return QString("%1/s").arg(formatSpeed(m_model->getRxSpeed()));
 }
 
 QString NetworkInfoModel::getUploadSpeed() const
 {
-    return formatSpeed(m_model->getTxSpeed());
+    return QString("%1/s").arg(formatSpeed(m_model->getTxSpeed()));
 }
 
 QString NetworkInfoModel::getTotalSpeed() const
 {
-    return formatSpeed(m_model->getTotalSpeed());//TODO: move total speed to model
+    return QString("%1/s").arg(formatSpeed(m_model->getTotalSpeed()));
 }
 
-QDateTime NetworkInfoModel::getTimestamp() const
+QString NetworkInfoModel::getStatus() const
 {
-    return m_model->getTimestamp();
+    return m_model->getIsUp() ? "Connected" : "Disconnected";
 }
 
-qint64 NetworkInfoModel::getLastUpdateTime() const
+QString NetworkInfoModel::getLastUpdate() const
 {
-    return m_model->getLastUpdateTime();
+    return formatTimestamp();
 }
-
-// void NetworkInfoModel::updateFromModel()
-// {
-//     //emit nameChanged();
-//     //emit ipAddressChanged();
-// }
 
 void NetworkInfoModel::updateSpeeds(quint64 rx, quint64 tx)
 {
-    m_model->setRxSpeed(rx);
-    m_model->setTxSpeed(tx);
+    m_model->setRxSpeed(static_cast<qint64>(rx));
+    m_model->setTxSpeed(static_cast<qint64>(tx));
+    m_model->setLastUpdateTime(QDateTime::currentMSecsSinceEpoch());
+    emit speedChanged();
+}
+
+QString NetworkInfoModel::formatTimestamp() const
+{
+    return QDateTime::fromMSecsSinceEpoch(m_model->getLastUpdateTime())
+    .toString("hh:mm:ss.zzz");
 }
 
 QString NetworkInfoModel::formatSpeed(quint64 bytes) const
 {
-    const QStringList units = {"B/s", "KB/s", "MB/s", "GB/s"};
+    const QStringList units = {"B", "KB", "MB", "GB"};
     int unitIndex = 0;
     double speed = bytes;
 
@@ -94,39 +93,23 @@ QString NetworkInfoModel::formatSpeed(quint64 bytes) const
         speed /= 1024;
         unitIndex++;
     }
-
     return QString("%1 %2").arg(speed, 0, 'f', unitIndex > 0 ? 2 : 0).arg(units[unitIndex]);
 }
 
 void NetworkInfoModel::connectModelSignals()
 {
-    connect(m_model, &NetworkInfo::nameChanged, this, [this](const QString& name)
-            {
-                emit nameChanged(name);
-            });
-
-    connect(m_model, &NetworkInfo::macChanged, this, [this](const QString& mac)
-            {
-                emit macChanged(mac);
-            });
-
+    connect(m_model, &NetworkInfo::nameChanged, this, &NetworkInfoModel::nameChanged);
+    connect(m_model, &NetworkInfo::macChanged, this, &NetworkInfoModel::macChanged);
     connect(m_model, &NetworkInfo::ipv4Changed, this, [this]()
             {
-                emit ipAddressChanged(m_model->getIpv4());
+                emit ipAddressChanged(getIpAddress());
             });
-
     connect(m_model, &NetworkInfo::netmaskChanged, this, [this]()
             {
-                emit netmaskChanged(m_model->getNetmask());
+                emit netmaskChanged(getNetmask());
             });
-
-    connect(m_model, &NetworkInfo::rxSpeedChanged, this, [this]()
-            {
-                emit speedChanged(m_model->getRxSpeed(), m_model->getTxSpeed());
-            });
-
-    connect(m_model, &NetworkInfo::txSpeedChanged, this, [this]()
-            {
-                emit speedChanged(m_model->getRxSpeed(), m_model->getTxSpeed());
-            });
+    connect(m_model, &NetworkInfo::rxSpeedChanged, this, &NetworkInfoModel::speedChanged);
+    connect(m_model, &NetworkInfo::txSpeedChanged, this, &NetworkInfoModel::speedChanged);
+    connect(m_model, &NetworkInfo::lastUpdateTimeChanged, this, &NetworkInfoModel::timestampChanged);
+    connect(m_model, &NetworkInfo::isUpChanged, this, &NetworkInfoModel::statusChanged);
 }

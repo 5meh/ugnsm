@@ -6,6 +6,7 @@
 #include <QVector>
 
 class GridCellWidget;
+class NetworkInfoModel;
 
 class GridViewManager : public QWidget
 {
@@ -17,6 +18,7 @@ public:
     void setGridSize(int rows, int cols);
     GridCellWidget* cellAt(int row, int col) const;
     void setCell(int row, int col, GridCellWidget* widget);
+    void updateCell(int row, int col, NetworkInfoModel* model);
 
 signals:
     void cellSwapRequested(int fromRow, int fromCol, int toRow, int toCol);

@@ -43,17 +43,6 @@ void NetworkMonitor::refreshStats()
     }
 }
 
-// void NetworkMonitor::onNetworkStatsUpdated(const QString& mac, quint64 rx, quint64 tx)
-// {
-//     for(NetworkInfoViewWidget* widget : m_widgets)
-//     {
-//         if(widget->getMac() == mac)
-//         {
-//             widget->viewModel()->updateSpeeds(rx, tx);
-//         }
-//     }
-// }
-
 bool NetworkMonitor::getInterfaceStats(QHash<QString, InterfaceStats>& currentStats)
 {
     if(!readRawInterfaceStats(currentStats))

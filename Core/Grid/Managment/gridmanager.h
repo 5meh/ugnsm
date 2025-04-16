@@ -5,18 +5,22 @@
 
 class GridDataManager;
 class GridViewManager;
+class IParser;
+class INetworkSortStrategy;
 
 class GridManager : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(int rows READ rows NOTIFY gridDimensionsChanged)
-    Q_PROPERTY(int cols READ cols NOTIFY gridDimensionsChanged)
+    Q_PROPERTY(int rows READ getRows NOTIFY gridDimensionsChanged)
+    Q_PROPERTY(int cols READ getCols NOTIFY gridDimensionsChanged)
 public:
-    explicit GridManager(QObject* parent = nullptr);
-    ~GridManager();
+    GridManager(IParser* parser,
+                INetworkSortStrategy* sorter,
+                QObject *parent = nullptr);
+    virtual ~GridManager();
 
-    int rows() const { return m_rows; }
-    int cols() const { return m_cols; }
+    int getRows() const;
+    int getCols() const;
     void setGridDimensions(int rows, int cols);
 
     GridViewManager* view() const;
@@ -24,8 +28,12 @@ public:
 signals:
     void gridDimensionsChanged();
 
+private slots:
+    void handleModelChanged();
+    void handleSwapRequest(int fr, int fc, int tr, int tc);
+
 private:
-    void syncManagers();
+    void initializeView();
 
     GridDataManager* m_dataManager;
     QScopedPointer<GridViewManager> m_viewManager;

@@ -2,14 +2,22 @@
 #include "../../../UI/Components/Grid/GridViewManager/gridviewmanager.h"
 #include "griddatamanager.h"
 
-GridManager::GridManager(QObject *parent)
-    : QObject{parent},
-    m_dataManager{new GridDataManager(this)},
+GridManager::GridManager(IParser* parser,
+                         INetworkSortStrategy* sorter,
+                         QObject *parent)
+    : m_dataManager{new GridDataManager(parser, sorter, this)},
     m_viewManager{new GridViewManager()},
-    m_rows(GRID_ROWS_DEFAULT),
-    m_cols(GRID_COLUMNS_DEFAUT)
+    QObject{parent}
 {
-    syncManagers();
+    connect(m_dataManager, &GridDataManager::modelChanged,
+            this, &GridManager::handleModelChanged);
+    connect(m_dataManager, &GridDataManager::gridDimensionsChanged,
+            this, &GridManager::gridDimensionsChanged);
+    connect(m_viewManager.data(), &GridViewManager::cellSwapRequested,
+            this, &GridManager::handleSwapRequest);
+
+    m_dataManager->initializeGrid(3, 3);
+    initializeView();
 }
 
 GridManager::~GridManager()
@@ -17,23 +25,33 @@ GridManager::~GridManager()
 
 }
 
-void GridManager::setGridDimensions(int rows, int cols)
+int GridManager::getRows() const
 {
-    if(rows == m_rows && cols == m_cols)
-        return;
-    m_rows = rows;
-    m_cols = cols;
-    syncManagers();
-    emit gridDimensionsChanged();
+    return m_dataManager->getRows();
 }
 
-void GridManager::syncManagers()
+int GridManager::getCols() const
 {
-    m_dataManager->initializeData(m_rows, m_cols);
-    m_viewManager->setGridSize(m_rows, m_cols);
+    return m_dataManager->getCols();
+}
+
+void GridManager::setGridDimensions(int rows, int cols)
+{
+    m_dataManager->initializeGrid(rows, cols);
+}
+
+void GridManager::initializeView()
+{
+    m_viewManager->setGridSize(getRows(), getCols());
+    handleModelChanged();
 }
 
 GridViewManager* GridManager::view() const
 {
     return m_viewManager.data();
+}
+
+void GridManager::handleSwapRequest(int fr, int fc, int tr, int tc)
+{
+    m_dataManager->swapCells(fr, fc, tr, tc);
 }

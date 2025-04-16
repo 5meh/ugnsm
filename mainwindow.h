@@ -2,19 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QtNetwork/QNetworkInterface>
-#include <QVector>
-#include <QHash>
 
-QT_FORWARD_DECLARE_CLASS(NetworkInfoViewWidget)
-QT_FORWARD_DECLARE_CLASS(NetworkInfoView)
-QT_FORWARD_DECLARE_CLASS(QGridLayout)
-QT_FORWARD_DECLARE_CLASS(QWidget)
-class NetworkInfo;
-class NetworkInfoModel;
-class NetworkDashboard;
-class NetworkMonitor;
-class NetworkDashboardManager;
+class GridManager;
 
 class MainWindow : public QMainWindow
 {
@@ -23,37 +12,10 @@ public:
     MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-protected:
-    bool eventFilter(QObject* watched, QEvent* event) override;
-
-private slots:
-    void handleLayoutChanged();
-    void handleDragInitiated(QWidget* source);
-    void handleDropReceived(QWidget* target);
-    void addNetworkInfo(NetworkInfo* info);
-signals:
-    void widgetsSwapped(QWidget* source, QWidget* target);    
 private:
     void setupUI();
-    void initializeNetworkDashboardManager();
-    void clearGrid();
-    QWidget* createPlaceholder();
-    void updateGridDisplay();
-    QPair<int, int> gridPosition(QWidget* widget) const;
 
-    void addOrUpdateNetworkWidget(const QNetworkInterface& interface);
-    void addAllNetworkInfoViewWidgets();
-
-    NetworkDashboardManager* m_dashboardManager;
-    //NetworkDashboard* m_dashboard;
-    NetworkMonitor* m_networkMonitor;
-    QGridLayout* m_gridLayout;
-    QHash<QString, NetworkInfoViewWidget*> m_widgets;
-    QWidget* m_draggedWidget = nullptr;
-    QTimer* m_refreshTimer;
-
-    static constexpr int GRID_SIZE = 3;
-    const QSize WIDGET_SIZE = QSize(300, 180);
+    GridManager* m_gridManager;
 };
 
 #endif // MAINWINDOW_H

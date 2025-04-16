@@ -14,11 +14,13 @@ public:
 
 public:
     void parse() override;
+
 private:
     void parseInterface(const QNetworkInterface& interface, QList<NetworkInfo*>& results);
     QString getIPv4Address(const QNetworkInterface& interface) const;
     QString getNetmask(const QNetworkInterface& interface) const;
     QString getBroadcast(const QNetworkInterface& interface) const;
+
 protected:
     virtual bool validate(QVariant& result, QStringList& warnings) override;
 };

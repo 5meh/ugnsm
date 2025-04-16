@@ -19,16 +19,29 @@ add_subdirectory(UI)
 add_subdirectory(Utilities)
 add_subdirectory(Resources)
 
+set(MAIN_SOURCES
+    main.cpp
+    mainwindow.cpp
+)
+
 # Main executable
-qt_add_executable(ugnsm)
+qt_add_executable(ugnsm
+    ${MAIN_SOURCES}
+    $<TARGET_OBJECTS:ResourceLibrary>
+)
+
 target_link_libraries(ugnsm PRIVATE
     CoreLibrary
     UILibrary
     UtilitiesLibrary
     Qt6::Widgets
     Qt6::Network
+    Qt6::Gui
 )
 
+target_include_directories(ugnsm PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 install(TARGETS ugnsm
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     BUNDLE DESTINATION .

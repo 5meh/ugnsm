@@ -15,7 +15,7 @@ public:
     void stopMonitoring();
 
 signals:
-    void statsUpdated(const QString& interfaceName,
+    void statsUpdated(const QString& mac,
                       quint64 downloadSpeedBps,
                       quint64 uploadSpeedBps);
 // public slots:
@@ -23,7 +23,6 @@ signals:
 
 private slots:
     void refreshStats();
-
 
 private:
     struct InterfaceStats

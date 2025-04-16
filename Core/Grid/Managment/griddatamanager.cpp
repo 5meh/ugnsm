@@ -4,18 +4,33 @@
 #include "../../Network/Information/networkinfomodel.h"
 #include "../Utilities/Parser/networkethernetparser.h"
 #include "../Network/NetworkSortingStrategies/speedsortstrategy.h"
+#include "../Network/Monitoring/networkmonitor.h"
 
 #include <QTimer>
 
-GridDataManager::GridDataManager(IParser *parser, INetworkSortStrategy *sorter, QObject *parent)
-    : m_parser(new NetworkEthernetParser(new SpeedSortStrategy(this)), this),
+GridDataManager::GridDataManager(IParser* parser, INetworkSortStrategy* sorter, QObject* parent)
+    : m_monitor{new NetworkMonitor{this}},//TODO: mb use "old" syntaxis
+    m_sorter{new SpeedSortStrategy{this}},
+    m_parser{new NetworkEthernetParser{m_sorter, this}},
     QObject{parent}
 {
     connect(m_parser, &IParser::parsingCompleted,
             this, &GridDataManager::handleParsingCompleted);
-    QTimer* timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &GridDataManager::refreshGrid);
-    timer->start(5000);
+    connect(m_monitor, &NetworkMonitor::statsUpdated,
+            this, &GridDataManager::handleNetworkStats);
+
+    QTimer* refreshTimer = new QTimer(this);
+    connect(refreshTimer, &QTimer::timeout, this, &GridDataManager::refreshData);
+    refreshTimer->start(5000);
+    m_monitor->startMonitoring(1000);
+
+    // Initial data load
+    QMetaObject::invokeMethod(this, "refreshData", Qt::QueuedConnection);
+}
+
+GridDataManager::~GridDataManager()
+{
+    clearGrid();
 }
 
 NetworkInfoModel* GridDataManager::cellData(int row, int col) const
@@ -25,58 +40,104 @@ NetworkInfoModel* GridDataManager::cellData(int row, int col) const
     return nullptr;
 }
 
-void GridDataManager::initializeData(int rows, int cols)
+int GridDataManager::getRows() const
 {
-    for(auto& row : m_data)
-        qDeleteAll(row);
-    m_data.clear();
+    return m_data.size();
+}
 
-    QList<QNetworkInterface> interfaces = getSortedInterfaces();
+int GridDataManager::getCols() const
+{
+    return m_data.isEmpty() ? 0 : m_data[0].size();
+}
 
+void GridDataManager::initializeGrid(int rows, int cols)
+{
+    clearGrid();
     m_data.resize(rows);
-    for(int i=0; i<rows; ++i)
+    for(auto& row : m_data)
     {
-        m_data[i].resize(cols);
-        for(int j=0; j<cols; ++j)
-        {
-            int idx = i*cols + j;
-            NetworkInfo* info = idx < interfaces.size() ?
-                                    new NetworkInfo(interfaces[idx], this) :
-                                    new NetworkInfo(/* dummy */);
-            m_data[i][j] = new NetworkInfoModel(info, this);
-        }
+        row.resize(cols);
     }
+    emit gridDimensionsChanged();
+    refreshData();
+}
+
+void GridDataManager::swapCells(int fromRow, int fromCol, int toRow, int toCol)
+{
+    if(fromRow < 0 || fromRow >= getRows() || fromCol < 0 || fromCol >= getCols() ||
+        toRow < 0 || toRow >= getRows() || toCol < 0 || toCol >= getCols())
+        return;
+
+    qSwap(m_data[fromRow][fromCol], m_data[toRow][toCol]);
     emit modelChanged();
 }
 
-QList<QNetworkInterface> GridDataManager::getSortedInterfaces() const
+void GridDataManager::handleParsingCompleted(const QVariant& result)
 {
-    QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
+    QList<NetworkInfo*> newData = result.value<QList<NetworkInfo*>>();
+    m_sorter->sort(newData);
 
-    QList<QNetworkInterface> ethernet;
-    for(const QNetworkInterface& iface : interfaces)
+    clearGrid();
+    const int maxItems = qMin(newData.size(), 9);
+    const int numRows = getRows();
+    const int numCols = getCols();
+
+    if(numRows == 0 || numCols == 0) return;
+
+    int itemIndex = 0;
+    for(int row = 0; row < numRows && itemIndex < maxItems; ++row)
     {
-        if(iface.type() == QNetworkInterface::Ethernet &&
-            !iface.flags().testFlag(QNetworkInterface::IsLoopBack))
+        m_data[row].resize(numCols);
+        for(int col = 0; col < numCols && itemIndex < maxItems; ++col)
         {
-            ethernet.append(iface);//TODO:rework initialization
+            NetworkInfo* info = newData[itemIndex];
+            m_data[row][col] = new NetworkInfoModel(info, this);
+            ++itemIndex;
         }
     }
 
+    for(int i = maxItems; i < newData.size(); ++i)
+        delete newData[i];
 
-
-    return ethernet.mid(0, 9); // Max 9 best interfaces
+    updateMacMap();
+    emit modelChanged();
 }
 
-void GridDataManager::refreshGrid()
+void GridDataManager::handleNetworkStats(const QString& mac, quint64 rxSpeed, quint64 txSpeed)
 {
-    initializeData(m_data.size(), m_data.isEmpty() ? 0 : m_data[0].size());
+    if(m_macMap.contains(mac))
+    {
+        NetworkInfoModel* model = m_macMap[mac];
+        model->updateSpeeds(rxSpeed, txSpeed);
+    }
 }
 
-void GridDataManager::handleParsingCompleted(const QVariant &result)
+void GridDataManager::refreshData()
 {
-    m_networkData = result.value<QList<NetworkInfo*>>();
-    if(m_sorter)
-        m_sorter->sort(m_networkData);
-    initializeGrid();
+    if(m_parser)
+        m_parser->parse();
+}
+
+void GridDataManager::clearGrid()
+{
+    for(auto& row : m_data)
+    {
+        qDeleteAll(row);
+        row.clear();
+    }
+    m_data.clear();
+    m_macMap.clear();
+}
+
+void GridDataManager::updateMacMap()
+{
+    m_macMap.clear();
+    for(const auto& row : m_data)
+    {
+        for(NetworkInfoModel* model : row)
+        {
+            if(model  && !model->getMac().isEmpty())
+                m_macMap.insert(model->getMac(), model);
+        }
+    }
 }
