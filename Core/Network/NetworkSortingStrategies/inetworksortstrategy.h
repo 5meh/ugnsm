@@ -3,6 +3,13 @@
 
 #include <QObject>
 
+enum class SortStrategyType
+{
+    Speed,
+    Stability,
+    Default = Speed
+};
+
 class NetworkInfo;
 
 class INetworkSortStrategy : public QObject
@@ -12,6 +19,8 @@ public:
     explicit INetworkSortStrategy(QObject *parent = nullptr);
     virtual ~INetworkSortStrategy() = default;
     virtual void sort(QList<NetworkInfo*>& networks) = 0;
+
+     static INetworkSortStrategy* create(SortStrategyType type, QObject* parent = nullptr);
 };
 
 #endif // INETWORKSORTSTRATEGY_H

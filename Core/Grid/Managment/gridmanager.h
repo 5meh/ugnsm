@@ -7,6 +7,10 @@ class GridDataManager;
 class GridViewManager;
 class IParser;
 class INetworkSortStrategy;
+class ParserType;
+class SortStrategyType;
+
+class ComponentSystem;
 
 class GridManager : public QObject
 {
@@ -14,16 +18,14 @@ class GridManager : public QObject
     Q_PROPERTY(int rows READ getRows NOTIFY gridDimensionsChanged)
     Q_PROPERTY(int cols READ getCols NOTIFY gridDimensionsChanged)
 public:
-    GridManager(IParser* parser,
-                INetworkSortStrategy* sorter,
-                QObject *parent = nullptr);
+    GridManager(ComponentSystem& system, QObject* parent = nullptr);
     virtual ~GridManager();
 
     int getRows() const;
     int getCols() const;
     void setGridDimensions(int rows, int cols);
 
-    GridViewManager* view() const;
+    GridViewManager* getView() const;
 
 signals:
     void gridDimensionsChanged();

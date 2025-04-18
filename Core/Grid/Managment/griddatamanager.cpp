@@ -8,7 +8,7 @@
 
 #include <QTimer>
 
-GridDataManager::GridDataManager(IParser* parser, INetworkSortStrategy* sorter, QObject* parent)
+GridDataManager::GridDataManager(ComponentSystem& system, QObject* parent)
     : m_monitor{new NetworkMonitor{this}},//TODO: mb use "old" syntaxis
     m_sorter{new SpeedSortStrategy{this}},
     m_parser{new NetworkEthernetParser{m_sorter, this}},

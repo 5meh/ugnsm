@@ -1,6 +1,13 @@
 #ifndef IPARSER_H
 #define IPARSER_H
 
+enum class ParserType
+{
+    Ethernet,
+    Wireless,
+    Default = Ethernet
+};
+
 #include <QObject>
 #include <QVariant>
 
@@ -12,6 +19,8 @@ public:
     virtual ~IParser() = default;
 
     virtual void parse() = 0;
+
+    static IParser* create(ParserType type, INetworkSortStrategy* sorter, QObject* parent = nullptr);
 
 signals:
     void parsingCompleted(QVariant result);

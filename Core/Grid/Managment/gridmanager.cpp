@@ -2,13 +2,12 @@
 #include "../../../UI/Components/Grid/GridViewManager/gridviewmanager.h"
 #include "griddatamanager.h"
 
-GridManager::GridManager(IParser* parser,
-                         INetworkSortStrategy* sorter,
-                         QObject *parent)
-    : m_dataManager{new GridDataManager(parser, sorter, this)},
-    m_viewManager{new GridViewManager()},
-    QObject{parent}
+GridManager::GridManager(ComponentSystem& system, QObject* parent)
+    :m_viewManager(new GridViewManager(this)),
+    QObject(parent)
 {
+    m_dataManager = new GridDataManager(m_parser, m_sorter, this);
+
     connect(m_dataManager, &GridDataManager::modelChanged,
             this, &GridManager::handleModelChanged);
     connect(m_dataManager, &GridDataManager::gridDimensionsChanged,
@@ -46,12 +45,12 @@ void GridManager::initializeView()
     handleModelChanged();
 }
 
-GridViewManager* GridManager::view() const
-{
-    return m_viewManager.data();
-}
-
 void GridManager::handleSwapRequest(int fr, int fc, int tr, int tc)
 {
     m_dataManager->swapCells(fr, fc, tr, tc);
+}
+
+GridViewManager* GridManager::getView() const
+{
+    return m_viewManager.data();
 }
