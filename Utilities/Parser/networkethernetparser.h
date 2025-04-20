@@ -5,13 +5,12 @@
 #include <QNetworkInterface>
 
 class NetworkInfo;
-class INetworkSortStrategy;
 
 class NetworkEthernetParser: public IParser
 {
 public:
-    NetworkEthernetParser(INetworkSortStrategy*, QObject* parent = nullptr);
-
+    NetworkEthernetParser(QObject* parent = nullptr);
+    virtual ~NetworkEthernetParser() = default;
 public:
     void parse() override;
 

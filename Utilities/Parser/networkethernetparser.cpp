@@ -2,9 +2,8 @@
 
 #include "../Core/Network/NetworkSortingStrategies/speedsortstrategy.h"
 
-NetworkEthernetParser::NetworkEthernetParser(INetworkSortStrategy* sorter, QObject* parent)
-    : IParser(parent),
-    m_sorter(new SpeedSortStrategy(this))
+NetworkEthernetParser::NetworkEthernetParser(QObject* parent)
+    : IParser(parent)
 {
 
 }
@@ -27,8 +26,6 @@ void NetworkEthernetParser::parse()
     QVariant result = QVariant::fromValue(results);
     if(validate(result, warnings))
     {
-        if(m_sorter)
-            m_sorter->sort(results);
         emit parsingCompleted(result);
     }
     else

@@ -20,8 +20,6 @@ public:
 
     virtual void parse() = 0;
 
-    static IParser* create(ParserType type, INetworkSortStrategy* sorter, QObject* parent = nullptr);
-
 signals:
     void parsingCompleted(QVariant result);
     void parsingFailed(QString error);

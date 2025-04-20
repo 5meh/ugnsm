@@ -5,13 +5,14 @@
 #include "../Utilities/Parser/networkethernetparser.h"
 #include "../Network/NetworkSortingStrategies/speedsortstrategy.h"
 #include "../Network/Monitoring/networkmonitor.h"
+#include "../../componentsystem.h"
 
 #include <QTimer>
 
 GridDataManager::GridDataManager(ComponentSystem& system, QObject* parent)
     : m_monitor{new NetworkMonitor{this}},//TODO: mb use "old" syntaxis
-    m_sorter{new SpeedSortStrategy{this}},
-    m_parser{new NetworkEthernetParser{m_sorter, this}},
+    m_sorter{system.create<INetworkSortStrategy>()},
+    m_parser{system.create<IParser>()},
     QObject{parent}
 {
     connect(m_parser, &IParser::parsingCompleted,

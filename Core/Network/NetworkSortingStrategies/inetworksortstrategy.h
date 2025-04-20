@@ -19,8 +19,6 @@ public:
     explicit INetworkSortStrategy(QObject *parent = nullptr);
     virtual ~INetworkSortStrategy() = default;
     virtual void sort(QList<NetworkInfo*>& networks) = 0;
-
-     static INetworkSortStrategy* create(SortStrategyType type, QObject* parent = nullptr);
 };
 
 #endif // INETWORKSORTSTRATEGY_H

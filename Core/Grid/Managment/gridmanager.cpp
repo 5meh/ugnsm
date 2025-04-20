@@ -6,7 +6,7 @@ GridManager::GridManager(ComponentSystem& system, QObject* parent)
     :m_viewManager(new GridViewManager(this)),
     QObject(parent)
 {
-    m_dataManager = new GridDataManager(m_parser, m_sorter, this);
+    m_dataManager = new GridDataManager(system, this);
 
     connect(m_dataManager, &GridDataManager::modelChanged,
             this, &GridManager::handleModelChanged);

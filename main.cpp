@@ -9,10 +9,11 @@
 
 void configureSystem(ComponentSystem& system)
 {
-    system.configure<SpeedSortStrategy>();
-    system.configure<NetworkEthernetParser>(
-        system.create<SpeedSortStrategy>()
-        );
+    system.register_interface<INetworkSortStrategy, SpeedSortStrategy>();
+    system.register_interface<IParser,       NetworkEthernetParser>();
+
+    // Register components with dependencies
+    //system.register_component<NetworkEthernetParser, INetworkSortStrategy>();
 }
 
 int main(int argc, char *argv[])
