@@ -18,7 +18,7 @@ class GridManager : public QObject
     Q_PROPERTY(int rows READ getRows NOTIFY gridDimensionsChanged)
     Q_PROPERTY(int cols READ getCols NOTIFY gridDimensionsChanged)
 public:
-    GridManager(ComponentSystem& system, QObject* parent = nullptr);
+    GridManager(QObject* parent = nullptr);
     virtual ~GridManager();
 
     int getRows() const;

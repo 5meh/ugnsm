@@ -13,6 +13,7 @@
 #include <QApplication>
 
 #include "../../../../Utilities/Delegates/ledindicatordelegate.h"
+#include "../../../../Utilities/LedIndicator/ledindicator.h"
 //#include "networkinfo.h"
 #include "../../../../Core/Network/Information/networkinfomodel.h"
 
@@ -23,7 +24,6 @@ NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfoModel *viewModel, QFrame
     setupUI();
     setStyleSheet("background-color: white; border-radius: 8px;");
 }
-
 
 NetworkInfoViewWidget::~NetworkInfoViewWidget()
 {

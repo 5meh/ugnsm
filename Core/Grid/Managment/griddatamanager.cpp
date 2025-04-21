@@ -2,17 +2,22 @@
 
 #include "../../Network/Information/networkinfo.h"
 #include "../../Network/Information/networkinfomodel.h"
+#include "../Utilities/Parser/iparser.h"
+#include "../NetworkSortingStrategies/inetworksortstrategy.h"
 #include "../Utilities/Parser/networkethernetparser.h"
+
+
 #include "../Network/NetworkSortingStrategies/speedsortstrategy.h"
 #include "../Network/Monitoring/networkmonitor.h"
-#include "../../componentsystem.h"
+//#include "../../componentsystem.h"
+#include "../../componentregistry.h"
 
 #include <QTimer>
 
 GridDataManager::GridDataManager(ComponentSystem& system, QObject* parent)
     : m_monitor{new NetworkMonitor{this}},//TODO: mb use "old" syntaxis
-    m_sorter{system.create<INetworkSortStrategy>()},
-    m_parser{system.create<IParser>()},
+    m_sorter{ComponentRegistry::create<INetworkSortStrategy>()},
+    m_parser{ComponentRegistry::create<IParser>();},
     QObject{parent}
 {
     connect(m_parser, &IParser::parsingCompleted,

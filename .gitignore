@@ -56,3 +56,7 @@ compile_commands.json
 
 jetson.img
 
+cmakelists_full_dump.txt
+cmakelists_paths.txt
+project_dump.txt
+project_dump2.txt

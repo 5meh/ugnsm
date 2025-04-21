@@ -6,13 +6,13 @@
 
 class GridManager;
 class QResizeEvent;
-class ComponentSystem;
+//class ComponentSystem;
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit MainWindow(ComponentSystem& system, QWidget* parent = nullptr);
+    explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow() override;
 
     GridManager* gridManager() const { return m_gridManager.data(); }

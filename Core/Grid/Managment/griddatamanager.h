@@ -11,13 +11,11 @@ class IParser;
 class INetworkSortStrategy;
 class NetworkMonitor;
 
-class ComponentSystem;
-
 class GridDataManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit GridDataManager(ComponentSystem& system, QObject* parent = nullptr);
+    explicit GridDataManager(QObject* parent = nullptr);
     virtual ~GridDataManager();
     NetworkInfoModel* cellData(int row, int col) const;
 

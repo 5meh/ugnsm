@@ -16,6 +16,7 @@ target_include_directories(UILibrary PUBLIC
 
 target_link_libraries(UILibrary PUBLIC
     CoreLibrary
+    UtilitiesLibrary
     Qt6::Widgets
     Qt6::Gui
 )

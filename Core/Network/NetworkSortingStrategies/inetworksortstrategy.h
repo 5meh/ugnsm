@@ -2,13 +2,7 @@
 #define INETWORKSORTSTRATEGY_H
 
 #include <QObject>
-
-enum class SortStrategyType
-{
-    Speed,
-    Stability,
-    Default = Speed
-};
+#include <QtPlugin>
 
 class NetworkInfo;
 
@@ -20,5 +14,9 @@ public:
     virtual ~INetworkSortStrategy() = default;
     virtual void sort(QList<NetworkInfo*>& networks) = 0;
 };
+
+#define INetworkSortStrategy_iid "com.ugnsm.INetworkSortStrategy"
+Q_DECLARE_INTERFACE(INetworkSortStrategy, INetworkSortStrategy_iid)
+
 
 #endif // INETWORKSORTSTRATEGY_H

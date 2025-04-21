@@ -1,15 +1,9 @@
 #ifndef IPARSER_H
 #define IPARSER_H
 
-enum class ParserType
-{
-    Ethernet,
-    Wireless,
-    Default = Ethernet
-};
-
 #include <QObject>
 #include <QVariant>
+#include <QtPlugin>
 
 class IParser : public QObject
 {
@@ -26,7 +20,11 @@ signals:
     void validationErrors(QStringList warnings);
 
 protected:
-       virtual bool validate(QVariant& result, QStringList& warnings) = 0;
+    virtual bool validate(QVariant& result, QStringList& warnings) = 0;
 };
+
+#define IParser_iid "com.ugnsm.IParser"
+Q_DECLARE_INTERFACE(IParser, IParser_iid)
+
 
 #endif // IPARSER_H

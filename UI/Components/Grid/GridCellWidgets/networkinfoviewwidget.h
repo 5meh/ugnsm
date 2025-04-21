@@ -23,8 +23,6 @@ public:
 
 public slots:
     void updateNetworkInfoDisplay();
-protected:
-    void paintEvent(QPaintEvent* event) override;
 private:
     void updateStatusIndicator(QStandardItem* item, const QString& key,
                                const QString& value);

@@ -8,10 +8,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Network Gui)
 
-# Add subdirectories
 add_subdirectory(Core)
 add_subdirectory(UI)
 add_subdirectory(Utilities)
@@ -19,13 +19,16 @@ add_subdirectory(Resources)
 
 set(MAIN_SOURCES
     main.cpp
+    mainwindow.h
     mainwindow.cpp
 )
 
 # Main executable
 qt_add_executable(ugnsm
     ${MAIN_SOURCES}
-    $<TARGET_OBJECTS:ResourceLibrary>
+    $<TARGET_OBJECTS:ResourceLibrary>   
+    $<TARGET_OBJECTS:CoreLibrary>
+    $<TARGET_OBJECTS:UILibrary>
 )
 
 target_link_libraries(ugnsm PRIVATE

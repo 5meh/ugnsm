@@ -1,4 +1,6 @@
 file(GLOB_RECURSE CORE_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/componentregistry.cpp"     
+    "${CMAKE_CURRENT_SOURCE_DIR}/componentregistry.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Grid/Management/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Grid/Management/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Network/Information/*.cpp"
@@ -23,4 +25,5 @@ target_link_libraries(CoreLibrary PUBLIC
     Qt6::Core
     Qt6::Network
     Qt6::Widgets
+    Qt6::Gui
 )

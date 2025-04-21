@@ -6,12 +6,12 @@
 #include <QStatusBar>
 #include <QMessageBox>
 
-MainWindow::MainWindow(ComponentSystem& system, QWidget* parent)
+MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
     //setWindowIcon(QIcon(":/icons/app_icon"));
 
-    m_gridManager.reset(new GridManager(system, this));
+    m_gridManager.reset(new GridManager(this));
     setupUI();
     setupConnections();
     updateWindowTitle();

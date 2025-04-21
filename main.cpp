@@ -1,29 +1,25 @@
 #include "mainwindow.h"
 
-#include "componentsystem.h"
+#include "componentregistry.h"
 
 #include "Core/Network/NetworkSortingStrategies/speedsortstrategy.h"
 #include "Utilities/Parser/networkethernetparser.h"
 
 #include <QApplication>
 
-void configureSystem(ComponentSystem& system)
+void configureSystem()
 {
-    system.register_interface<INetworkSortStrategy, SpeedSortStrategy>();
-    system.register_interface<IParser,       NetworkEthernetParser>();
-
-    // Register components with dependencies
-    //system.register_component<NetworkEthernetParser, INetworkSortStrategy>();
+    ComponentRegistry::registerComponent<INetworkSortStrategy, SpeedSortStrategy>();
+    ComponentRegistry::registerComponent<IParser, NetworkEthernetParser>();
 }
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    ComponentSystem system;
-    configureSystem(system);
+    configureSystem();
 
-    MainWindow w(system);
+    MainWindow w;
     w.show();
     return a.exec();
 }

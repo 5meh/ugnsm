@@ -8,8 +8,10 @@ class NetworkInfo;
 
 class NetworkEthernetParser: public IParser
 {
+    Q_OBJECT
+    Q_INTERFACES(IParser)
 public:
-    NetworkEthernetParser(QObject* parent = nullptr);
+    Q_INVOKABLE NetworkEthernetParser(QObject* parent = nullptr);
     virtual ~NetworkEthernetParser() = default;
 public:
     void parse() override;
@@ -23,7 +25,5 @@ private:
 protected:
     virtual bool validate(QVariant& result, QStringList& warnings) override;
 };
-
-Q_DECLARE_METATYPE(QList<NetworkInfo*>)
 
 #endif // NETWORKETHERNETPARSER_H

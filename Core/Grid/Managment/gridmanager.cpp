@@ -2,11 +2,11 @@
 #include "../../../UI/Components/Grid/GridViewManager/gridviewmanager.h"
 #include "griddatamanager.h"
 
-GridManager::GridManager(ComponentSystem& system, QObject* parent)
+GridManager::GridManager(QObject* parent)
     :m_viewManager(new GridViewManager(this)),
     QObject(parent)
 {
-    m_dataManager = new GridDataManager(system, this);
+    m_dataManager = new GridDataManager(this);
 
     connect(m_dataManager, &GridDataManager::modelChanged,
             this, &GridManager::handleModelChanged);
