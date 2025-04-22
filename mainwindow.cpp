@@ -1,6 +1,7 @@
 #include "mainwindow.h"
-#include "Core/Grid/Managment/gridmanager.h"
 #include "UI/Components/Grid/GridViewManager/gridviewmanager.h"
+#include "Core/Grid/Managment/gridmanager.h"
+
 
 #include <QResizeEvent>
 #include <QStatusBar>

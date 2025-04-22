@@ -1,6 +1,7 @@
 #include "networkethernetparser.h"
 
 #include "../Core/Network/NetworkSortingStrategies/speedsortstrategy.h"
+#include "../Core/Network/Information/networkinfo.h"
 
 NetworkEthernetParser::NetworkEthernetParser(QObject* parent)
     : IParser(parent)
@@ -34,6 +35,11 @@ void NetworkEthernetParser::parse()
         emit parsingFailed(warnings.join("; "));
         qDeleteAll(results); // Cleanup invalid data
     }
+}
+
+void NetworkEthernetParser::parseInterface(const QNetworkInterface& interface, QList<NetworkInfo*>& results)
+{
+
 }
 
 bool NetworkEthernetParser::validate(QVariant& result, QStringList& warnings)

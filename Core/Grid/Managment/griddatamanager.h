@@ -6,6 +6,8 @@
 #include <QHash>
 #include <QNetworkInterface>
 
+#include "../Utilities/Parser/iparser.h"
+
 class NetworkInfoModel;
 class IParser;
 class INetworkSortStrategy;
@@ -40,7 +42,7 @@ private:
     void updateMacMap();
 
     NetworkMonitor* m_monitor;
-    std::shared_ptr<NetworkEthernetParser> m_parser;
+    std::shared_ptr<IParser> m_parser;
     std::shared_ptr<INetworkSortStrategy> m_sorter;
     QVector<QVector<NetworkInfoModel*>> m_data;
     QHash<QString, NetworkInfoModel*> m_macMap;

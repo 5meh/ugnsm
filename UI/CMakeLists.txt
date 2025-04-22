@@ -12,6 +12,7 @@ target_include_directories(UILibrary PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/Components/Grid
     ${CMAKE_CURRENT_SOURCE_DIR}/Components/Grid/GridCellWidgets
     ${CMAKE_CURRENT_SOURCE_DIR}/Components/Grid/GridViewManager
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Core  # For GridManager
 )
 
 target_link_libraries(UILibrary PUBLIC

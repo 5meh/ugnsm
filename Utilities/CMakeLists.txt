@@ -1,6 +1,9 @@
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 file(GLOB_RECURSE UTILS_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/Parsers/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Parsers/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Parser/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Parser/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/LedIndicator/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/LedIndicator/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Delegates/*.cpp"
@@ -11,9 +14,16 @@ add_library(UtilitiesLibrary STATIC ${UTILS_SOURCES})
 
 target_include_directories(UtilitiesLibrary PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/Parsers
+    ${CMAKE_CURRENT_SOURCE_DIR}/Parser
     ${CMAKE_CURRENT_SOURCE_DIR}/LedIndicator
     ${CMAKE_CURRENT_SOURCE_DIR}/Delegates
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Core  # For NetworkInfo
 )
 
-target_link_libraries(UtilitiesLibrary PUBLIC Qt6::Core Qt6::Widgets Qt6::Gui)
+target_link_libraries(UtilitiesLibrary PUBLIC
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Gui
+    Qt6::Network
+    CoreLibrary  # Link to Core
+)
