@@ -29,6 +29,8 @@ public:
 signals:
     void modelChanged();
     void gridDimensionsChanged();
+    void parsingFailed(const QStringList& warnings);
+    void networkHighlightChanged(int row, int col);
 
 private slots:
     void handleParsingCompleted(const QVariant& result);

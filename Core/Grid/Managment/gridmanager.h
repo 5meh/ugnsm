@@ -36,6 +36,9 @@ private slots:
 
 private:
     void initializeView();
+    void initializeData();
+    void setupGridManager();
+    void setupConnections();
 
     GridDataManager* m_dataManager;
     QScopedPointer<GridViewManager> m_viewManager;

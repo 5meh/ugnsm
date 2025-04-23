@@ -29,7 +29,7 @@ GridDataManager::GridDataManager(QObject* parent)
     m_monitor->startMonitoring(1000);
 
     // Initial data load
-    QMetaObject::invokeMethod(this, "refreshData", Qt::QueuedConnection);
+    //QMetaObject::invokeMethod(this, "refreshData", Qt::QueuedConnection);
 }
 
 GridDataManager::~GridDataManager()
@@ -62,8 +62,9 @@ void GridDataManager::initializeGrid(int rows, int cols)
     {
         row.resize(cols);
     }
-    emit gridDimensionsChanged();
+
     refreshData();
+    emit gridDimensionsChanged();
 }
 
 void GridDataManager::swapCells(int fromRow, int fromCol, int toRow, int toCol)
