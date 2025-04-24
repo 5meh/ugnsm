@@ -6,6 +6,7 @@
 #include "Utilities/Parser/networkethernetparser.h"
 
 #include <QApplication>
+#include <QFile>
 
 void configureSystem()
 {
@@ -16,6 +17,12 @@ void configureSystem()
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    QFile styleFile(QStringLiteral("://styles.qss"));
+    if(styleFile.open(QFile::ReadOnly))
+    {
+        a.setStyleSheet(styleFile.readAll());
+    }
 
     configureSystem();
 

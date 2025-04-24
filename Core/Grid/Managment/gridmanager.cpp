@@ -62,8 +62,6 @@ void GridManager::setupConnections()
             this, &GridManager::gridDimensionsChanged);
     connect(m_viewManager.data(), &GridViewManager::cellSwapRequested,
             this, &GridManager::handleSwapRequest);
-    connect(m_viewManager.data(), &GridViewManager::cellSwapRequested,
-            this, &GridManager::handleSwapRequest);
 }
 
 GridViewManager* GridManager::getView() const

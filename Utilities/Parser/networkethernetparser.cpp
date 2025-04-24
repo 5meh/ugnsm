@@ -14,27 +14,46 @@ void NetworkEthernetParser::parse()
     QList<NetworkInfo*> results;
     QStringList warnings;
 
-    const QList<QNetworkInterface>  interfaces = QNetworkInterface::allInterfaces();
-    for(const QNetworkInterface& interface : interfaces)
+    const QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
+    for (const QNetworkInterface& interface : interfaces)
     {
-        if(interface.type() == QNetworkInterface::Ethernet &&
+        if (interface.type() == QNetworkInterface::Ethernet &&
             !interface.flags().testFlag(QNetworkInterface::IsLoopBack))
         {
             parseInterface(interface, results);
         }
     }
 
+    if (results.isEmpty())
+    {
+        warnings << "No Ethernet interfaces detected";
+    }
+
     QVariant result = QVariant::fromValue(results);
-    if(validate(result, warnings))
+
+    if (validate(result, warnings))
     {
         emit parsingCompleted(result);
+        results.clear();
     }
     else
     {
         qWarning() << "Validation failed:" << warnings;
+        QList<NetworkInfo*> validNetworks = result.value<QList<NetworkInfo*>>();
+
+        for (NetworkInfo* item : results)
+        {
+            if (!validNetworks.contains(item))
+            {
+                delete item;
+            }
+        }
+        qDeleteAll(validNetworks);
+
         emit parsingFailed(warnings.join("; "));
-        qDeleteAll(results); // Cleanup invalid data
     }
+
+    results.clear();
 }
 
 void NetworkEthernetParser::parseInterface(const QNetworkInterface& interface, QList<NetworkInfo*>& results)
@@ -86,34 +105,35 @@ bool NetworkEthernetParser::validate(QVariant& result, QStringList& warnings)
 {
     QList<NetworkInfo*> networks = result.value<QList<NetworkInfo*>>();
     QList<NetworkInfo*> validNetworks;
-    bool hasValid = false;
+    bool hasValid = true;
 
-    for(NetworkInfo* info : networks)
+    if (networks.isEmpty())
+    {
+        return false;
+    }
+
+    for (NetworkInfo* info : networks)
     {
         bool isValid = true;
-        if(info->getMac().isEmpty())
+        if (info->getMac().isEmpty())
         {
             warnings << "Invalid MAC for " + info->getName();
             isValid = false;
+            hasValid = false;
         }
-        if(info->getIpv4().isEmpty())
+        if (info->getIpv4().isEmpty())
         {
             warnings << "Missing IPv4 for " + info->getName();
             isValid = false;
+            hasValid = false;
         }
 
-        if(isValid)
+        if (isValid)
         {
             validNetworks.append(info);
-            hasValid = true;
-        }
-        else
-        {
-            delete info;
         }
     }
 
     result.setValue(validNetworks);
-
-    return hasValid;
+    return hasValid && !validNetworks.isEmpty();
 }

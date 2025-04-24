@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>crown.png</file>
+        <file>styles.qss</file>
     </qresource>
 </RCC>

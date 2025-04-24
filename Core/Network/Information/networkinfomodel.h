@@ -2,6 +2,7 @@
 #define NETWORKINFOMODEL_H
 
 #include <QObject>
+#include <QHash>
 
 class NetworkInfo;
 
@@ -22,6 +23,10 @@ public:
     explicit NetworkInfoModel(NetworkInfo* model, QObject* parent = nullptr);
 
     QList<QPair<QString, QString>> getAllKeyValuesAsList() const;
+    QPair<QString, QString> getKeyValue(const QString& key) const;
+    QStringList changedProperties() const;
+    void clearChangedProperties();
+
     QString getName() const;
     QString getMac() const;
     QString getIpAddress() const;
@@ -36,6 +41,8 @@ public slots:
     void updateSpeeds(quint64 rx, quint64 tx);
 
 signals:
+    void propertyChanged(const QString& propertyName);
+
     void nameChanged(const QString& name);
     void macChanged(const QString& mac);
     void ipAddressChanged(const QString& ip);
@@ -46,10 +53,13 @@ signals:
 
 private:
     void connectModelSignals();
+    void markPropertyChanged(const QString& property);
     QString formatTimestamp() const;
     QString formatSpeed(quint64 bytes) const;
 
     NetworkInfo* m_model;
+    QStringList m_changedProperties;
+    QHash<QString, QString> m_propertyMap;
 };
 
 #endif // NETWORKINFOMODEL_H

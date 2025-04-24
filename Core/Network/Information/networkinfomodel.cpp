@@ -5,22 +5,69 @@ NetworkInfoModel::NetworkInfoModel(NetworkInfo *model, QObject *parent)
     : QObject(parent),
     m_model(model)
 {
+    m_propertyMap =
+        {
+            {"name", "Interface"},
+            {"mac", "MAC Address"},
+            {"ipAddress", "IP Address"},
+            {"netmask", "Netmask"},
+            {"status", "Status"},
+            {"downloadSpeed", "Download Speed"},
+            {"uploadSpeed", "Upload Speed"},
+            {"totalSpeed", "Total Speed"},
+            {"lastUpdate", "Last Update"}
+        };
+
     connectModelSignals();
 }
 
 QList<QPair<QString, QString>> NetworkInfoModel::getAllKeyValuesAsList() const
 {
-    QList<QPair<QString, QString>> list;
-    list.append({"Interface", getName()});
-    list.append({"MAC Address", getMac()});
-    list.append({"IP Address", getIpAddress()});
-    list.append({"Netmask", getNetmask()});
-    list.append({"Status", getStatus()});
-    list.append({"Download Speed", getDownloadSpeed()});
-    list.append({"Upload Speed", getUploadSpeed()});
-    list.append({"Total Speed", getTotalSpeed()});
-    list.append({"Last Update", getLastUpdate()});
-    return list;
+    return
+        {
+            {m_propertyMap["name"], getName()},
+            {m_propertyMap["mac"], getMac()},
+            {m_propertyMap["ipAddress"], getIpAddress()},
+            {m_propertyMap["netmask"], getNetmask()},
+            {m_propertyMap["status"], getStatus()},
+            {m_propertyMap["downloadSpeed"], getDownloadSpeed()},
+            {m_propertyMap["uploadSpeed"], getUploadSpeed()},
+            {m_propertyMap["totalSpeed"], getTotalSpeed()},
+            {m_propertyMap["lastUpdate"], getLastUpdate()}
+        };
+}
+
+QPair<QString, QString> NetworkInfoModel::getKeyValue(const QString &key) const
+{
+    if(key == m_propertyMap["name"])
+        return {key, getName()};
+    if(key == m_propertyMap["mac"])
+        return {key, getMac()};
+    if(key == m_propertyMap["ipAddress"])
+        return {key, getIpAddress()};
+    if(key == m_propertyMap["netmask"])
+        return {key, getNetmask()};
+    if(key == m_propertyMap["status"])
+        return {key, getStatus()};
+    if(key == m_propertyMap["downloadSpeed"])
+        return {key, getDownloadSpeed()};
+    if(key == m_propertyMap["uploadSpeed"])
+        return {key, getUploadSpeed()};
+    if(key == m_propertyMap["totalSpeed"])
+        return {key, getTotalSpeed()};
+    if(key == m_propertyMap["lastUpdate"])
+        return {key, getLastUpdate()};
+    return {QString(), QString()};
+}
+
+QStringList NetworkInfoModel::changedProperties() const
+{
+    return m_changedProperties;
+}
+
+void NetworkInfoModel::clearChangedProperties()
+{
+    m_changedProperties.clear();
 }
 
 QString NetworkInfoModel::getName() const
@@ -73,7 +120,10 @@ void NetworkInfoModel::updateSpeeds(quint64 rx, quint64 tx)
     m_model->setRxSpeed(static_cast<qint64>(rx));
     m_model->setTxSpeed(static_cast<qint64>(tx));
     m_model->setLastUpdateTime(QDateTime::currentMSecsSinceEpoch());
-    emit speedChanged();
+    markPropertyChanged("downloadSpeed");
+    markPropertyChanged("uploadSpeed");
+    markPropertyChanged("totalSpeed");
+    markPropertyChanged("lastUpdate");
 }
 
 QString NetworkInfoModel::formatTimestamp() const
@@ -98,18 +148,43 @@ QString NetworkInfoModel::formatSpeed(quint64 bytes) const
 
 void NetworkInfoModel::connectModelSignals()
 {
-    connect(m_model, &NetworkInfo::nameChanged, this, &NetworkInfoModel::nameChanged);
-    connect(m_model, &NetworkInfo::macChanged, this, &NetworkInfoModel::macChanged);
-    connect(m_model, &NetworkInfo::ipv4Changed, this, [this]()
+    auto connectProperty = [this](const QString& property, auto signal)
+    {
+        connect(m_model, signal, this, [this, property]()
+                {
+                    markPropertyChanged(property);
+                });
+    };
+
+    connectProperty("name", &NetworkInfo::nameChanged);
+    connectProperty("mac", &NetworkInfo::macChanged);
+    connectProperty("ipAddress", &NetworkInfo::ipv4Changed);
+    connectProperty("netmask", &NetworkInfo::netmaskChanged);
+    connectProperty("status", &NetworkInfo::isUpChanged);
+
+    connect(m_model, &NetworkInfo::rxSpeedChanged, this, [this]()
             {
-                emit ipAddressChanged(getIpAddress());
+                markPropertyChanged("downloadSpeed");
+                markPropertyChanged("totalSpeed");
             });
-    connect(m_model, &NetworkInfo::netmaskChanged, this, [this]()
+
+    connect(m_model, &NetworkInfo::txSpeedChanged, this, [this]()
             {
-                emit netmaskChanged(getNetmask());
+                markPropertyChanged("uploadSpeed");
+                markPropertyChanged("totalSpeed");
             });
-    connect(m_model, &NetworkInfo::rxSpeedChanged, this, &NetworkInfoModel::speedChanged);
-    connect(m_model, &NetworkInfo::txSpeedChanged, this, &NetworkInfoModel::speedChanged);
-    connect(m_model, &NetworkInfo::lastUpdateTimeChanged, this, &NetworkInfoModel::timestampChanged);
-    connect(m_model, &NetworkInfo::isUpChanged, this, &NetworkInfoModel::statusChanged);
+
+    connect(m_model, &NetworkInfo::lastUpdateTimeChanged, this, [this]()
+            {
+                markPropertyChanged("lastUpdate");
+            });
+}
+
+void NetworkInfoModel::markPropertyChanged(const QString &property)
+{
+    if(!m_changedProperties.contains(property))
+    {
+        m_changedProperties.append(property);
+        emit propertyChanged(property);
+    }
 }

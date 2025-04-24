@@ -49,7 +49,6 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
     setUpdatesEnabled(false);
     keyValueTbl->setUpdatesEnabled(false);
 
-    //keyValModel->clear();
     QList<QPair<QString, QString>> currentData = m_viewModel->getAllKeyValuesAsList();
 
     for(int row = 0; row < keyValModel->rowCount(); ++row)
@@ -114,7 +113,6 @@ void NetworkInfoViewWidget::setupTableView()
     keyValueTbl->verticalHeader()->hide();
     keyValueTbl->horizontalHeader()->setStretchLastSection(true);
     keyValueTbl->setShowGrid(false);
-    //keyValModel->setHorizontalHeaderLabels({"Property", "Value"});
     setKeyValueTbl();
     connectViewModel();
     keyValueTbl->viewport()->installEventFilter(this);
