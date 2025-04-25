@@ -19,6 +19,10 @@ public:
     GridCellWidget* cellAt(int row, int col) const;
     void setCell(int row, int col, GridCellWidget* widget);
     void updateCell(int row, int col, NetworkInfoModel* model);
+    void clearCell(int row, int col);
+
+    int gridRows() const { return m_cells.size(); }
+    int gridCols() const { return m_cells.isEmpty() ? 0 : m_cells[0].size(); }
 
 signals:
     void cellSwapRequested(int fromRow, int fromCol, int toRow, int toCol);
@@ -37,6 +41,8 @@ private:
     void highlightCell(int row, int col);
     void clearHighlight();
     QPoint parseCellPosition(const QString& cellId) const;
+    void updateCellContent(int row, int col, NetworkInfoModel* model);
+    GridCellWidget* createCellWidgetForModel(NetworkInfoModel* model);
 
     QGridLayout* m_gridLayout;
     QVector<QVector<GridCellWidget*>> m_cells;

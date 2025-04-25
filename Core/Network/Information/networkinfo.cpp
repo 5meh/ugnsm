@@ -219,3 +219,24 @@ void NetworkInfo::resetLastUpdateTime()
 {
     setLastUpdateTime(0);
 }
+
+void NetworkInfo::updateFrom(const NetworkInfo* other)
+{
+    if(!other)
+        return;
+
+    // Only update if values actually change
+    setName(other->getName());
+    setMac(other->getMac());
+    setIsUp(other->getIsUp());
+    setTimestamp(other->getTimestamp());
+    setIpv4(other->getIpv4());
+    setNetmask(other->getNetmask());
+    setBroadcast(other->getBroadcast());
+    setIsRunning(other->isRunning());
+    setLastRxBytes(other->getLastRxBytes());
+    setLastTxBytes(other->getLastTxBytes());
+    setRxSpeed(other->getRxSpeed());
+    setTxSpeed(other->getTxSpeed());
+    setLastUpdateTime(other->getLastUpdateTime());
+}

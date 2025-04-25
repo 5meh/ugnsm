@@ -32,6 +32,9 @@ signals:
     void parsingFailed(const QStringList& warnings);
     void networkHighlightChanged(int row, int col);
 
+    void cellChanged(int row, int col);
+    void gridReset();
+
 private slots:
     void handleParsingCompleted(const QVariant& result);
     void handleNetworkStats(const QString& mac,

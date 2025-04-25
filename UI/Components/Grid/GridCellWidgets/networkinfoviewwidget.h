@@ -18,7 +18,10 @@ public:
     explicit NetworkInfoViewWidget(NetworkInfoModel* viewModel, QFrame* parent = nullptr);
     ~NetworkInfoViewWidget();
 
+    void setViewModel(NetworkInfoModel* model);//TODO:mb add Q_PROPERTY
+    const NetworkInfoModel* getModel()const;
     QString cellId() const override;
+    void updateProperty(const QString& propertyName);
     QString getMac() const;
 
 public slots:
@@ -26,6 +29,8 @@ public slots:
 private:
     void updateStatusIndicator(QStandardItem* item, const QString& key,
                                const QString& value);
+
+    void updateSpeedIndicators();
     //void resizeKeyValTable();
     void setupUI();
     void setKeyValueTbl();

@@ -70,6 +70,16 @@ void NetworkInfoModel::clearChangedProperties()
     m_changedProperties.clear();
 }
 
+void NetworkInfoModel::updateFromNetworkInfo(NetworkInfo* newInfo)
+{
+    if(!m_model || !newInfo)
+        return;
+
+    m_model->updateFrom(newInfo);
+
+    delete newInfo;//TODO:mb remove and use std::move
+}
+
 QString NetworkInfoModel::getName() const
 {
     return m_model->getName();

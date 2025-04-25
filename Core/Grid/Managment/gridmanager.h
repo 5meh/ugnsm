@@ -30,10 +30,6 @@ public:
 signals:
     void gridDimensionsChanged();
 
-private slots:
-    void handleModelChanged();
-    void handleSwapRequest(int fr, int fc, int tr, int tc);
-
 private:
     void initializeView();
     void initializeData();

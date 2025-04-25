@@ -22,10 +22,12 @@ class NetworkInfoModel : public QObject
 public:
     explicit NetworkInfoModel(NetworkInfo* model, QObject* parent = nullptr);
 
+    const QHash<QString, QString>& propertyMap() const { return m_propertyMap; }//TODO:mb remove
     QList<QPair<QString, QString>> getAllKeyValuesAsList() const;
     QPair<QString, QString> getKeyValue(const QString& key) const;
     QStringList changedProperties() const;
     void clearChangedProperties();
+    void updateFromNetworkInfo(NetworkInfo* newInfo);
 
     QString getName() const;
     QString getMac() const;

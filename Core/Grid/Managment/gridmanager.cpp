@@ -34,18 +34,12 @@ void GridManager::setGridDimensions(int rows, int cols)
 void GridManager::initializeView()
 {
     m_viewManager->setGridSize(getRows(), getCols());
-    handleModelChanged();
 }
 
 void GridManager::initializeData()
 {
     m_dataManager->initializeGrid(GRID_ROWS_DEFAULT, GRID_COLUMNS_DEFAUT);
     QMetaObject::invokeMethod(m_dataManager, "refreshData", Qt::QueuedConnection);
-}
-
-void GridManager::handleSwapRequest(int fr, int fc, int tr, int tc)
-{
-    m_dataManager->swapCells(fr, fc, tr, tc);
 }
 
 void GridManager::setupGridManager()
@@ -56,20 +50,26 @@ void GridManager::setupGridManager()
 
 void GridManager::setupConnections()
 {
-    connect(m_dataManager, &GridDataManager::modelChanged,
-            this, &GridManager::handleModelChanged);
+    connect(m_dataManager, &GridDataManager::cellChanged,
+            this, [this](int row, int col)
+            {
+                m_viewManager->setUpdatesEnabled(false);
+                m_viewManager->updateCell(row, col, m_dataManager->cellData(row, col));
+                m_viewManager->setUpdatesEnabled(true);
+            });
+
     connect(m_dataManager, &GridDataManager::gridDimensionsChanged,
-            this, &GridManager::gridDimensionsChanged);
-    connect(m_viewManager.data(), &GridViewManager::cellSwapRequested,
-            this, &GridManager::handleSwapRequest);
+            m_viewManager.get(), [this]()
+            {
+                m_viewManager->setGridSize(m_dataManager->getRows(),
+                                           m_dataManager->getCols());
+            });
+
+    connect(m_viewManager.get(), &GridViewManager::cellSwapRequested,
+            m_dataManager, &GridDataManager::swapCells);
 }
 
 GridViewManager* GridManager::getView() const
 {
     return m_viewManager.data();
-}
-
-void GridManager::handleModelChanged()
-{
-
 }

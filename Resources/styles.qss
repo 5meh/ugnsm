@@ -87,3 +87,19 @@ QTableView
     qproperty-verticalScrollMode: QAbstractItemView::ScrollPerPixel;
     qproperty-horizontalScrollMode: QAbstractItemView::ScrollPerPixel;
 }
+
+GridCellWidget
+{
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+NetworkInfoViewWidget
+{
+    opacity: 1;
+    transition: opacity 0.15s ease;
+}
+
+NetworkInfoViewWidget.updating
+{
+    opacity: 0.7;
+}

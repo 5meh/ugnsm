@@ -11,6 +11,7 @@
 #include <QPainter>
 #include <QList>
 #include <QApplication>
+#include <QTimer>
 
 #include "../../../../Utilities/Delegates/ledindicatordelegate.h"
 #include "../../../../Utilities/LedIndicator/ledindicator.h"
@@ -31,9 +32,108 @@ NetworkInfoViewWidget::~NetworkInfoViewWidget()
         keyValModel->deleteLater();
 }
 
+void NetworkInfoViewWidget::setViewModel(NetworkInfoModel* model)
+{
+    if (m_viewModel == model)
+        return;
+
+    // Disconnect old model signals
+    if (m_viewModel)
+    {
+        disconnect(m_viewModel, &NetworkInfoModel::propertyChanged,
+                   this, &NetworkInfoViewWidget::updateProperty);
+        disconnect(m_viewModel, &NetworkInfoModel::nameChanged,
+                   this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        disconnect(m_viewModel, &NetworkInfoModel::macChanged,
+                   this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        disconnect(m_viewModel, &NetworkInfoModel::ipAddressChanged,
+                   this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        disconnect(m_viewModel, &NetworkInfoModel::netmaskChanged,
+                   this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        disconnect(m_viewModel, &NetworkInfoModel::speedChanged,
+                   this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    }
+
+    m_viewModel = model;
+
+    // Connect new model signals
+    if (m_viewModel)
+    {
+        connect(m_viewModel, &NetworkInfoModel::propertyChanged,
+                this, &NetworkInfoViewWidget::updateProperty);
+        connect(m_viewModel, &NetworkInfoModel::nameChanged,
+                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        connect(m_viewModel, &NetworkInfoModel::macChanged,
+                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        connect(m_viewModel, &NetworkInfoModel::ipAddressChanged,
+                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        connect(m_viewModel, &NetworkInfoModel::netmaskChanged,
+                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        connect(m_viewModel, &NetworkInfoModel::speedChanged,
+                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    }
+
+    // Full UI refresh
+    updateNetworkInfoDisplay();
+}
+
+const NetworkInfoModel *NetworkInfoViewWidget::getModel() const
+{
+    return m_viewModel;
+}
+
 QString NetworkInfoViewWidget::cellId() const
 {
     return objectName();
+}
+
+void NetworkInfoViewWidget::updateProperty(const QString &propertyName)
+{
+    if (!m_viewModel)
+        return;
+
+    setUpdatesEnabled(false);
+
+    // Get mapped display property name
+    const QString displayName = m_viewModel->propertyMap().key(propertyName);
+    const QPair<QString, QString> data = m_viewModel->getKeyValue(displayName);
+
+    // Find and update specific row
+    for (int row = 0; row < keyValModel->rowCount(); ++row)
+    {
+        QStandardItem* paramItem = keyValModel->item(row, 0);
+        if (paramItem->text() == data.first)
+        {
+            // Update value column
+            QStandardItem* valueItem = keyValModel->item(row, 1);
+            valueItem->setText(data.second);
+
+            // Update status indicator if needed
+            QStandardItem* statusItem = keyValModel->item(row, 2);
+            updateStatusIndicator(statusItem, data.first, data.second);
+
+            break;
+        }
+    }
+
+    // Special handling for speed updates
+    if (propertyName == "downloadSpeed" ||
+        propertyName == "uploadSpeed" ||
+        propertyName == "totalSpeed")
+    {
+        updateSpeedIndicators();
+    }
+
+    // Visual update feedback
+    setProperty("updating", true);
+    QTimer::singleShot(150, this, [this]()
+                       {
+                           setProperty("updating", false);
+                           style()->unpolish(this);
+                           style()->polish(this);
+                       });
+
+    setUpdatesEnabled(true);
 }
 
 QString NetworkInfoViewWidget::getMac() const
@@ -138,6 +238,22 @@ void NetworkInfoViewWidget::updateStatusIndicator(QStandardItem *item, const QSt
     else
     {
         item->setData(-1, Qt::UserRole);
+    }
+}
+
+void NetworkInfoViewWidget::updateSpeedIndicators()
+{
+    QPair<QString, QString> rxSpeed = m_viewModel->getKeyValue("RX Speed");
+    QPair<QString, QString> txSpeed = m_viewModel->getKeyValue("TX Speed");
+
+    for(int row = 0; row < keyValModel->rowCount(); ++row)
+    {
+        QStandardItem* paramItem = keyValModel->item(row, 0);
+        if(paramItem->text() == "RX Speed" || paramItem->text() == "TX Speed")
+        {
+            QStandardItem* valueItem = keyValModel->item(row, 1);
+            valueItem->setText(paramItem->text() == "RX Speed" ? rxSpeed.second : txSpeed.second);
+        }
     }
 }
 

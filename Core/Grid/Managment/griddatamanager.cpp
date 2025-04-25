@@ -80,32 +80,98 @@ void GridDataManager::swapCells(int fromRow, int fromCol, int toRow, int toCol)
 void GridDataManager::handleParsingCompleted(const QVariant& result)
 {
     QList<NetworkInfo*> newData = result.value<QList<NetworkInfo*>>();
-    m_sorter->sort(newData);
 
-    clearGrid();
-    const int maxItems = qMin(newData.size(), 9);
-    const int numRows = getRows();
-    const int numCols = getCols();
-
-    if(numRows == 0 || numCols == 0) return;
-
-    int itemIndex = 0;
-    for(int row = 0; row < numRows && itemIndex < maxItems; ++row)
+    // Track MAC addresses from new data
+    QSet<QString> newMacs;
+    for(auto* info : newData)
     {
-        m_data[row].resize(numCols);
-        for(int col = 0; col < numCols && itemIndex < maxItems; ++col)
+        newMacs.insert(info->getMac());
+    }
+
+    // Phase 1: Update existing models
+    for(int row = 0; row < m_data.size(); ++row)
+    {
+        for(int col = 0; col < m_data[row].size(); ++col)
         {
-            NetworkInfo* info = newData[itemIndex];
-            m_data[row][col] = new NetworkInfoModel(info, this);
-            ++itemIndex;
+            if(NetworkInfoModel* model = m_data[row][col])
+            {
+                if(newMacs.contains(model->getMac()))
+                {
+                    // Model will be updated in place
+                    emit cellChanged(row, col);
+                }
+                else
+                {
+                    // Remove obsolete models
+                    delete model;
+                    m_data[row][col] = nullptr;
+                    emit cellChanged(row, col);
+                }
+            }
         }
     }
 
-    for(int i = maxItems; i < newData.size(); ++i)
-        delete newData[i];
+    // Phase 2: Insert/Update network info
+    int itemIndex = 0;
+    for(int row = 0; row < m_data.size(); ++row)
+    {
+        for(int col = 0; col < m_data[row].size(); ++col)
+        {
+            if(itemIndex >= newData.size()) break;
 
+            NetworkInfo* newInfo = newData[itemIndex];
+            NetworkInfoModel* existing = m_macMap[newInfo->getMac()];
+
+            if(existing)
+            {
+                // Update existing model
+                existing->updateFromNetworkInfo(newInfo);
+                // Move model to new position if needed
+                //moveModelToPosition(existing, row, col);
+            }
+            else
+            {
+                // Create new model
+                m_data[row][col] = new NetworkInfoModel(newInfo, this);
+            }
+
+            emit cellChanged(row, col);
+            itemIndex++;
+        }
+    }
+
+    // Cleanup unused newInfo objects
+    qDeleteAll(newData);
     updateMacMap();
     emit modelChanged();
+    ////////////////////
+    // QList<NetworkInfo*> newData = result.value<QList<NetworkInfo*>>();
+    // m_sorter->sort(newData);
+
+    // clearGrid();
+    // const int maxItems = qMin(newData.size(), 9);
+    // const int numRows = getRows();
+    // const int numCols = getCols();
+
+    // if(numRows == 0 || numCols == 0) return;
+
+    // int itemIndex = 0;
+    // for(int row = 0; row < numRows && itemIndex < maxItems; ++row)
+    // {
+    //     m_data[row].resize(numCols);
+    //     for(int col = 0; col < numCols && itemIndex < maxItems; ++col)
+    //     {
+    //         NetworkInfo* info = newData[itemIndex];
+    //         m_data[row][col] = new NetworkInfoModel(info, this);
+    //         ++itemIndex;
+    //     }
+    // }
+
+    // for(int i = maxItems; i < newData.size(); ++i)
+    //     delete newData[i];
+
+    // updateMacMap();
+    // emit modelChanged();
 }
 
 void GridDataManager::handleNetworkStats(const QString& mac, quint64 rxSpeed, quint64 txSpeed)

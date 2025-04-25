@@ -71,6 +71,8 @@ public:
     void resetTxSpeed();
     void resetLastUpdateTime();
 
+    void updateFrom(const NetworkInfo* other);
+
 signals:
     void nameChanged(const QString&);
     void macChanged(const QString&);
