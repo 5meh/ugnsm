@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QHash>
 #include <QNetworkInterface>
+#include <QPoint>
 
 #include "../Utilities/Parser/iparser.h"
 
@@ -44,13 +45,14 @@ private slots:
 
 private:
     void clearGrid();
-    void updateMacMap();
+    void updateMacMap();//TODO: mb remove later
 
     NetworkMonitor* m_monitor;
     std::shared_ptr<IParser> m_parser;
     std::shared_ptr<INetworkSortStrategy> m_sorter;
     QVector<QVector<NetworkInfoModel*>> m_data;
-    QHash<QString, NetworkInfoModel*> m_macMap;
+    //QHash<QString, NetworkInfoModel*> m_macMap;//TODO:mb remove we got not so many network so it probably useless to use QHash
+    QHash<QString, QPoint> m_macIndex;
 };
 
 #endif // GRIDDATAMANAGER_H

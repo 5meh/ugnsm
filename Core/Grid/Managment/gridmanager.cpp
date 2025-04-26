@@ -7,8 +7,8 @@ GridManager::GridManager(QObject* parent)
     m_viewManager(new GridViewManager()),
     QObject(parent)
 {
-    setupGridManager();
     setupConnections();
+    setupGridManager();
 }
 
 GridManager::~GridManager()
@@ -44,8 +44,8 @@ void GridManager::initializeData()
 
 void GridManager::setupGridManager()
 {
-    initializeData();
     initializeView();
+    initializeData();
 }
 
 void GridManager::setupConnections()

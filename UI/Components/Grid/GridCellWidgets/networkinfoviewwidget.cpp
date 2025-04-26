@@ -285,3 +285,16 @@ void NetworkInfoViewWidget::setKeyValueTbl()
     }
     //resizeKeyValTable();
 }
+
+bool NetworkInfoViewWidget::isUpdating() const
+{
+    return m_updating;
+}
+
+void NetworkInfoViewWidget::setUpdating(bool newUpdating)
+{
+    if (m_updating == newUpdating)
+        return;
+    m_updating = newUpdating;
+    emit updatingChanged();
+}

@@ -23,9 +23,16 @@ public:
     QString cellId() const override;
     void updateProperty(const QString& propertyName);
     QString getMac() const;
+    Q_PROPERTY(bool updating READ isUpdating WRITE setUpdating NOTIFY updatingChanged)
+
+    bool isUpdating() const;
+    void setUpdating(bool newUpdating);
 
 public slots:
     void updateNetworkInfoDisplay();
+signals:
+    void updatingChanged();
+
 private:
     void updateStatusIndicator(QStandardItem* item, const QString& key,
                                const QString& value);
@@ -51,6 +58,7 @@ private:
     //QPoint dragStartPos;
     const QColor m_normalBorder = QColor(200, 200, 200);
     const QColor m_dragBorder = QColor(100, 150, 250);
+    bool m_updating;
 };
 
 #endif // NETWORKINFOVIEWWIDGET_H

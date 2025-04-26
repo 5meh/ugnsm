@@ -19,11 +19,16 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     QFile styleFile(QStringLiteral("://styles.qss"));
-    if(styleFile.open(QFile::ReadOnly))
+    if (!styleFile.open(QFile::ReadOnly | QFile::Text))
     {
-        a.setStyleSheet(styleFile.readAll());
+        qWarning() << "Failed to open style.qss:" << styleFile.errorString();
     }
-
+    else
+    {
+        QByteArray styleData = styleFile.readAll();
+        qDebug() << "Loaded stylesheet:" << styleData;
+        a.setStyleSheet(styleData);
+    }
     configureSystem();
 
     MainWindow w;

@@ -321,18 +321,18 @@ GridCellWidget *GridViewManager::createCellWidgetForModel(NetworkInfoModel *mode
             Qt::QueuedConnection);
 
     // Style initialization
-    widget->setStyleSheet(
-        "NetworkInfoViewWidget {"
-        "  border: 1px solid #e0e0e0;"
-        "  border-radius: 6px;"
-        "  background-color: #ffffff;"
-        "  opacity: 1;"
-        "  transition: opacity 0.15s ease, border-color 0.15s ease;"
-        "}"
-        "NetworkInfoViewWidget[updating='true'] {"
-        "  opacity: 0.7;"
-        "}"
-        );
+    // widget->setStyleSheet(
+    //     "NetworkInfoViewWidget {"
+    //     "  border: 1px solid #e0e0e0;"
+    //     "  border-radius: 6px;"
+    //     "  background-color: #ffffff;"
+    //     "  opacity: 1;"
+    //     "  transition: opacity 0.15s ease, border-color 0.15s ease;"
+    //     "}"
+    //     "NetworkInfoViewWidget[updating='true'] {"
+    //     "  opacity: 0.7;"
+    //     "}"
+    //     );
 
     widget->setUpdatesEnabled(true);
     return widget;
