@@ -16,8 +16,8 @@ GridViewManager::GridViewManager(QWidget* parent)
     : QWidget(parent),
     m_gridLayout(new QGridLayout(this))
 {
-    m_gridLayout->setSpacing(5);
-    m_gridLayout->setContentsMargins(2, 2, 2, 2);
+    m_gridLayout->setSpacing(10);
+    m_gridLayout->setContentsMargins(10, 10, 10, 10);
     setLayout(m_gridLayout);
     setAcceptDrops(true);
 }
@@ -159,43 +159,6 @@ void GridViewManager::dragLeaveEvent(QDragLeaveEvent* event)
 
 void GridViewManager::dropEvent(QDropEvent* event)
 {
-    // clearHighlight();
-
-    // if(!event->mimeData()->hasText())
-    // {
-    //     event->ignore();
-    //     return;
-    // }
-
-    // const QString sourceId = event->mimeData()->text();
-    // const QPoint sourcePos = parseCellPosition(sourceId);
-    // QPoint dropPos(-1, -1);
-
-    // // Find drop position using actual widget geometry
-    // const QPoint cursorPos = event->position().toPoint();
-    // for(int row = 0; row < gridRows(); ++row)
-    // {
-    //     for(int col = 0; col < gridCols(); ++col)
-    //     {
-    //         if(cellAt(row, col)->geometry().contains(cursorPos))
-    //         {
-    //             dropPos = QPoint(row, col);
-    //             break;
-    //         }
-    //     }
-    // }
-
-    // if(sourcePos.isValid() && dropPos.isValid())
-    // {
-    //     emit cellSwapRequested(sourcePos.x(), sourcePos.y(),
-    //                            dropPos.x(), dropPos.y());
-    //     event->acceptProposedAction();
-    // }
-    // else
-    // {
-    //     event->ignore();
-    // }
-    ////////////////
     clearHighlight();
 
     if(!event->mimeData()->hasText())
@@ -248,24 +211,23 @@ void GridViewManager::clearGrid()
 void GridViewManager::highlightCell(int row, int col)
 {
     clearHighlight();
-    m_highlightedCell = cellAt(row, col);
-    if (m_highlightedCell)
-    {
-        m_highlightedCell->setProperty("highlighted", true);
-        m_highlightedCell->style()->unpolish(m_highlightedCell);
-        m_highlightedCell->style()->polish(m_highlightedCell);
-    }
+    auto *cell = cellAt(row, col);
+    if (!cell)
+        return;
+    cell->setProperty("highlighted", true);
+    cell->style()->unpolish(cell);
+    cell->style()->polish(cell);
+    m_highlightedCell = cell;
 }
 
 void GridViewManager::clearHighlight()
 {
-    if (m_highlightedCell)
-    {
-        m_highlightedCell->setProperty("highlighted", false);
-        m_highlightedCell->style()->unpolish(m_highlightedCell);
-        m_highlightedCell->style()->polish(m_highlightedCell);
-        m_highlightedCell = nullptr;
-    }
+    if (!m_highlightedCell)
+        return;
+    m_highlightedCell->setProperty("highlighted", false);
+    m_highlightedCell->style()->unpolish(m_highlightedCell);
+    m_highlightedCell->style()->polish(m_highlightedCell);
+    m_highlightedCell = nullptr;
 }
 
 QPoint GridViewManager::parseCellPosition(const QString& cellId) const

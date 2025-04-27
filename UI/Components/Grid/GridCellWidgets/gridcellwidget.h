@@ -31,6 +31,7 @@ protected:
     virtual void dragLeaveEvent(QDragLeaveEvent* event) override;
 
     const QSize m_widgetSize = QSize(400, 300);
+    QPoint m_dragStartPos;
     //QPoint m_dragStartPosition;
 };
 

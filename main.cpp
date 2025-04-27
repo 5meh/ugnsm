@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     QFile styleFile(QStringLiteral("://styles.qss"));
-    if (!styleFile.open(QFile::ReadOnly | QFile::Text))
+    if (!styleFile.open(QFile::ReadOnly | QFile::Text))//TODO:remove later
     {
         qWarning() << "Failed to open style.qss:" << styleFile.errorString();
     }
@@ -27,8 +27,8 @@ int main(int argc, char *argv[])
     {
         QByteArray styleData = styleFile.readAll();
         QString qss = QString::fromUtf8(styleData);
-        qDebug() << "QSS is\n" << qss.left(200) << "...";
-        a.setStyleSheet(qss);  // Or styleData
+        //qDebug() << "QSS is\n" << qss.left(200) << "...";
+        a.setStyleSheet(qss);
     }
     configureSystem();
 

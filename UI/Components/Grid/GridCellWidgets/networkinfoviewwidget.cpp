@@ -180,6 +180,7 @@ void NetworkInfoViewWidget::dragEnterEvent(QDragEnterEvent* event)
         style()->unpolish(this);
         style()->polish(this);
         event->acceptProposedAction();
+        //update();
     }
     else
     {

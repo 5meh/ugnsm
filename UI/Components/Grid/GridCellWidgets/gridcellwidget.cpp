@@ -23,33 +23,32 @@ GridCellWidget::~GridCellWidget()
 
 void GridCellWidget::mousePressEvent(QMouseEvent *event)
 {
-    setProperty("dragStartPos", event->pos());
+    if(event->button() == Qt::LeftButton)
+    {
+        m_dragStartPos = event->pos();
+    }
     QFrame::mousePressEvent(event);
 }
 
 void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    QPoint startPos = property("dragStartPos").toPoint();
-    if ((event->pos() - startPos).manhattanLength() >= QApplication::startDragDistance())
-    {
-        QDrag *drag = new QDrag(this);
-        QMimeData *mimeData = new QMimeData;
-        // Use the cell's identifier as MIME data.
-        mimeData->setText(cellId());
-        drag->setMimeData(mimeData);
+    if(!(event->buttons() & Qt::LeftButton)) return;
 
+    if((event->pos() - m_dragStartPos).manhattanLength()
+        >= QApplication::startDragDistance()) {
+        QDrag* drag = new QDrag(this);
+        QMimeData* mime = new QMimeData;
+        mime->setText(cellId());
+
+        // Create drag pixmap with transparency
         QPixmap pixmap(size());
+        pixmap.fill(Qt::transparent);
         render(&pixmap);
-        drag->setPixmap(pixmap);
-        drag->setHotSpot(event->pos());
 
-        emit dragInitiated(this);
-        // if (drag->exec(Qt::MoveAction) == Qt::MoveAction)
-        // {
-        //     // Optionally perform additional logic on successful drag.
-        // }
+        drag->setPixmap(pixmap);
+        drag->setMimeData(mime);
+        drag->exec(Qt::MoveAction);
     }
-    QFrame::mouseMoveEvent(event);
 }
 
 void GridCellWidget::dragEnterEvent(QDragEnterEvent *event)

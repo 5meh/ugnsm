@@ -20,6 +20,11 @@ PlaceHolderCellWidget[highlighted="true"] {
     background-color: #e8f5e9;
 }
 
+GridCellWidget[highlighted="true"] {
+    border: 2px solid #ff9900;
+    background-color: #fff4e6;
+}
+
 GridCellWidget[bestNetwork="true"] {
     border: 2px solid #2196F3;
     background-color: #e3f2fd;
