@@ -12,7 +12,7 @@ class GridCellWidget : public QFrame
 {
     Q_OBJECT
 public:
-    explicit GridCellWidget(QWidget *parent = nullptr);
+    explicit GridCellWidget(QWidget* parent = nullptr);
     virtual ~GridCellWidget();
 
     // Derived classes must provide a unique cell identifier (e.g., "row,col")
@@ -31,6 +31,7 @@ protected:
     virtual void dragLeaveEvent(QDragLeaveEvent* event) override;
 
     const QSize m_widgetSize = QSize(400, 300);
+    //QPoint m_dragStartPosition;
 };
 
 #endif // GRIDCELLWIDGET_H

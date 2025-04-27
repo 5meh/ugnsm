@@ -26,8 +26,9 @@ int main(int argc, char *argv[])
     else
     {
         QByteArray styleData = styleFile.readAll();
-        qDebug() << "Loaded stylesheet:" << styleData;
-        a.setStyleSheet(styleData);
+        QString qss = QString::fromUtf8(styleData);
+        qDebug() << "QSS is\n" << qss.left(200) << "...";
+        a.setStyleSheet(qss);  // Or styleData
     }
     configureSystem();
 

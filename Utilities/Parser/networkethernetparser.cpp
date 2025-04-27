@@ -59,6 +59,7 @@ void NetworkEthernetParser::parse()
 void NetworkEthernetParser::parseInterface(const QNetworkInterface& interface, QList<NetworkInfo*>& results)
 {
     NetworkInfo* info = new NetworkInfo(this);
+    info->setName(interface.name());
     info->setMac(interface.hardwareAddress());
     const bool isUp = interface.flags().testFlag(QNetworkInterface::IsUp);
     const bool isRunning = interface.flags().testFlag(QNetworkInterface::IsRunning);
@@ -68,7 +69,6 @@ void NetworkEthernetParser::parseInterface(const QNetworkInterface& interface, Q
 
     bool hasIpv4 = false;
     const QList<QNetworkAddressEntry> entries = interface.addressEntries();
-
 
     for(const QNetworkAddressEntry &entry : entries)
     {

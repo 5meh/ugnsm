@@ -74,7 +74,9 @@ void GridDataManager::swapCells(int fromRow, int fromCol, int toRow, int toCol)
         return;
 
     qSwap(m_data[fromRow][fromCol], m_data[toRow][toCol]);
-    emit modelChanged();
+    emit cellChanged(fromRow, fromCol);
+    emit cellChanged(toRow, toCol);
+    //emit modelChanged();
 }
 
 void GridDataManager::handleParsingCompleted(const QVariant& result)

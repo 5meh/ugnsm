@@ -33,6 +33,11 @@ public slots:
 signals:
     void updatingChanged();
 
+protected:
+    void dragEnterEvent(QDragEnterEvent* event)override;
+    void dragLeaveEvent(QDragLeaveEvent* event)override;
+    void dropEvent(QDropEvent* event)override;
+
 private:
     void updateStatusIndicator(QStandardItem* item, const QString& key,
                                const QString& value);
@@ -54,8 +59,6 @@ private:
     QStandardItemModel* keyValModel;
 
     QLabel crownLbl;
-    //bool m_isDragging = false;
-    //QPoint dragStartPos;
     const QColor m_normalBorder = QColor(200, 200, 200);
     const QColor m_dragBorder = QColor(100, 150, 250);
     bool m_updating;

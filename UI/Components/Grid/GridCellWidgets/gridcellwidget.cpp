@@ -8,8 +8,9 @@
 #include <QMimeData>
 #include <QApplication>
 #include <QDebug>
+#include <QStyle>
 
-GridCellWidget::GridCellWidget(QWidget *parent)
+GridCellWidget::GridCellWidget(QWidget* parent)
     :QFrame(parent)
 {
     setAcceptDrops(true);
@@ -53,8 +54,11 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
 
 void GridCellWidget::dragEnterEvent(QDragEnterEvent *event)
 {
-    if(event->mimeData()->hasText())
+    if (event->mimeData()->hasText())
     {
+        setProperty("dragOver", true);
+        style()->unpolish(this);
+        style()->polish(this);
         event->acceptProposedAction();
     }
     else
@@ -65,12 +69,16 @@ void GridCellWidget::dragEnterEvent(QDragEnterEvent *event)
 
 void GridCellWidget::dropEvent(QDropEvent *event)
 {
+
     if(event->mimeData()->hasText())
     {
         QString sourceId = event->mimeData()->text();
         qDebug() << "GridCellWidget (" << cellId() << ") received drop from:" << sourceId;
         // In a real scenario, you might look up the source cell widget by comparing IDs.
         // Here we simply emit swapRequested with a dummy target (this cell).
+        setProperty("dragOver", false);
+        style()->unpolish(this);
+        style()->polish(this);
         emit swapRequested(nullptr, this);
         emit dropReceived(this);
         event->acceptProposedAction();
@@ -84,6 +92,9 @@ void GridCellWidget::dropEvent(QDropEvent *event)
 
 void GridCellWidget::dragLeaveEvent(QDragLeaveEvent *event)
 {
+    setProperty("dragOver", false);
+    style()->unpolish(this);
+    style()->polish(this);
     QFrame::dragLeaveEvent(event);
 }
 

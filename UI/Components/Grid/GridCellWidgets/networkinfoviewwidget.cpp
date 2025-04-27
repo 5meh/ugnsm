@@ -23,7 +23,6 @@ NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfoModel *viewModel, QFrame
 {
     setFixedSize(m_widgetSize);
     setupUI();
-    setStyleSheet("background-color: white; border-radius: 8px;");
 }
 
 NetworkInfoViewWidget::~NetworkInfoViewWidget()
@@ -94,21 +93,17 @@ void NetworkInfoViewWidget::updateProperty(const QString &propertyName)
 
     setUpdatesEnabled(false);
 
-    // Get mapped display property name
     const QString displayName = m_viewModel->propertyMap().key(propertyName);
     const QPair<QString, QString> data = m_viewModel->getKeyValue(displayName);
 
-    // Find and update specific row
     for (int row = 0; row < keyValModel->rowCount(); ++row)
     {
         QStandardItem* paramItem = keyValModel->item(row, 0);
         if (paramItem->text() == data.first)
         {
-            // Update value column
             QStandardItem* valueItem = keyValModel->item(row, 1);
             valueItem->setText(data.second);
 
-            // Update status indicator if needed
             QStandardItem* statusItem = keyValModel->item(row, 2);
             updateStatusIndicator(statusItem, data.first, data.second);
 
@@ -116,7 +111,6 @@ void NetworkInfoViewWidget::updateProperty(const QString &propertyName)
         }
     }
 
-    // Special handling for speed updates
     if (propertyName == "downloadSpeed" ||
         propertyName == "uploadSpeed" ||
         propertyName == "totalSpeed")
@@ -124,7 +118,6 @@ void NetworkInfoViewWidget::updateProperty(const QString &propertyName)
         updateSpeedIndicators();
     }
 
-    // Visual update feedback
     setProperty("updating", true);
     QTimer::singleShot(150, this, [this]()
                        {
@@ -179,6 +172,53 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
     keyValueTbl->setUpdatesEnabled(true);
 }
 
+void NetworkInfoViewWidget::dragEnterEvent(QDragEnterEvent* event)
+{
+    if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
+    {
+        setProperty("dragOver", true);
+        style()->unpolish(this);
+        style()->polish(this);
+        event->acceptProposedAction();
+    }
+    else
+    {
+        event->ignore();
+    }
+}
+
+void NetworkInfoViewWidget::dragLeaveEvent(QDragLeaveEvent* event)
+{
+    setProperty("dragOver", false);
+    style()->unpolish(this);
+    style()->polish(this);
+    QFrame::dragLeaveEvent(event);
+}
+
+void NetworkInfoViewWidget::dropEvent(QDropEvent *event)
+{
+    setProperty("dragOver", false);
+    style()->unpolish(this);
+    style()->polish(this);
+
+    // Only accept our own widget format
+    if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
+    {
+        // We stored the pointer in a property on the MIME data
+        QVariant v = event->mimeData()->property("widget");
+        auto source = qobject_cast<NetworkInfoViewWidget*>(v.value<QObject*>());
+        if (source && source != this)
+        {
+            emit swapRequested(source, this);
+            event->acceptProposedAction();
+            return;
+        }
+    }
+
+    // Otherwise, ignore
+    event->ignore();
+}
+
 void NetworkInfoViewWidget::addKeyValue(QPair<QString, QString> keyVal)
 {
     QList<QStandardItem*> newRow;
@@ -210,12 +250,19 @@ void NetworkInfoViewWidget::setupTableView()
     keyValueTbl->setItemDelegateForColumn(2, new LedIndicatorDelegate(this));
     keyValueTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
     keyValueTbl->setSelectionMode(QAbstractItemView::NoSelection);
-    keyValueTbl->verticalHeader()->hide();
+    keyValueTbl->verticalHeader()->setVisible(false);
+    keyValueTbl->horizontalHeader()->setVisible(false);
     keyValueTbl->horizontalHeader()->setStretchLastSection(true);
     keyValueTbl->setShowGrid(false);
+
+    //keyValueTbl->setDragEnabled(true);
+    //keyValueTbl->setAcceptDrops(true);
+    //keyValueTbl->setDropIndicatorShown(true);
+    //keyValueTbl->setDragDropMode(QAbstractItemView::InternalMove);
+    //keyValueTbl->setSelectionMode(QAbstractItemView::NoSelection);
     setKeyValueTbl();
     connectViewModel();
-    keyValueTbl->viewport()->installEventFilter(this);
+    //keyValueTbl->viewport()->installEventFilter(this);
     layout()->addWidget(keyValueTbl);
 }
 
@@ -267,10 +314,10 @@ void NetworkInfoViewWidget::setupUI()
     // crownLbl.setScaledContents(true);
     // crownLbl.setFixedWidth(50);
     // crownLbl.setFixedHeight(50);
-    //layout()->addWidget(&crownLbl);
+    // layout()->addWidget(&crownLbl);
 
-    keyValueTbl->viewport()->installEventFilter(this);
-
+    //keyValueTbl->viewport()->installEventFilter(this);
+    //layout()->setContentsMargins(8, 8, 8, 8);
     layout()->setSpacing(0);
 }
 
@@ -283,7 +330,6 @@ void NetworkInfoViewWidget::setKeyValueTbl()
             addKeyValue(keyVal);
         }
     }
-    //resizeKeyValTable();
 }
 
 bool NetworkInfoViewWidget::isUpdating() const

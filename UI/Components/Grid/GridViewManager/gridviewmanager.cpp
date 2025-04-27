@@ -10,6 +10,7 @@
 #include <QDropEvent>
 #include <QPainter>
 #include <QDebug>
+#include <QStyle>
 
 GridViewManager::GridViewManager(QWidget* parent)
     : QWidget(parent),
@@ -41,10 +42,11 @@ void GridViewManager::setGridSize(int rows, int cols)
             connect(cell, &GridCellWidget::swapRequested,
                     this, &GridViewManager::handleSwapRequested);
 
-            // Highlight best network at (0,0)
-            if(row == 0 && col == 0)
+            if (row == 0 && col == 0)
             {
-                cell->setStyleSheet("border: 3px solid green;");
+                cell->setProperty("bestNetwork", true);
+                cell->style()->unpolish(cell);
+                cell->style()->polish(cell);
             }
 
             m_gridLayout->addWidget(cell, row, col);
@@ -102,8 +104,9 @@ void GridViewManager::updateCell(int row, int col, NetworkInfoModel* model)
 void GridViewManager::clearCell(int row, int col)
 {
     if(auto* current = cellAt(row, col)) {
-        if(current->metaObject()->className() != PlaceHolderCellWidget::staticMetaObject.className()) {
-            setCell(row, col, new PlaceHolderCellWidget());
+        if(current->metaObject()->className() != PlaceHolderCellWidget::staticMetaObject.className())
+        {
+            setCell(row, col, new PlaceHolderCellWidget(this));
         }
     }
 }
@@ -209,7 +212,8 @@ void GridViewManager::dropEvent(QDropEvent* event)
         );
 
     if(sourcePos.x() >= 0 && sourcePos.y() >= 0 &&
-        dropPos.x() >= 0 && dropPos.y() >= 0) {
+        dropPos.x() >= 0 && dropPos.y() >= 0)
+    {
         emit cellSwapRequested(sourcePos.x(), sourcePos.y(),
                                dropPos.x(), dropPos.y());
         event->acceptProposedAction();
@@ -245,21 +249,21 @@ void GridViewManager::highlightCell(int row, int col)
 {
     clearHighlight();
     m_highlightedCell = cellAt(row, col);
-    if(m_highlightedCell)
+    if (m_highlightedCell)
     {
-        m_highlightedCell->setStyleSheet(
-            m_highlightedCell->styleSheet() + "border: 2px dashed #0078d4;"
-            );
+        m_highlightedCell->setProperty("highlighted", true);
+        m_highlightedCell->style()->unpolish(m_highlightedCell);
+        m_highlightedCell->style()->polish(m_highlightedCell);
     }
 }
 
 void GridViewManager::clearHighlight()
 {
-    if(m_highlightedCell)
+    if (m_highlightedCell)
     {
-        QString style = m_highlightedCell->styleSheet();
-        style.replace("border: 2px dashed #0078d4;", "");
-        m_highlightedCell->setStyleSheet(style);
+        m_highlightedCell->setProperty("highlighted", false);
+        m_highlightedCell->style()->unpolish(m_highlightedCell);
+        m_highlightedCell->style()->polish(m_highlightedCell);
         m_highlightedCell = nullptr;
     }
 }
@@ -303,14 +307,14 @@ void GridViewManager::updateCellContent(int row, int col, NetworkInfoModel* mode
     }
     else
     {
-        // Create new widget with proper model connections
         setCell(row, col, createCellWidgetForModel(model));
     }
 }
 
-GridCellWidget *GridViewManager::createCellWidgetForModel(NetworkInfoModel *model)
+GridCellWidget* GridViewManager::createCellWidgetForModel(NetworkInfoModel* model)
 {
-    if (!model) return new PlaceHolderCellWidget();
+    if (!model)
+        return new PlaceHolderCellWidget(this);
 
     NetworkInfoViewWidget* widget = new NetworkInfoViewWidget(model);
     widget->setUpdatesEnabled(false);
@@ -319,20 +323,6 @@ GridCellWidget *GridViewManager::createCellWidgetForModel(NetworkInfoModel *mode
     connect(model, &NetworkInfoModel::propertyChanged,
             widget, &NetworkInfoViewWidget::updateProperty,
             Qt::QueuedConnection);
-
-    // Style initialization
-    // widget->setStyleSheet(
-    //     "NetworkInfoViewWidget {"
-    //     "  border: 1px solid #e0e0e0;"
-    //     "  border-radius: 6px;"
-    //     "  background-color: #ffffff;"
-    //     "  opacity: 1;"
-    //     "  transition: opacity 0.15s ease, border-color 0.15s ease;"
-    //     "}"
-    //     "NetworkInfoViewWidget[updating='true'] {"
-    //     "  opacity: 0.7;"
-    //     "}"
-    //     );
 
     widget->setUpdatesEnabled(true);
     return widget;
