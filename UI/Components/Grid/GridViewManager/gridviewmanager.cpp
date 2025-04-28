@@ -32,24 +32,17 @@ void GridViewManager::setGridSize(int rows, int cols)
     clearGrid();
     m_cells.resize(rows);
 
+    m_gridLayout->setSpacing(10);
+    m_gridLayout->setContentsMargins(10, 10, 10, 10);
+
     for(int row = 0; row < rows; ++row)
     {
         m_cells[row].resize(cols);
         for(int col = 0; col < cols; ++col)
         {
-            PlaceHolderCellWidget* cell = new PlaceHolderCellWidget();
+            auto* cell = new PlaceHolderCellWidget();
             cell->setObjectName(QString("%1,%2").arg(row).arg(col));
-            connect(cell, &GridCellWidget::swapRequested,
-                    this, &GridViewManager::handleSwapRequested);
-
-            if (row == 0 && col == 0)
-            {
-                cell->setProperty("bestNetwork", true);
-                cell->style()->unpolish(cell);
-                cell->style()->polish(cell);
-            }
-
-            m_gridLayout->addWidget(cell, row, col);
+            m_gridLayout->addWidget(cell, row, col, Qt::AlignCenter);
             m_cells[row][col] = cell;
         }
     }
@@ -161,28 +154,35 @@ void GridViewManager::dropEvent(QDropEvent* event)
 {
     clearHighlight();
 
-    if(!event->mimeData()->hasText())
-    {
+    if(!event->mimeData()->hasText()) {
         event->ignore();
         return;
     }
 
     const QString sourceId = event->mimeData()->text();
     const QPoint sourcePos = parseCellPosition(sourceId);
-    const QPoint dropPos = parseCellPosition(
-        cellAt(event->position().toPoint().y() / height(),
-               event->position().toPoint().x() / width())->cellId()
-        );
+    QPoint dropPos(-1, -1);
 
-    if(sourcePos.x() >= 0 && sourcePos.y() >= 0 &&
+    // Find actual widget under cursor
+    const QPoint cursorPos = event->position().toPoint();
+    for(int row = 0; row < gridRows(); ++row) {
+        for(int col = 0; col < gridCols(); ++col) {
+            if(cellAt(row, col)->geometry().contains(cursorPos)) {
+                dropPos = QPoint(row, col);
+                break;
+            }
+        }
+    }
+
+    // Validate positions using grid bounds
+    if(sourcePos.x() >= 0 && sourcePos.x() < gridRows() &&
+        sourcePos.y() >= 0 && sourcePos.y() < gridCols() &&
         dropPos.x() >= 0 && dropPos.y() >= 0)
     {
         emit cellSwapRequested(sourcePos.x(), sourcePos.y(),
                                dropPos.x(), dropPos.y());
         event->acceptProposedAction();
-    }
-    else
-    {
+    } else {
         event->ignore();
     }
 }
@@ -235,9 +235,12 @@ QPoint GridViewManager::parseCellPosition(const QString& cellId) const
     QStringList parts = cellId.split(',');
     if(parts.size() == 2)
     {
-        return QPoint(parts[0].toInt(), parts[1].toInt());
+        bool ok1, ok2;
+        int row = parts[0].toInt(&ok1);
+        int col = parts[1].toInt(&ok2);
+        if(ok1 && ok2) return QPoint(row, col);
     }
-    return QPoint(-1, -1);
+    return QPoint(-1, -1); // Invalid position marker
 }
 
 void GridViewManager::updateCellContent(int row, int col, NetworkInfoModel* model)

@@ -17,11 +17,11 @@ public:
 
     // Derived classes must provide a unique cell identifier (e.g., "row,col")
     virtual QString cellId() const = 0;
-
+    QSize sizeHint() const override;
 signals:
     void swapRequested(GridCellWidget* source, GridCellWidget* target);
-    void dragInitiated(GridCellWidget* source);
-    void dropReceived(GridCellWidget* target);
+    void dragInitiated(GridCellWidget* source);//TODO: mb remove
+    void dropReceived(GridCellWidget* target);//TODO: mb remove
 
 protected:
     virtual void mousePressEvent(QMouseEvent* event) override;

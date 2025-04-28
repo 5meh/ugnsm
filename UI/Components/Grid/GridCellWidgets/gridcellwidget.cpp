@@ -21,6 +21,11 @@ GridCellWidget::~GridCellWidget()
 
 }
 
+QSize GridCellWidget::sizeHint() const
+{
+    return m_widgetSize;
+}
+
 void GridCellWidget::mousePressEvent(QMouseEvent *event)
 {
     if(event->button() == Qt::LeftButton)

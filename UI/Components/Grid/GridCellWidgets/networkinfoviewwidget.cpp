@@ -176,30 +176,26 @@ void NetworkInfoViewWidget::dragEnterEvent(QDragEnterEvent* event)
 {
     if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
     {
-        setProperty("dragOver", true);
-        style()->unpolish(this);
-        style()->polish(this);
         event->acceptProposedAction();
+        setProperty("dragOver", true);
+        //style()->unpolish(this);
+        style()->polish(this);
         //update();
-    }
-    else
-    {
-        event->ignore();
     }
 }
 
 void NetworkInfoViewWidget::dragLeaveEvent(QDragLeaveEvent* event)
 {
     setProperty("dragOver", false);
-    style()->unpolish(this);
+    //style()->unpolish(this);
     style()->polish(this);
-    QFrame::dragLeaveEvent(event);
+    QFrame::dragLeaveEvent(event);//TODO:mb remove?
 }
 
 void NetworkInfoViewWidget::dropEvent(QDropEvent *event)
 {
     setProperty("dragOver", false);
-    style()->unpolish(this);
+    //style()->unpolish(this);
     style()->polish(this);
 
     // Only accept our own widget format
@@ -276,6 +272,18 @@ void NetworkInfoViewWidget::connectViewModel()
     connect(m_viewModel, &NetworkInfoModel::speedChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
 }
 
+bool NetworkInfoViewWidget::eventFilter(QObject *watched, QEvent *event)
+{
+    QEvent::Type type = event->type();
+    if(type == QEvent::MouseButtonPress ||
+        type == QEvent::MouseMove ||
+        type == QEvent::MouseButtonRelease)
+    {
+        return true;
+    }
+    return GridCellWidget::eventFilter(watched, event);
+}
+
 void NetworkInfoViewWidget::updateStatusIndicator(QStandardItem *item, const QString &key, const QString &value)
 {
     if(key == "Is Up:" || key == "Is Running:")
@@ -320,6 +328,7 @@ void NetworkInfoViewWidget::setupUI()
     //keyValueTbl->viewport()->installEventFilter(this);
     //layout()->setContentsMargins(8, 8, 8, 8);
     layout()->setSpacing(0);
+    keyValueTbl->viewport()->installEventFilter(this);
 }
 
 void NetworkInfoViewWidget::setKeyValueTbl()

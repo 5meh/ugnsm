@@ -49,6 +49,7 @@ private:
     void addKeyValue(QPair<QString, QString>);
     void setupTableView();
     void connectViewModel();
+    bool eventFilter(QObject* watched, QEvent* event) override;
 
     //TODO: mb remove constants
     //bool m_isTableDragging = false;
