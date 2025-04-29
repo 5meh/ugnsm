@@ -25,22 +25,22 @@ public:
     int gridCols() const { return m_cells.isEmpty() ? 0 : m_cells[0].size(); }
 
 signals:
-    void cellSwapRequested(QPoint from, QPoint to);
+    void cellSwapRequestToDataManager(QPoint from, QPoint to);
 
-protected:
-    void dragEnterEvent(QDragEnterEvent* event) override;
-    void dragMoveEvent(QDragMoveEvent* event) override;
-    void dragLeaveEvent(QDragLeaveEvent* event) override;
-    void dropEvent(QDropEvent* event) override;
+// protected:
+//     void dragEnterEvent(QDragEnterEvent* event) override;
+//     void dragMoveEvent(QDragMoveEvent* event) override;
+//     void dragLeaveEvent(QDragLeaveEvent* event) override;
+//     void dropEvent(QDropEvent* event) override;
 
 private slots:
-    void handleSwapRequested(GridCellWidget* source, GridCellWidget* target);
+    void handleSwapRequested(QPoint source, QPoint target);
 
 private:
     void clearGrid();
     void highlightCell(int row, int col);
     void clearHighlight();
-    QPoint getCellIndexFromPos(const QPoint& pos);
+    QPoint getCellIndexFromPos(const QPoint& indx);
     void updateCellContent(int row, int col, NetworkInfoModel* model);
     GridCellWidget* createCellWidgetForModel(NetworkInfoModel* model);
 

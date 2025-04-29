@@ -21,7 +21,7 @@
 NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfoModel *viewModel, QFrame *parent)
     : GridCellWidget(parent), m_viewModel(viewModel)
 {
-    setFixedSize(m_widgetSize);
+    //setGeometry(m_widgetSize);
     setupUI();
 }
 
@@ -117,7 +117,7 @@ void NetworkInfoViewWidget::updateProperty(const QString &propertyName)
     QTimer::singleShot(150, this, [this]()
                        {
                            setProperty("updating", false);
-                           style()->unpolish(this);
+                           //style()->unpolish(this);
                            style()->polish(this);
                        });
 
@@ -162,7 +162,7 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
             keyValModel->removeRow(row--);
         }
     }
-
+    //resizeKeyValTable();
     setUpdatesEnabled(true);
     keyValueTbl->setUpdatesEnabled(true);
 }
@@ -326,8 +326,6 @@ void NetworkInfoViewWidget::setupUI()
     // crownLbl.setFixedHeight(50);
     // layout()->addWidget(&crownLbl);
 
-    //keyValueTbl->viewport()->installEventFilter(this);
-    //layout()->setContentsMargins(8, 8, 8, 8);
     layout()->setSpacing(0);
     keyValueTbl->viewport()->installEventFilter(this);
 }

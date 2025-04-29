@@ -5,6 +5,6 @@
 PlaceHolderCellWidget::PlaceHolderCellWidget(QWidget* parent)
     :GridCellWidget(parent)
 {
-    setFixedSize(sizeHint());
+    //setGeometry(sizeHint());
     setProperty("isPlaceholder", true);
 }

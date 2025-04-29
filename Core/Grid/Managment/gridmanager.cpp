@@ -65,7 +65,7 @@ void GridManager::setupConnections()
                                            m_dataManager->getCols());
             });
 
-    connect(m_viewManager.get(), &GridViewManager::cellSwapRequested,
+    connect(m_viewManager.get(), &GridViewManager::cellSwapRequestToDataManager,
             m_dataManager, &GridDataManager::swapCells);
 }
 

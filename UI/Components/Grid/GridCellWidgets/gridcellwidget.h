@@ -21,7 +21,7 @@ public:
     void setGridIndex(QPoint newGridIndex);
 
 signals:
-    void swapRequested(GridCellWidget* source, GridCellWidget* target);
+    void swapRequested(QPoint source, QPoint target);
     void gridIndexChanged();
 
 protected:

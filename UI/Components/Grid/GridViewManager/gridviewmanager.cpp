@@ -78,21 +78,23 @@ void GridViewManager::updateCell(int row, int col, NetworkInfoModel* model)
 
     if(model)
     {
-        NetworkInfoViewWidget* viewWidget = qobject_cast<NetworkInfoViewWidget*>(current);
-        if(viewWidget)
+        if(!qobject_cast<NetworkInfoViewWidget*>(current))
         {
-            viewWidget->setViewModel(model);
+            auto* newWidget = createCellWidgetForModel(model);
+            //newWidget->setFixedSize(current->size());
+            setCell(row, col, newWidget);
         }
         else
         {
-            auto* newWidget = createCellWidgetForModel(model);
-            newWidget->setFixedSize(newWidget->sizeHint());
-            setCell(row, col, newWidget);
+            static_cast<NetworkInfoViewWidget*>(current)->setViewModel(model);
         }
     }
     else
     {
-        clearCell(row, col);
+        if(!qobject_cast<PlaceHolderCellWidget*>(current))
+        {
+            setCell(row, col, new PlaceHolderCellWidget(this));
+        }
     }
 }
 
@@ -116,64 +118,63 @@ GridCellWidget* GridViewManager::cellAt(int row, int col) const
     return nullptr;
 }
 
-void GridViewManager::dragEnterEvent(QDragEnterEvent* event)
+// void GridViewManager::dragEnterEvent(QDragEnterEvent* event)
+// {
+//     if(event->mimeData()->hasText())
+//     {
+//         event->acceptProposedAction();
+//     }
+//     else
+//     {
+//         event->ignore();
+//     }
+// }
+
+// void GridViewManager::dragMoveEvent(QDragMoveEvent* event)
+// {
+//     const QPoint pos = event->position().toPoint();
+//     for(int row = 0; row < m_cells.size(); ++row)
+//     {
+//         for(int col = 0; col < m_cells[row].size(); ++col)
+//         {
+//             if(m_cells[row][col]->geometry().contains(pos))
+//             {
+//                 highlightCell(row, col);
+//                 event->acceptProposedAction();
+//                 return;
+//             }
+//         }
+//     }
+//     event->ignore();
+// }
+
+// void GridViewManager::dragLeaveEvent(QDragLeaveEvent* event)
+// {
+//     Q_UNUSED(event)
+//     clearHighlight();
+// }
+
+// void GridViewManager::dropEvent(QDropEvent* event)
+// {
+//     clearHighlight();
+
+//     QPoint sourceIndex = event->mimeData()->property("gridIndex").toPoint();
+//     QPoint dropIndex = getCellIndexFromPos(event->position().toPoint());
+
+//     if(sourceIndex != QPoint(-1, -1) && dropIndex != QPoint(-1, -1))
+//     {
+//         emit cellSwapRequested(sourceIndex, dropIndex);
+//         event->acceptProposedAction();
+//     }
+//     else
+//     {
+//         event->ignore();
+//     }
+// }
+
+void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
 {
-    if(event->mimeData()->hasText())
-    {
-        event->acceptProposedAction();
-    }
-    else
-    {
-        event->ignore();
-    }
-}
-
-void GridViewManager::dragMoveEvent(QDragMoveEvent* event)
-{
-    const QPoint pos = event->position().toPoint();
-    for(int row = 0; row < m_cells.size(); ++row)
-    {
-        for(int col = 0; col < m_cells[row].size(); ++col)
-        {
-            if(m_cells[row][col]->geometry().contains(pos))
-            {
-                highlightCell(row, col);
-                event->acceptProposedAction();
-                return;
-            }
-        }
-    }
-    event->ignore();
-}
-
-void GridViewManager::dragLeaveEvent(QDragLeaveEvent* event)
-{
-    Q_UNUSED(event)
-    clearHighlight();
-}
-
-void GridViewManager::dropEvent(QDropEvent* event)
-{
-    clearHighlight();
-
-    QPoint sourceIndex = event->mimeData()->property("gridIndex").toPoint();
-    QPoint dropIndex = getCellIndexFromPos(event->position().toPoint());
-
-    // Validate positions using grid bounds
-    if(sourceIndex != QPoint(-1, -1) && dropIndex != QPoint(-1, -1))
-    {
-        emit cellSwapRequested(sourceIndex, dropIndex);
-        event->acceptProposedAction();
-    }
-    else
-    {
-        event->ignore();
-    }
-}
-
-void GridViewManager::handleSwapRequested(GridCellWidget* source, GridCellWidget* target)
-{
-    emit cellSwapRequested(source->getGridIndex(), target->getGridIndex());
+    emit cellSwapRequestToDataManager(source, target);
 }
 
 void GridViewManager::clearGrid()
@@ -211,12 +212,12 @@ void GridViewManager::clearHighlight()
     m_highlightedCell = nullptr;
 }
 
-QPoint GridViewManager::getCellIndexFromPos(const QPoint& pos)
+QPoint GridViewManager::getCellIndexFromPos(const QPoint& indx)
 {
-    if(pos.x() >= 0 && pos.x() < gridRows() &&
-        pos.y() >= 0 && pos.y() < gridCols())
+    if(indx.x() >= 0 && indx.x() < gridRows() &&
+        indx.y() >= 0 && indx.y() < gridCols())
     {
-        return pos;
+        return indx;
     }
     return QPoint(-1, -1);
 }
@@ -262,7 +263,6 @@ GridCellWidget* GridViewManager::createCellWidgetForModel(NetworkInfoModel* mode
     NetworkInfoViewWidget* widget = new NetworkInfoViewWidget(model);
     widget->setUpdatesEnabled(false);
 
-    // Connect model changes to specific widget updates
     connect(model, &NetworkInfoModel::propertyChanged,
             widget, &NetworkInfoViewWidget::updateProperty,
             Qt::QueuedConnection);

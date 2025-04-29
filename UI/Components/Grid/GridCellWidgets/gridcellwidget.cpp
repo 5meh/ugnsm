@@ -44,11 +44,10 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
         >= QApplication::startDragDistance())
     {
         QDrag* drag = new QDrag(this);
-        QMimeData* mime = new QMimeData;
-        const QPoint idx = getGridIndex();
-        mime->setData("application/x-grid-index", QByteArray::number(idx.x()) + ',' + QByteArray::number(idx.y()));
+        QMimeData *mime = new QMimeData;
+        mime->setData("application/x-grid-index", QByteArray());
+        mime->setProperty("gridIndex", getGridIndex());
 
-        // Create drag pixmap with transparency
         QPixmap pixmap(size());
         pixmap.fill(Qt::transparent);
         render(&pixmap);
@@ -63,38 +62,37 @@ void GridCellWidget::dragEnterEvent(QDragEnterEvent *event)
     if(event->mimeData()->hasFormat("application/x-grid-index"))
     {
         setProperty("dragOver", true);
-        style()->unpolish(this);
         style()->polish(this);
         event->acceptProposedAction();
     }
-    else
-    {
-        event->ignore();
-    }
+    QFrame::dragEnterEvent(event);
 }
 
 void GridCellWidget::dropEvent(QDropEvent *event)
 {
-
-    if(event->mimeData()->hasFormat("application/x-grid-index"))
-    {
-        setProperty("dragOver", false);
-        //style()->unpolish(this);
-        style()->polish(this);
-        emit swapRequested(nullptr, this);
-        event->acceptProposedAction();
-    }
-    else
+    if (!event->mimeData()->hasFormat("application/x-grid-index"))
     {
         event->ignore();
+        return;
     }
+
+    setProperty("dragOver", false);
+    style()->polish(this);
+
+    const QVariant data = event->mimeData()->property("gridIndex");
+    const QPoint indxs = data.toPoint();
+
+    auto debug = getGridIndex();
+    emit swapRequested(data.toPoint(), getGridIndex());
+    event->acceptProposedAction();
+
+    //event->ignore();
     QFrame::dropEvent(event);
 }
 
 void GridCellWidget::dragLeaveEvent(QDragLeaveEvent *event)
 {
     setProperty("dragOver", false);
-    style()->unpolish(this);
     style()->polish(this);
     QFrame::dragLeaveEvent(event);
 }
