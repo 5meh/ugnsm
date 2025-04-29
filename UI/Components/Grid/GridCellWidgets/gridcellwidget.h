@@ -15,13 +15,14 @@ public:
     explicit GridCellWidget(QWidget* parent = nullptr);
     virtual ~GridCellWidget();
 
-    // Derived classes must provide a unique cell identifier (e.g., "row,col")
-    virtual QString cellId() const = 0;
     QSize sizeHint() const override;
+
+    QPoint getGridIndex() const;
+    void setGridIndex(QPoint newGridIndex);
+
 signals:
     void swapRequested(GridCellWidget* source, GridCellWidget* target);
-    void dragInitiated(GridCellWidget* source);//TODO: mb remove
-    void dropReceived(GridCellWidget* target);//TODO: mb remove
+    void gridIndexChanged();
 
 protected:
     virtual void mousePressEvent(QMouseEvent* event) override;
@@ -31,8 +32,10 @@ protected:
     virtual void dragLeaveEvent(QDragLeaveEvent* event) override;
 
     const QSize m_widgetSize = QSize(400, 300);
+    QPoint m_gridIndex;
     QPoint m_dragStartPos;
-    //QPoint m_dragStartPosition;
+private:
+    Q_PROPERTY(QPoint gridIndex READ getGridIndex WRITE setGridIndex NOTIFY gridIndexChanged FINAL)
 };
 
 #endif // GRIDCELLWIDGET_H

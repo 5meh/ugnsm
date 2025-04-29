@@ -25,7 +25,7 @@ public:
     int gridCols() const { return m_cells.isEmpty() ? 0 : m_cells[0].size(); }
 
 signals:
-    void cellSwapRequested(int fromRow, int fromCol, int toRow, int toCol);
+    void cellSwapRequested(QPoint from, QPoint to);
 
 protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
@@ -40,7 +40,7 @@ private:
     void clearGrid();
     void highlightCell(int row, int col);
     void clearHighlight();
-    QPoint parseCellPosition(const QString& cellId) const;
+    QPoint getCellIndexFromPos(const QPoint& pos);
     void updateCellContent(int row, int col, NetworkInfoModel* model);
     GridCellWidget* createCellWidgetForModel(NetworkInfoModel* model);
 

@@ -3,6 +3,7 @@ QWidget {
     font-size: 10pt;
 }
 
+PlaceHolderCellWidget[dragOver="true"],
 NetworkInfoViewWidget[dragOver="true"],
 GridCellWidget[dragOver="true"] {
     background-color: rgba(0, 255, 0, 50);

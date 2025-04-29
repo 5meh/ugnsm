@@ -81,11 +81,6 @@ const NetworkInfoModel *NetworkInfoViewWidget::getModel() const
     return m_viewModel;
 }
 
-QString NetworkInfoViewWidget::cellId() const
-{
-    return objectName();
-}
-
 void NetworkInfoViewWidget::updateProperty(const QString &propertyName)
 {
     if (!m_viewModel)
@@ -172,49 +167,49 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
     keyValueTbl->setUpdatesEnabled(true);
 }
 
-void NetworkInfoViewWidget::dragEnterEvent(QDragEnterEvent* event)
-{
-    if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
-    {
-        event->acceptProposedAction();
-        setProperty("dragOver", true);
-        //style()->unpolish(this);
-        style()->polish(this);
-        //update();
-    }
-}
+// void NetworkInfoViewWidget::dragEnterEvent(QDragEnterEvent* event)
+// {
+//     if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
+//     {
+//         event->acceptProposedAction();
+//         setProperty("dragOver", true);
+//         //style()->unpolish(this);
+//         style()->polish(this);
+//         //update();
+//     }
+// }
 
-void NetworkInfoViewWidget::dragLeaveEvent(QDragLeaveEvent* event)
-{
-    setProperty("dragOver", false);
-    //style()->unpolish(this);
-    style()->polish(this);
-    QFrame::dragLeaveEvent(event);//TODO:mb remove?
-}
+// void NetworkInfoViewWidget::dragLeaveEvent(QDragLeaveEvent* event)
+// {
+//     setProperty("dragOver", false);
+//     //style()->unpolish(this);
+//     style()->polish(this);
+//     QFrame::dragLeaveEvent(event);//TODO:mb remove?
+// }
 
-void NetworkInfoViewWidget::dropEvent(QDropEvent *event)
-{
-    setProperty("dragOver", false);
-    //style()->unpolish(this);
-    style()->polish(this);
+// void NetworkInfoViewWidget::dropEvent(QDropEvent *event)
+// {
+//     setProperty("dragOver", false);
+//     //style()->unpolish(this);
+//     style()->polish(this);
 
-    // Only accept our own widget format
-    if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
-    {
-        // We stored the pointer in a property on the MIME data
-        QVariant v = event->mimeData()->property("widget");
-        auto source = qobject_cast<NetworkInfoViewWidget*>(v.value<QObject*>());
-        if (source && source != this)
-        {
-            emit swapRequested(source, this);
-            event->acceptProposedAction();
-            return;
-        }
-    }
+//     // Only accept our own widget format
+//     if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
+//     {
+//         // We stored the pointer in a property on the MIME data
+//         QVariant v = event->mimeData()->property("widget");
+//         auto source = qobject_cast<NetworkInfoViewWidget*>(v.value<QObject*>());
+//         if (source && source != this)
+//         {
+//             emit swapRequested(source, this);
+//             event->acceptProposedAction();
+//             return;
+//         }
+//     }
 
-    // Otherwise, ignore
-    event->ignore();
-}
+//     // Otherwise, ignore
+//     event->ignore();
+// }
 
 void NetworkInfoViewWidget::addKeyValue(QPair<QString, QString> keyVal)
 {
@@ -274,11 +269,15 @@ void NetworkInfoViewWidget::connectViewModel()
 
 bool NetworkInfoViewWidget::eventFilter(QObject *watched, QEvent *event)
 {
-    QEvent::Type type = event->type();
-    if(type == QEvent::MouseButtonPress ||
-        type == QEvent::MouseMove ||
-        type == QEvent::MouseButtonRelease)
+    QTableView* table = qobject_cast<QTableView*>(watched->parent());
+    if (table && (table == keyValueTbl))
     {
+        // Allow drag operations to pass through
+        if(event->type() == QEvent::MouseMove &&
+            static_cast<QMouseEvent*>(event)->buttons() & Qt::LeftButton)
+        {
+            return false;
+        }
         return true;
     }
     return GridCellWidget::eventFilter(watched, event);

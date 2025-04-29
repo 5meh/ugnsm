@@ -37,10 +37,10 @@ GridDataManager::~GridDataManager()
     clearGrid();
 }
 
-NetworkInfoModel* GridDataManager::cellData(int row, int col) const
+NetworkInfoModel* GridDataManager::cellData(QPoint indx) const
 {
-    if(row >= 0 && row < m_data.size() && col >= 0 && col < m_data[row].size())
-        return m_data[row][col];
+    if(indx.x() >= 0 && indx.x() < m_data.size() && indx.y() >= 0 && indx.y() < m_data[indx.x()].size())
+        return m_data[indx.x()][indx.y()];
     return nullptr;
 }
 
@@ -67,15 +67,15 @@ void GridDataManager::initializeGrid(int rows, int cols)
     emit gridDimensionsChanged();
 }
 
-void GridDataManager::swapCells(int fromRow, int fromCol, int toRow, int toCol)
+void GridDataManager::swapCells(QPoint from, QPoint to)
 {
-    if(fromRow < 0 || fromRow >= getRows() || fromCol < 0 || fromCol >= getCols() ||
-        toRow < 0 || toRow >= getRows() || toCol < 0 || toCol >= getCols())
+    if(from.x() < 0 || from.x() >= getRows() || from.y() < 0 || from.y() >= getCols() ||
+        to.x() < 0 || to.x() >= getRows() || to.y() < 0 || to.y() >= getCols())
         return;
 
-    qSwap(m_data[fromRow][fromCol], m_data[toRow][toCol]);
-    emit cellChanged(fromRow, fromCol);
-    emit cellChanged(toRow, toCol);
+    qSwap(m_data[from.x()][from.y()], m_data[to.x()][to.y()]);
+    emit cellChanged(from);
+    emit cellChanged(to);
     //emit modelChanged();
 }
 
@@ -127,7 +127,7 @@ void GridDataManager::handleParsingCompleted(const QVariant& result)
             m_data[r][c] = nullptr;
         }
 
-        emit cellChanged(r, c);
+        emit cellChanged(QPoint(r, c));
     }
 
     for (auto it = oldIndex.constBegin(); it != oldIndex.constEnd(); ++it)
@@ -135,7 +135,7 @@ void GridDataManager::handleParsingCompleted(const QVariant& result)
         QPoint p = it.value();
         delete m_data[p.x()][p.y()];
         m_data[p.x()][p.y()] = nullptr;
-        emit cellChanged(p.x(), p.y());
+        emit cellChanged(p);
     }
 
     for (int i = capacity; i < result.value<QList<NetworkInfo*>>().size(); ++i)

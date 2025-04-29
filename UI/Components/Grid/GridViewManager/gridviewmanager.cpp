@@ -41,7 +41,7 @@ void GridViewManager::setGridSize(int rows, int cols)
         for(int col = 0; col < cols; ++col)
         {
             auto* cell = new PlaceHolderCellWidget();
-            cell->setObjectName(QString("%1,%2").arg(row).arg(col));
+            cell->setGridIndex(QPoint(row, col));
             m_gridLayout->addWidget(cell, row, col, Qt::AlignCenter);
             m_cells[row][col] = cell;
         }
@@ -60,7 +60,8 @@ void GridViewManager::setCell(int row, int col, GridCellWidget* widget)
         oldWidget->deleteLater();
     }
 
-    widget->setObjectName(QString("%1,%2").arg(row).arg(col));
+    //widget->setObjectName(QString("%1,%2").arg(row).arg(col));
+    widget->setGridIndex(QPoint(row, col));
     connect(widget, &GridCellWidget::swapRequested,
             this, &GridViewManager::handleSwapRequested);
 
@@ -154,45 +155,24 @@ void GridViewManager::dropEvent(QDropEvent* event)
 {
     clearHighlight();
 
-    if(!event->mimeData()->hasText()) {
-        event->ignore();
-        return;
-    }
-
-    const QString sourceId = event->mimeData()->text();
-    const QPoint sourcePos = parseCellPosition(sourceId);
-    QPoint dropPos(-1, -1);
-
-    // Find actual widget under cursor
-    const QPoint cursorPos = event->position().toPoint();
-    for(int row = 0; row < gridRows(); ++row) {
-        for(int col = 0; col < gridCols(); ++col) {
-            if(cellAt(row, col)->geometry().contains(cursorPos)) {
-                dropPos = QPoint(row, col);
-                break;
-            }
-        }
-    }
+    QPoint sourceIndex = event->mimeData()->property("gridIndex").toPoint();
+    QPoint dropIndex = getCellIndexFromPos(event->position().toPoint());
 
     // Validate positions using grid bounds
-    if(sourcePos.x() >= 0 && sourcePos.x() < gridRows() &&
-        sourcePos.y() >= 0 && sourcePos.y() < gridCols() &&
-        dropPos.x() >= 0 && dropPos.y() >= 0)
+    if(sourceIndex != QPoint(-1, -1) && dropIndex != QPoint(-1, -1))
     {
-        emit cellSwapRequested(sourcePos.x(), sourcePos.y(),
-                               dropPos.x(), dropPos.y());
+        emit cellSwapRequested(sourceIndex, dropIndex);
         event->acceptProposedAction();
-    } else {
+    }
+    else
+    {
         event->ignore();
     }
 }
 
 void GridViewManager::handleSwapRequested(GridCellWidget* source, GridCellWidget* target)
 {
-    const QPoint sourcePos = parseCellPosition(source->cellId());
-    const QPoint targetPos = parseCellPosition(target->cellId());
-    emit cellSwapRequested(sourcePos.x(), sourcePos.y(),
-                           targetPos.x(), targetPos.y());
+    emit cellSwapRequested(source->getGridIndex(), target->getGridIndex());
 }
 
 void GridViewManager::clearGrid()
@@ -230,17 +210,14 @@ void GridViewManager::clearHighlight()
     m_highlightedCell = nullptr;
 }
 
-QPoint GridViewManager::parseCellPosition(const QString& cellId) const
+QPoint GridViewManager::getCellIndexFromPos(const QPoint& pos)
 {
-    QStringList parts = cellId.split(',');
-    if(parts.size() == 2)
+    if(pos.x() >= 0 && pos.x() < gridRows() &&
+        pos.y() >= 0 && pos.y() < gridCols())
     {
-        bool ok1, ok2;
-        int row = parts[0].toInt(&ok1);
-        int col = parts[1].toInt(&ok2);
-        if(ok1 && ok2) return QPoint(row, col);
+        return pos;
     }
-    return QPoint(-1, -1); // Invalid position marker
+    return QPoint(-1, -1);
 }
 
 void GridViewManager::updateCellContent(int row, int col, NetworkInfoModel* model)

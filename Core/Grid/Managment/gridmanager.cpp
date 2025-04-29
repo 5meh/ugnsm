@@ -51,10 +51,10 @@ void GridManager::setupGridManager()
 void GridManager::setupConnections()
 {
     connect(m_dataManager, &GridDataManager::cellChanged,
-            this, [this](int row, int col)
+            this, [this](QPoint indx)
             {
                 m_viewManager->setUpdatesEnabled(false);
-                m_viewManager->updateCell(row, col, m_dataManager->cellData(row, col));
+                m_viewManager->updateCell(indx.x(), indx.y(), m_dataManager->cellData(indx));
                 m_viewManager->setUpdatesEnabled(true);
             });
 

@@ -20,12 +20,12 @@ class GridDataManager : public QObject
 public:
     explicit GridDataManager(QObject* parent = nullptr);
     virtual ~GridDataManager();
-    NetworkInfoModel* cellData(int row, int col) const;
+    NetworkInfoModel* cellData(QPoint indx) const;
 
     int getRows() const;//TODO:mb remowe later
     int getCols() const;//TODO:mb remowe later
     void initializeGrid(int rows, int cols);
-    void swapCells(int fromRow, int fromCol, int toRow, int toCol);
+    void swapCells(QPoint from, QPoint to);
 
 signals:
     void modelChanged();
@@ -33,7 +33,7 @@ signals:
     void parsingFailed(const QStringList& warnings);
     void networkHighlightChanged(int row, int col);
 
-    void cellChanged(int row, int col);
+    void cellChanged(QPoint indx);
     void gridReset();
 
 private slots:

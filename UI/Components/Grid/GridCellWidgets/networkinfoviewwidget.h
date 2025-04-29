@@ -20,7 +20,6 @@ public:
 
     void setViewModel(NetworkInfoModel* model);//TODO:mb add Q_PROPERTY
     const NetworkInfoModel* getModel()const;
-    QString cellId() const override;
     void updateProperty(const QString& propertyName);
     QString getMac() const;
     Q_PROPERTY(bool updating READ isUpdating WRITE setUpdating NOTIFY updatingChanged)
@@ -33,10 +32,10 @@ public slots:
 signals:
     void updatingChanged();
 
-protected:
-    void dragEnterEvent(QDragEnterEvent* event)override;
-    void dragLeaveEvent(QDragLeaveEvent* event)override;
-    void dropEvent(QDropEvent* event)override;
+// protected:
+    //void dragEnterEvent(QDragEnterEvent* event)override;
+    //void dragLeaveEvent(QDragLeaveEvent* event)override;
+    //void dropEvent(QDropEvent* event)override;
 
 private:
     void updateStatusIndicator(QStandardItem* item, const QString& key,

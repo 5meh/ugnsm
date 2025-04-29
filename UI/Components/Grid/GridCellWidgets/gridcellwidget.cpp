@@ -37,19 +37,21 @@ void GridCellWidget::mousePressEvent(QMouseEvent *event)
 
 void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    if(!(event->buttons() & Qt::LeftButton)) return;
+    if(!(event->buttons() & Qt::LeftButton))
+        return;
 
     if((event->pos() - m_dragStartPos).manhattanLength()
-        >= QApplication::startDragDistance()) {
+        >= QApplication::startDragDistance())
+    {
         QDrag* drag = new QDrag(this);
         QMimeData* mime = new QMimeData;
-        mime->setText(cellId());
+        const QPoint idx = getGridIndex();
+        mime->setData("application/x-grid-index", QByteArray::number(idx.x()) + ',' + QByteArray::number(idx.y()));
 
         // Create drag pixmap with transparency
         QPixmap pixmap(size());
         pixmap.fill(Qt::transparent);
         render(&pixmap);
-
         drag->setPixmap(pixmap);
         drag->setMimeData(mime);
         drag->exec(Qt::MoveAction);
@@ -58,7 +60,7 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
 
 void GridCellWidget::dragEnterEvent(QDragEnterEvent *event)
 {
-    if (event->mimeData()->hasText())
+    if(event->mimeData()->hasFormat("application/x-grid-index"))
     {
         setProperty("dragOver", true);
         style()->unpolish(this);
@@ -74,17 +76,12 @@ void GridCellWidget::dragEnterEvent(QDragEnterEvent *event)
 void GridCellWidget::dropEvent(QDropEvent *event)
 {
 
-    if(event->mimeData()->hasText())
+    if(event->mimeData()->hasFormat("application/x-grid-index"))
     {
-        QString sourceId = event->mimeData()->text();
-        qDebug() << "GridCellWidget (" << cellId() << ") received drop from:" << sourceId;
-        // In a real scenario, you might look up the source cell widget by comparing IDs.
-        // Here we simply emit swapRequested with a dummy target (this cell).
         setProperty("dragOver", false);
-        style()->unpolish(this);
+        //style()->unpolish(this);
         style()->polish(this);
         emit swapRequested(nullptr, this);
-        emit dropReceived(this);
         event->acceptProposedAction();
     }
     else
@@ -100,5 +97,18 @@ void GridCellWidget::dragLeaveEvent(QDragLeaveEvent *event)
     style()->unpolish(this);
     style()->polish(this);
     QFrame::dragLeaveEvent(event);
+}
+
+QPoint GridCellWidget::getGridIndex() const
+{
+    return m_gridIndex;
+}
+
+void GridCellWidget::setGridIndex(QPoint newGridIndex)
+{
+    if (m_gridIndex == newGridIndex)
+        return;
+    m_gridIndex = newGridIndex;
+    emit gridIndexChanged();//TODO; mb change
 }
 

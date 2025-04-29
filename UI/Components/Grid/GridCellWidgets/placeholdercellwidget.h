@@ -9,8 +9,6 @@ class PlaceHolderCellWidget: public GridCellWidget
 public:
     PlaceHolderCellWidget(QWidget* parent = nullptr);
     ~PlaceHolderCellWidget() = default;
-
-    QString cellId() const override;
 };
 
 #endif // PLACEHOLDERCELLWIDGET_H
