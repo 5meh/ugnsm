@@ -39,8 +39,11 @@ GridDataManager::~GridDataManager()
 
 NetworkInfoModel* GridDataManager::cellData(QPoint indx) const
 {
-    if(indx.x() >= 0 && indx.x() < m_data.size() && indx.y() >= 0 && indx.y() < m_data[indx.x()].size())
+    if (indx.x() >= 0 && indx.x() < m_data.size() &&
+        indx.y() >= 0 && indx.y() < m_data[indx.x()].size())
+    {
         return m_data[indx.x()][indx.y()];
+    }
     return nullptr;
 }
 
@@ -74,6 +77,9 @@ void GridDataManager::swapCells(QPoint from, QPoint to)
         return;
 
     qSwap(m_data[from.x()][from.y()], m_data[to.x()][to.y()]);
+
+    updateMacMap();
+
     emit cellChanged(from);
     emit cellChanged(to);
 }
@@ -169,8 +175,8 @@ void GridDataManager::handleNetworkStats(const QString& mac, quint64 rxSpeed, qu
 
 void GridDataManager::refreshData()
 {
-    if(m_parser)
-        m_parser->parse();
+    //if(m_parser)
+    m_parser->parse();
 }
 
 void GridDataManager::clearGrid()
@@ -186,13 +192,15 @@ void GridDataManager::clearGrid()
 
 void GridDataManager::updateMacMap()
 {
-    //m_macIndex.clear();
-    // for(const auto& row : m_data)
-    // {
-    //     for(NetworkInfoModel* model : row)
-    //     {
-    //         if(model  && !model->getMac().isEmpty())
-    //             m_macMap.insert(model->getMac(), model);
-    //     }
-    // }
+    m_macIndex.clear();
+    for (int r = 0; r < m_data.size(); ++r)
+    {
+        for (int c = 0; c < m_data[r].size(); ++c)
+        {
+            if (m_data[r][c] && !m_data[r][c]->getMac().isEmpty())
+            {
+                m_macIndex.insert(m_data[r][c]->getMac(), QPoint(r, c));
+            }
+        }
+    }
 }

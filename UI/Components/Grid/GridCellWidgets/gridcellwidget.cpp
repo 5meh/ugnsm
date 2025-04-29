@@ -45,8 +45,11 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
     {
         QDrag* drag = new QDrag(this);
         QMimeData *mime = new QMimeData;
-        mime->setData("application/x-grid-index", QByteArray());
-        mime->setProperty("gridIndex", getGridIndex());
+
+        QByteArray indexData;
+        QDataStream stream(&indexData, QIODevice::WriteOnly);
+        stream << getGridIndex();
+        mime->setData("application/x-grid-index", indexData);
 
         QPixmap pixmap(size());
         pixmap.fill(Qt::transparent);
@@ -79,14 +82,14 @@ void GridCellWidget::dropEvent(QDropEvent *event)
     setProperty("dragOver", false);
     style()->polish(this);
 
-    const QVariant data = event->mimeData()->property("gridIndex");
-    const QPoint indxs = data.toPoint();
+    QByteArray receivedData = event->mimeData()->data("application/x-grid-index");
+    QDataStream stream(&receivedData, QIODevice::ReadOnly);
+    QPoint sourceIndex;
+    stream >> sourceIndex;
 
-    auto debug = getGridIndex();
-    emit swapRequested(data.toPoint(), getGridIndex());
+    emit swapRequested(sourceIndex, getGridIndex());
     event->acceptProposedAction();
 
-    //event->ignore();
     QFrame::dropEvent(event);
 }
 

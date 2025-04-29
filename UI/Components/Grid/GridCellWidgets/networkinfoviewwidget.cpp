@@ -246,7 +246,7 @@ void NetworkInfoViewWidget::setupTableView()
     keyValueTbl->horizontalHeader()->setVisible(false);
     keyValueTbl->horizontalHeader()->setStretchLastSection(true);
     keyValueTbl->setShowGrid(false);
-
+    keyValueTbl->setFocusPolicy(Qt::NoFocus);
     //keyValueTbl->setDragEnabled(true);
     //keyValueTbl->setAcceptDrops(true);
     //keyValueTbl->setDropIndicatorShown(true);
@@ -254,6 +254,8 @@ void NetworkInfoViewWidget::setupTableView()
     //keyValueTbl->setSelectionMode(QAbstractItemView::NoSelection);
     setKeyValueTbl();
     connectViewModel();
+
+    keyValueTbl->viewport()->setAttribute(Qt::WA_TransparentForMouseEvents);
     //keyValueTbl->viewport()->installEventFilter(this);
     layout()->addWidget(keyValueTbl);
 }
@@ -275,7 +277,6 @@ bool NetworkInfoViewWidget::eventFilter(QObject *watched, QEvent *event)
         // Only block unwanted interactions
         switch(event->type())
         {
-        case QEvent::MouseButtonDblClick:
         case QEvent::ContextMenu:
             return true;
         default:

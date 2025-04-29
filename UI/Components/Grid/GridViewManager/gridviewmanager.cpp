@@ -80,8 +80,7 @@ void GridViewManager::updateCell(int row, int col, NetworkInfoModel* model)
     {
         if(!qobject_cast<NetworkInfoViewWidget*>(current))
         {
-            auto* newWidget = createCellWidgetForModel(model);
-            //newWidget->setFixedSize(current->size());
+            GridCellWidget* newWidget = createCellWidgetForModel(model);
             setCell(row, col, newWidget);
         }
         else
