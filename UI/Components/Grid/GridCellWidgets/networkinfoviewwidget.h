@@ -31,11 +31,8 @@ public slots:
     void updateNetworkInfoDisplay();
 signals:
     void updatingChanged();
-
-// protected:
-    //void dragEnterEvent(QDragEnterEvent* event)override;
-    //void dragLeaveEvent(QDragLeaveEvent* event)override;
-    //void dropEvent(QDropEvent* event)override;
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
     void updateStatusIndicator(QStandardItem* item, const QString& key,
@@ -48,11 +45,8 @@ private:
     void addKeyValue(QPair<QString, QString>);
     void setupTableView();
     void connectViewModel();
-    bool eventFilter(QObject* watched, QEvent* event) override;
 
-    //TODO: mb remove constants
-    //bool m_isTableDragging = false;
-    //QPoint m_tableDragStartPos;
+
     NetworkInfoModel* m_viewModel;
 
     QTableView* keyValueTbl;

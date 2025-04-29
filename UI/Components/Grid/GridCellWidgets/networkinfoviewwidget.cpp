@@ -270,15 +270,17 @@ void NetworkInfoViewWidget::connectViewModel()
 bool NetworkInfoViewWidget::eventFilter(QObject *watched, QEvent *event)
 {
     QTableView* table = qobject_cast<QTableView*>(watched->parent());
-    if (table && (table == keyValueTbl))
+    if(table && (table == keyValueTbl))
     {
-        // Allow drag operations to pass through
-        if(event->type() == QEvent::MouseMove &&
-            static_cast<QMouseEvent*>(event)->buttons() & Qt::LeftButton)
+        // Only block unwanted interactions
+        switch(event->type())
         {
+        case QEvent::MouseButtonDblClick:
+        case QEvent::ContextMenu:
+            return true;
+        default:
             return false;
         }
-        return true;
     }
     return GridCellWidget::eventFilter(watched, event);
 }

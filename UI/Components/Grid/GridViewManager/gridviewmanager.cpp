@@ -60,7 +60,7 @@ void GridViewManager::setCell(int row, int col, GridCellWidget* widget)
         oldWidget->deleteLater();
     }
 
-    //widget->setObjectName(QString("%1,%2").arg(row).arg(col));
+
     widget->setGridIndex(QPoint(row, col));
     connect(widget, &GridCellWidget::swapRequested,
             this, &GridViewManager::handleSwapRequested);
@@ -78,15 +78,16 @@ void GridViewManager::updateCell(int row, int col, NetworkInfoModel* model)
 
     if(model)
     {
-        if(current && current->metaObject()->className() == NetworkInfoViewWidget::staticMetaObject.className())
+        NetworkInfoViewWidget* viewWidget = qobject_cast<NetworkInfoViewWidget*>(current);
+        if(viewWidget)
         {
-            // Update existing widget
-            static_cast<NetworkInfoViewWidget*>(current)->setViewModel(model);
+            viewWidget->setViewModel(model);
         }
         else
         {
-            // Replace with new widget
-            setCell(row, col, createCellWidgetForModel(model));
+            auto* newWidget = createCellWidgetForModel(model);
+            newWidget->setFixedSize(newWidget->sizeHint());
+            setCell(row, col, newWidget);
         }
     }
     else
@@ -191,7 +192,7 @@ void GridViewManager::clearGrid()
 void GridViewManager::highlightCell(int row, int col)
 {
     clearHighlight();
-    auto *cell = cellAt(row, col);
+    auto* cell = cellAt(row, col);
     if (!cell)
         return;
     cell->setProperty("highlighted", true);
