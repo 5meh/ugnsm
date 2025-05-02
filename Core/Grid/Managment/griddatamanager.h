@@ -6,6 +6,9 @@
 #include <QHash>
 #include <QNetworkInterface>
 #include <QPoint>
+#include <QMutex>
+#include <QWaitCondition>
+#include <QAtomicInt>
 
 #include "../Utilities/Parser/iparser.h"
 
@@ -22,8 +25,8 @@ public:
     virtual ~GridDataManager();
     NetworkInfoModel* cellData(QPoint indx) const;
 
-    int getRows() const;//TODO:mb remowe later
-    int getCols() const;//TODO:mb remowe later
+    int getRows() const;
+    int getCols() const;
     void initializeGrid(int rows, int cols);
     void swapCells(QPoint from, QPoint to);
 
@@ -44,6 +47,13 @@ private slots:
     void refreshData();
 
 private:
+    QMutex m_dataMutex;
+    QWaitCondition m_dataCondition;
+    QAtomicInt m_activeOperations{0};
+    bool m_shuttingDown = false;
+
+    void processDataAsync();
+    void safeSwapCells(QPoint from, QPoint to);
     void clearGrid();
     void updateMacMap();//TODO: mb remove later
 

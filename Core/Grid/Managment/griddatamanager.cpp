@@ -1,5 +1,6 @@
 #include "griddatamanager.h"
 
+#include "../Utilities/Logger/logger.h"
 #include "../../Network/Information/networkinfo.h"
 #include "../../Network/Information/networkinfomodel.h"
 #include "../Utilities/Parser/iparser.h"

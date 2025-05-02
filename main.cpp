@@ -12,6 +12,8 @@ void configureSystem()
 {
     ComponentRegistry::registerComponent<INetworkSortStrategy, SpeedSortStrategy>();
     ComponentRegistry::registerComponent<IParser, NetworkEthernetParser>();
+
+    Logger::instance().log(Logger::Info, "Components registered", "MainWindow");
 }
 
 int main(int argc, char *argv[])
