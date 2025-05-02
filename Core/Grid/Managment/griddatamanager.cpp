@@ -76,7 +76,9 @@ void GridDataManager::swapCells(QPoint from, QPoint to)
         to.x() < 0 || to.x() >= getRows() || to.y() < 0 || to.y() >= getCols())
         return;
 
-    qSwap(m_data[from.x()][from.y()], m_data[to.x()][to.y()]);
+    if(from == to) return;
+
+    std::swap(m_data[from.x()][from.y()], m_data[to.x()][to.y()]);
 
     updateMacMap();
 
@@ -86,82 +88,75 @@ void GridDataManager::swapCells(QPoint from, QPoint to)
 
 void GridDataManager::handleParsingCompleted(const QVariant& result)
 {
-    QList<NetworkInfo*> incoming = result.value<QList<NetworkInfo*>>();
-    m_sorter->sort(incoming);
+    // Get sorted network info list and calculate grid parameters
+    QList<NetworkInfo*> allInfos = result.value<QList<NetworkInfo*>>();
+    m_sorter->sort(allInfos);
 
     const int rows = getRows();
     const int cols = getCols();
     const int capacity = rows * cols;
-    incoming = incoming.mid(0,capacity);
+
+    // Split into used and unused NetworkInfo objects
+    QList<NetworkInfo*> usedInfos = allInfos.mid(0, capacity);
+    QList<NetworkInfo*> unusedInfos = allInfos.mid(capacity);
+
+    // Immediately delete unused NetworkInfo objects
+    qDeleteAll(unusedInfos);
+    unusedInfos.clear();
 
     QHash<QString, QPoint> oldIndex = m_macIndex;
+    m_macIndex.clear();
 
-    for (int idx = 0; idx < capacity; ++idx)
-    {
-        int r = idx / cols;
-        int c = idx % cols;
+    // Process grid cells using explicit row/column iteration
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            const int linearIndex = r * cols + c;
+            NetworkInfo* info = (linearIndex < usedInfos.size()) ? usedInfos[linearIndex] : nullptr;
 
-        if (idx < incoming.size())
-        {
-            NetworkInfo* info = incoming.at(idx);
-            QString mac = info->getMac();
+            // Process valid network information
+            if (info) {
+                const QString mac = info->getMac();
 
-            if (auto it = oldIndex.find(mac); it != oldIndex.end())
-            {
-                QPoint oldPos = *it;
-                NetworkInfoModel* model = m_data[oldPos.x()][oldPos.y()];
-
-                if (oldPos != QPoint(r,c))
-                {
-                    std::swap(m_data[r][c], m_data[oldPos.x()][oldPos.y()]);
+                if (oldIndex.contains(mac)) {
+                    // Update existing model position
+                    QPoint oldPos = oldIndex[mac];
+                    if (oldPos != QPoint(r, c)) {
+                        std::swap(m_data[r][c], m_data[oldPos.x()][oldPos.y()]);
+                        emit cellChanged(oldPos);
+                    }
+                    m_data[r][c]->updateFromNetworkInfo(info);
+                } else {
+                    // Create new model and transfer ownership
+                    delete m_data[r][c];
+                    m_data[r][c] = new NetworkInfoModel(info, this);
                 }
 
-                m_data[r][c]->updateFromNetworkInfo(info);
-
-                oldIndex.remove(mac);
-            }
-            else
-            {
-                delete m_data[r][c];
-                m_data[r][c] = new NetworkInfoModel(info, this);
-            }
-        }
-        else
-        {
-            delete m_data[r][c];
-            m_data[r][c] = nullptr;
-        }
-
-        emit cellChanged(QPoint(r, c));
-    }
-
-    for (auto it = oldIndex.constBegin(); it != oldIndex.constEnd(); ++it)
-    {
-        QPoint p = it.value();
-        delete m_data[p.x()][p.y()];
-        m_data[p.x()][p.y()] = nullptr;
-        emit cellChanged(p);
-    }
-
-    for (int i = capacity; i < result.value<QList<NetworkInfo*>>().size(); ++i)
-    {
-        delete incoming[i];
-    }
-
-    m_macIndex.clear();
-    for (int r = 0; r < rows; ++r)
-    {
-        for (int c = 0; c < cols; ++c)
-        {
-            if (auto *model = m_data[r][c])
-            {
-                const QString m = model->getMac();
-                if (!m.isEmpty())
-                    m_macIndex.insert(m, QPoint(r,c));
+                // Update MAC index
+                m_macIndex[mac] = QPoint(r, c);
+                emit cellChanged(QPoint(r, c));
+            } else {
+                // Clear cell if no corresponding info
+                if (m_data[r][c]) {
+                    delete m_data[r][c];
+                    m_data[r][c] = nullptr;
+                    emit cellChanged(QPoint(r, c));
+                }
             }
         }
     }
-    //emit modelChanged();//TODO: mb remove
+
+    // Cleanup remaining old entries that weren't updated
+    for (auto it = oldIndex.constBegin(); it != oldIndex.constEnd(); ++it) {
+        const QPoint pos = it.value();
+        if (!m_macIndex.contains(it.key()) && m_data[pos.x()][pos.y()]) {
+            delete m_data[pos.x()][pos.y()];
+            m_data[pos.x()][pos.y()] = nullptr;
+            emit cellChanged(pos);
+        }
+    }
+
+    // Clear temporary lists without deleting managed pointers
+    usedInfos.clear();
 }
 
 void GridDataManager::handleNetworkStats(const QString& mac, quint64 rxSpeed, quint64 txSpeed)

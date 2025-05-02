@@ -31,7 +31,7 @@ protected:
     virtual void dropEvent(QDropEvent* event) override;
     virtual void dragLeaveEvent(QDragLeaveEvent* event) override;
 
-    const QSize m_widgetSize = QSize(400, 300);
+    const QSize m_widgetSize = QSize(400, 400);
     QPoint m_gridIndex;
     QPoint m_dragStartPos;
 private:

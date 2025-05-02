@@ -40,7 +40,7 @@ void GridViewManager::setGridSize(int rows, int cols)
         m_cells[row].resize(cols);
         for(int col = 0; col < cols; ++col)
         {
-            auto* cell = new PlaceHolderCellWidget();
+            PlaceHolderCellWidget* cell = new PlaceHolderCellWidget();
             cell->setGridIndex(QPoint(row, col));
             m_gridLayout->addWidget(cell, row, col, Qt::AlignCenter);
             m_cells[row][col] = cell;
@@ -71,28 +71,30 @@ void GridViewManager::setCell(int row, int col, GridCellWidget* widget)
 
 void GridViewManager::updateCell(int row, int col, NetworkInfoModel* model)
 {
-    if(row < 0 || row >= gridRows() || col < 0 || col >= gridCols())
+    if (row < 0 || row >= gridRows() || col < 0 || col >= gridCols())
         return;
 
     GridCellWidget* current = cellAt(row, col);
 
-    if(model)
-    {
-        if(!qobject_cast<NetworkInfoViewWidget*>(current))
-        {
-            GridCellWidget* newWidget = createCellWidgetForModel(model);
+    if (model) {
+        NetworkInfoViewWidget* networkWidget = qobject_cast<NetworkInfoViewWidget*>(current);
+        if (networkWidget) {
+            // Update existing widget if model is different
+            if (networkWidget->getModel() != model) {
+                networkWidget->setViewModel(model);
+            }
+        } else {
+            // Replace placeholder with new NetworkInfoViewWidget
+            auto* newWidget = createCellWidgetForModel(model);
+            newWidget->setGridIndex(QPoint(row, col));
             setCell(row, col, newWidget);
         }
-        else
-        {
-            static_cast<NetworkInfoViewWidget*>(current)->setViewModel(model);
-        }
-    }
-    else
-    {
-        if(!qobject_cast<PlaceHolderCellWidget*>(current))
-        {
-            setCell(row, col, new PlaceHolderCellWidget(this));
+    } else {
+        // Replace with placeholder if not already one
+        if (!qobject_cast<PlaceHolderCellWidget*>(current)) {
+            PlaceHolderCellWidget* placeholder = new PlaceHolderCellWidget(this);
+            placeholder->setGridIndex(QPoint(row, col));
+            setCell(row, col, placeholder);
         }
     }
 }

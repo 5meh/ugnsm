@@ -78,7 +78,7 @@ void NetworkInfoViewWidget::setViewModel(NetworkInfoModel* model)
 
 const NetworkInfoModel *NetworkInfoViewWidget::getModel() const
 {
-    return m_viewModel;
+    return m_viewModel ? m_viewModel : nullptr;
 }
 
 void NetworkInfoViewWidget::updateProperty(const QString &propertyName)

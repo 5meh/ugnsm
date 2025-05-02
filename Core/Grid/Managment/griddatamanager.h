@@ -28,7 +28,7 @@ public:
     void swapCells(QPoint from, QPoint to);
 
 signals:
-    void modelChanged();
+    //void modelChanged();
     void gridDimensionsChanged();
     void parsingFailed(const QStringList& warnings);
     void networkHighlightChanged(int row, int col);

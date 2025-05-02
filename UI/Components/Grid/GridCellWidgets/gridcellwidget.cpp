@@ -14,6 +14,7 @@ GridCellWidget::GridCellWidget(QWidget* parent)
     :QFrame(parent)
 {
     setAcceptDrops(true);
+    resize(sizeHint());
 }
 
 GridCellWidget::~GridCellWidget()
