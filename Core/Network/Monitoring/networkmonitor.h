@@ -18,11 +18,12 @@ signals:
     void statsUpdated(const QString& mac,
                       quint64 downloadSpeedBps,
                       quint64 uploadSpeedBps);
-// public slots:
-//     void onNetworkStatsUpdated(const QString& interface, quint64 rx, quint64 tx);
+    // public slots:
+    //     void onNetworkStatsUpdated(const QString& interface, quint64 rx, quint64 tx);
 
 private slots:
     void refreshStats();
+    void monitoringLoop();
 
 private:
     struct InterfaceStats
@@ -35,11 +36,14 @@ private:
     bool getInterfaceStats(QHash<QString, InterfaceStats>& currentStats);
     void calculateSpeeds(const QHash<QString, InterfaceStats>& currentStats);
 
-    QTimer m_timer;
-    QHash<QString, InterfaceStats> m_previousStats;
-
     // Platform-specific implementation
     bool readRawInterfaceStats(QHash<QString, InterfaceStats>& stats);
+
+    TaskScheduler* m_scheduler;
+    QAtomicInt m_running{0};
+    int m_interval;
+
+    QHash<QString, InterfaceStats> m_previousStats;
 };
 
 #endif // NETWORKMONITOR_H

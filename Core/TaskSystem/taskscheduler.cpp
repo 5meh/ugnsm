@@ -14,6 +14,20 @@ TaskScheduler::~TaskScheduler()
     qDeleteAll(m_resources);
 }
 
+void TaskScheduler::cancelAll(const QString &resourceKey)
+{
+    QMutexLocker lock(&m_mapMutex);
+    if(resourceKey.isEmpty())
+    {
+        m_pool.clear();
+    }
+    else if(m_mutexes.contains(resourceKey))
+    {
+        QMutex* mutex = m_mutexes[resourceKey];
+        QMutexLocker resourceLock(mutex);
+    }
+}
+
 template<typename T>
 void TaskScheduler::schedule(const QString& resourceKey,
                              void (T::*method)(),

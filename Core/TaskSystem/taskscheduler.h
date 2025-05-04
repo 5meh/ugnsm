@@ -1,46 +1,76 @@
 #ifndef TASKSCHEDULER_H
 #define TASKSCHEDULER_H
 
-#include <QObject>
-#include <QThreadPool>
+#include "methodtask.h"
+#include "atomicmethodtask.h"
 #include <QMap>
-#include <QMutex>
+#include <QThreadPool>
 
 class TaskScheduler : public QObject
 {
     Q_OBJECT
 public:
-    explicit TaskScheduler(QObject* parent = nullptr);
-    ~TaskScheduler();
-
-    enum class Priority
+    explicit TaskScheduler(QObject* parent = nullptr)
+        : QObject(parent), m_pool(new QThreadPool(this))
     {
-        Normal,
-        High,
-        Background
-    };
+        m_pool->setMaxThreadCount(4);
+    }
 
-    template<typename T>
+    template<class Receiver, typename... Args>
     void schedule(const QString& resourceKey,
-                  void (T::*method)(),
-                  T* receiver,
-                  Priority priority = Priority::Normal);
+                  Receiver* receiver,
+                  void (Receiver::*method)(Args...),
+                  Args... args,
+                  TaskWrapperBase::Priority priority = TaskWrapperBase::NormalPriority)
+    {
+        MethodTask<Receiver, Args...>* task = new MethodTask<Receiver, Args...>(
+            receiver, method, priority, args...
+            );
+        startTask(resourceKey, task);
+    }
 
-    void cancelAll(const QString& resourceKey = "");
+    template<class Receiver, typename... Args>
+    void scheduleAtomic(QAtomicInt& flag,
+                        const QString& resourceKey,
+                        Receiver* receiver,
+                        void (Receiver::*method)(Args...),
+                        Args... args,
+                        TaskWrapperBase::Priority priority = TaskWrapperBase::NormalPriority)
+    {
+        AtomicMethodTask<Receiver, Args...>* task = new AtomicMethodTask<Receiver, Args...>(
+            flag, receiver, method, args...
+            );
+        startTask(resourceKey, task);
+    }
 
 private:
-    class ResourceMutex;
+    void startTask(const QString& resourceKey, TaskWrapperBase* task) {
+        QMutex* mutex = getResourceMutex(resourceKey);
+        task->setProperty("resourceMutex", QVariant::fromValue(mutex));
 
-    QThreadPool m_pool;
-    QMap<QString, ResourceMutex*> m_resources;
-    QMutex m_resourceMapMutex;
-};
+        switch(task->taskPriority()) {
+        case TaskWrapperBase::HighPriority:
+            m_pool->start(task, QThread::HighPriority);
+            break;
+        case TaskWrapperBase::LowPriority:
+            m_pool->start(task, QThread::LowPriority);
+            break;
+        default:
+            m_pool->start(task, QThread::InheritPriority);
+        }
+    }
 
-class TaskScheduler::ResourceMutex
-{
-public:
-    QMutex mutex;
-    QAtomicInt refCount{0};
+    QMutex* getResourceMutex(const QString& key) {
+        QMutexLocker lock(&m_mapMutex);
+        if(!m_mutexes.contains(key)) {
+            m_mutexes[key] = new QMutex(QMutex::Recursive);
+        }
+        return m_mutexes[key];
+    }
+
+    QThreadPool* m_pool;
+    QMap<QString, QMutex*> m_mutexes;
+    QMutex m_mapMutex;
 };
 
 #endif // TASKSCHEDULER_H

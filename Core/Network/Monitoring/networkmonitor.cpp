@@ -20,13 +20,12 @@
 NetworkMonitor::NetworkMonitor(QObject* parent)
     : QObject(parent)
 {
-    m_timer.setTimerType(Qt::VeryCoarseTimer);
-    connect(&m_timer, &QTimer::timeout, this, &NetworkMonitor::refreshStats);
 }
 
 void NetworkMonitor::startMonitoring(int intervalMs)
 {
-    m_timer.start(intervalMs);
+    m_interval = interval;
+    m_running.storeRelease(1);
 }
 
 void NetworkMonitor::stopMonitoring()
@@ -41,6 +40,11 @@ void NetworkMonitor::refreshStats()
     {
         calculateSpeeds(currentStats);
     }
+}
+
+void NetworkMonitor::monitoringLoop()
+{
+
 }
 
 bool NetworkMonitor::getInterfaceStats(QHash<QString, InterfaceStats>& currentStats)
