@@ -3,6 +3,7 @@
 #include "componentregistry.h"
 
 #include "Core/Network/NetworkSortingStrategies/speedsortstrategy.h"
+#include "Utilities/Logger/logger.h"
 #include "Utilities/Parser/networkethernetparser.h"
 
 #include <QApplication>
