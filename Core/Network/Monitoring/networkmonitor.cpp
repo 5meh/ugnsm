@@ -4,6 +4,7 @@
 #include <QTextStream>
 #include <QDateTime>
 #include "../../../UI/Components/Grid/GridCellWidgets/networkinfoviewwidget.h"
+#include "../TaskSystem/taskscheduler.h"
 
 #ifdef Q_OS_WIN
 #include <winsock2.h>
@@ -17,20 +18,21 @@
 // Linux implementation
 #endif
 
-NetworkMonitor::NetworkMonitor(QObject* parent)
-    : QObject(parent)
+NetworkMonitor::NetworkMonitor(TaskScheduler* scheduler, QObject* parent)
+    :m_scheduler(scheduler),
+    QObject(parent)
 {
 }
 
 void NetworkMonitor::startMonitoring(int intervalMs)
 {
-    m_interval = interval;
+    m_interval = intervalMs;
     m_running.storeRelease(1);
 }
 
 void NetworkMonitor::stopMonitoring()
 {
-    m_timer.stop();
+    //m_timer.stop();
 }
 
 void NetworkMonitor::refreshStats()

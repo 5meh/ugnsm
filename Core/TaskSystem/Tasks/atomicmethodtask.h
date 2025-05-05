@@ -11,9 +11,13 @@ public:
                      typename MethodTask<Receiver, Args...>::Method method,
                      Args... args)
         : MethodTask<Receiver, Args...>(receiver, method, args...),
-        m_flag(flag) {}
+        m_flag(flag)
+    {
 
-    void executeTask() override {
+    }
+
+    void executeTask() override
+    {
         m_flag.ref();
         MethodTask<Receiver, Args...>::executeTask();
         m_flag.deref();

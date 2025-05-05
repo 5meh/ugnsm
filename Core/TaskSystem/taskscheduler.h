@@ -5,6 +5,7 @@
 #include "atomicmethodtask.h"
 #include <QMap>
 #include <QThreadPool>
+#include <QTimer>
 
 class TaskScheduler : public QObject
 {
@@ -16,17 +17,25 @@ public:
         m_pool->setMaxThreadCount(4);
     }
 
+    ~TaskScheduler()
+    {
+        qDeleteAll(m_mutexes);
+        qDeleteAll(m_repeatingTimers);
+    }
+
     template<class Receiver, typename... Args>
     void schedule(const QString& resourceKey,
                   Receiver* receiver,
                   void (Receiver::*method)(Args...),
                   Args... args,
-                  TaskWrapperBase::Priority priority = TaskWrapperBase::NormalPriority)
+                  QThread::Priority priority = QThread::NormalPriority)
     {
+        QMutex* mutex = getResourceMutex(resourceKey);
         MethodTask<Receiver, Args...>* task = new MethodTask<Receiver, Args...>(
             receiver, method, priority, args...
             );
-        startTask(resourceKey, task);
+        task->setMutex(mutex);
+        startTask(task, priority);
     }
 
     template<class Receiver, typename... Args>
@@ -35,35 +44,47 @@ public:
                         Receiver* receiver,
                         void (Receiver::*method)(Args...),
                         Args... args,
-                        TaskWrapperBase::Priority priority = TaskWrapperBase::NormalPriority)
+                        QThread::Priority priority = QThread::NormalPriority)
     {
+        QMutex* mutex = getResourceMutex(resourceKey);
         AtomicMethodTask<Receiver, Args...>* task = new AtomicMethodTask<Receiver, Args...>(
             flag, receiver, method, args...
             );
-        startTask(resourceKey, task);
+        task->setMutex(mutex);
+        startTask(task, priority);
+    }
+
+    template<class Receiver, typename... Args>
+    void scheduleRepeating(const QString& resourceKey,
+                           int intervalMs,
+                           Receiver* receiver,
+                           void (Receiver::*method)(Args...),
+                           QThread::Priority priority = QThread::NormalPriority,
+                           Args... args)
+    {
+        QTimer* timer = new QTimer(this);
+        timer->setInterval(intervalMs);
+
+        connect(timer, &QTimer::timeout, this, [=]
+                {
+                    this->schedule(resourceKey, receiver, method, args..., priority);
+                });
+
+        timer->start();
     }
 
 private:
-    void startTask(const QString& resourceKey, TaskWrapperBase* task) {
-        QMutex* mutex = getResourceMutex(resourceKey);
-        task->setProperty("resourceMutex", QVariant::fromValue(mutex));
-
-        switch(task->taskPriority()) {
-        case TaskWrapperBase::HighPriority:
-            m_pool->start(task, QThread::HighPriority);
-            break;
-        case TaskWrapperBase::LowPriority:
-            m_pool->start(task, QThread::LowPriority);
-            break;
-        default:
-            m_pool->start(task, QThread::InheritPriority);
-        }
+    void startTask(TaskWrapperBase* task, QThread::Priority priority)
+    {
+        m_pool->start(task, priority);
     }
 
-    QMutex* getResourceMutex(const QString& key) {
+    QMutex* getResourceMutex(const QString& key)
+    {
         QMutexLocker lock(&m_mapMutex);
-        if(!m_mutexes.contains(key)) {
-            m_mutexes[key] = new QMutex(QMutex::Recursive);
+        if(!m_mutexes.contains(key))
+        {
+            m_mutexes[key] = new QMutex();
         }
         return m_mutexes[key];
     }
@@ -71,6 +92,7 @@ private:
     QThreadPool* m_pool;
     QMap<QString, QMutex*> m_mutexes;
     QMutex m_mapMutex;
+    QList<QTimer*> m_repeatingTimers;
 };
 
 #endif // TASKSCHEDULER_H

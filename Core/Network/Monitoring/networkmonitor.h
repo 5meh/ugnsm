@@ -5,11 +5,13 @@
 #include <QHash>
 #include <QTimer>
 
+class TaskScheduler;
+
 class NetworkMonitor: public QObject
 {
     Q_OBJECT
 public:
-    explicit NetworkMonitor(QObject* parent = nullptr);
+    explicit NetworkMonitor(TaskScheduler* scheduler = nullptr, QObject* parent = nullptr);
 
     void startMonitoring(int intervalMs = 1000);
     void stopMonitoring();

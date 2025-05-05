@@ -14,7 +14,7 @@
 #include <QTimer>
 
 GridDataManager::GridDataManager(QObject* parent)
-    : m_monitor{new NetworkMonitor{this}},//TODO: mb use "old" syntaxis
+    : m_monitor{new NetworkMonitor{nullptr, this}},//TODO: mb use "old" syntaxis
     m_sorter{ComponentRegistry::create<INetworkSortStrategy>()},
     m_parser{ComponentRegistry::create<IParser>()},
     QObject{parent}
@@ -28,9 +28,6 @@ GridDataManager::GridDataManager(QObject* parent)
     connect(refreshTimer, &QTimer::timeout, this, &GridDataManager::refreshData);
     refreshTimer->start(5000);
     m_monitor->startMonitoring(1000);
-
-    // Initial data load
-    //QMetaObject::invokeMethod(this, "refreshData", Qt::QueuedConnection);
 }
 
 GridDataManager::~GridDataManager()
