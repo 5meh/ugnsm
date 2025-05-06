@@ -1,8 +1,8 @@
 #ifndef TASKSCHEDULER_H
 #define TASKSCHEDULER_H
 
-#include "methodtask.h"
-#include "atomicmethodtask.h"
+#include "Tasks/methodtask.h"
+#include "Tasks/atomicmethodtask.h"
 #include <QMap>
 #include <QThreadPool>
 #include <QTimer>
@@ -59,8 +59,8 @@ public:
                            int intervalMs,
                            Receiver* receiver,
                            void (Receiver::*method)(Args...),
-                           QThread::Priority priority = QThread::NormalPriority,
-                           Args... args)
+                           Args... args,
+                           QThread::Priority priority = QThread::NormalPriority)
     {
         QTimer* timer = new QTimer(this);
         timer->setInterval(intervalMs);

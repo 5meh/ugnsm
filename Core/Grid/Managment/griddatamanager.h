@@ -16,12 +16,13 @@ class NetworkInfoModel;
 class IParser;
 class INetworkSortStrategy;
 class NetworkMonitor;
+class TaskScheduler;
 
 class GridDataManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit GridDataManager(QObject* parent = nullptr);
+    explicit GridDataManager(TaskScheduler* scheduler, QObject* parent = nullptr);
     virtual ~GridDataManager();
     NetworkInfoModel* cellData(QPoint indx) const;
 
@@ -46,17 +47,18 @@ private slots:
                             quint64 txSpeed);
     void refreshData();
 
-private:
-    QMutex m_dataMutex;
-    QWaitCondition m_dataCondition;
-    QAtomicInt m_activeOperations{0};
-    bool m_shuttingDown = false;
+    void swapCellsImpl(QPoint from, QPoint to);
+    void handleParsingCompletedImpl(const QVariant& result);
+    void handleNetworkStatsImpl(const QString& mac, quint64 rxSpeed, quint64 txSpeed);
 
+private:
     void processDataAsync();
     void safeSwapCells(QPoint from, QPoint to);
     void clearGrid();
     void updateMacMap();//TODO: mb remove later
 
+    TaskScheduler* m_scheduler;
+    QAtomicInt m_refreshInProgress{0};
     NetworkMonitor* m_monitor;
     std::shared_ptr<IParser> m_parser;
     std::shared_ptr<INetworkSortStrategy> m_sorter;

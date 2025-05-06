@@ -32,7 +32,7 @@ public:
 
     void executeTask() override
     {
-        QMutexLocker lock(&m_mutex);
+        QMutexLocker lock(m_mutex);
         if(m_receiver)
         {
             executeImpl(std::index_sequence_for<Args...>{});

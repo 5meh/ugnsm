@@ -1,14 +1,18 @@
 #include "gridmanager.h"
 #include "../../../UI/Components/Grid/GridViewManager/gridviewmanager.h"
 #include "griddatamanager.h"
+#include "../Utilities/Logger/logger.h"
+#include "../TaskSystem/taskscheduler.h"
 
 GridManager::GridManager(QObject* parent)
-    :m_dataManager(new GridDataManager(this)),
+    :m_scheduler(new TaskScheduler(this)),
+    m_dataManager(new GridDataManager(m_scheduler, this)),
     m_viewManager(new GridViewManager()),
     QObject(parent)
 {
     setupConnections();
     setupGridManager();
+    Logger::instance().log(Logger::Info, "GridManager initialized", "Grid");
 }
 
 GridManager::~GridManager()
@@ -53,9 +57,15 @@ void GridManager::setupConnections()
     connect(m_dataManager, &GridDataManager::cellChanged,
             this, [this](QPoint indx)
             {
-                m_viewManager->setUpdatesEnabled(false);
-                m_viewManager->updateCell(indx.x(), indx.y(), m_dataManager->cellData(indx));
-                m_viewManager->setUpdatesEnabled(true);
+                m_scheduler->schedule("ui_update",
+                                      this,
+                                      [=]
+                                      {
+                                          m_viewManager->setUpdatesEnabled(false);
+                                          m_viewManager->updateCell(indx.x(), indx.y(), m_dataManager->cellData(indx));
+                                          m_viewManager->setUpdatesEnabled(true);
+                                      },
+                                      QThread::HighPriority);
             });
 
     connect(m_dataManager, &GridDataManager::gridDimensionsChanged,

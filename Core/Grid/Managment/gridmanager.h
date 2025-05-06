@@ -11,6 +11,7 @@ class ParserType;
 class SortStrategyType;
 
 class ComponentSystem;
+class TaskScheduler;
 
 class GridManager : public QObject
 {
@@ -36,6 +37,7 @@ private:
     void setupGridManager();
     void setupConnections();
 
+    TaskScheduler* m_scheduler;
     GridDataManager* m_dataManager;
     QScopedPointer<GridViewManager> m_viewManager;
 

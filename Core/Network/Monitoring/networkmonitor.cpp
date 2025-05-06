@@ -5,6 +5,7 @@
 #include <QDateTime>
 #include "../../../UI/Components/Grid/GridCellWidgets/networkinfoviewwidget.h"
 #include "../TaskSystem/taskscheduler.h"
+#include "../../../Utilities/Logger/logger.h"
 
 #ifdef Q_OS_WIN
 #include <winsock2.h>
@@ -26,8 +27,11 @@ NetworkMonitor::NetworkMonitor(TaskScheduler* scheduler, QObject* parent)
 
 void NetworkMonitor::startMonitoring(int intervalMs)
 {
-    m_interval = intervalMs;
-    m_running.storeRelease(1);
+    m_scheduler->scheduleRepeating("network_monitoring", intervalMs, this,
+                                   &NetworkMonitor::refreshStats,
+                                   QThread::NormalPriority);
+    Logger::instance().log(Logger::Info,
+                           QString("Network monitoring started (interval %1ms)").arg(intervalMs), "Network");
 }
 
 void NetworkMonitor::stopMonitoring()
