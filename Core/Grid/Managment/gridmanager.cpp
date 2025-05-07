@@ -55,17 +55,17 @@ void GridManager::setupGridManager()
 void GridManager::setupConnections()
 {
     connect(m_dataManager, &GridDataManager::cellChanged,
-            this, [this](QPoint indx)
+            this, [=](QPoint indx)
             {
-                m_scheduler->schedule("ui_update",
-                                      this,
-                                      [=]
-                                      {
-                                          m_viewManager->setUpdatesEnabled(false);
-                                          m_viewManager->updateCell(indx.x(), indx.y(), m_dataManager->cellData(indx));
-                                          m_viewManager->setUpdatesEnabled(true);
-                                      },
-                                      QThread::HighPriority);
+                m_scheduler->schedule(
+                    "ui_update",
+                    m_viewManager.get(),
+                    &GridViewManager::updateCell,
+                    QThread::HighPriority,
+                    indx.x(),
+                    indx.y(),
+                    m_dataManager->cellData(indx)
+                    );
             });
 
     connect(m_dataManager, &GridDataManager::gridDimensionsChanged,

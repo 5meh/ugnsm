@@ -15,7 +15,7 @@ public:
     virtual void parse() = 0;
 
 signals:
-    void parsingCompleted(QVariant result);
+    void parsingCompleted(const QVariant& result);
     void parsingFailed(QString error);
     void validationErrors(QStringList warnings);
 

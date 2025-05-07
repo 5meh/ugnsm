@@ -29,7 +29,7 @@ public:
     int getRows() const;
     int getCols() const;
     void initializeGrid(int rows, int cols);
-    void swapCells(QPoint from, QPoint to);
+    void swapCells(const QPoint& from, const QPoint& to);
 
 signals:
     //void modelChanged();
@@ -42,14 +42,12 @@ signals:
 
 private slots:
     void handleParsingCompleted(const QVariant& result);
-    void handleNetworkStats(const QString& mac,
-                            quint64 rxSpeed,
-                            quint64 txSpeed);
+    void handleNetworkStats(const QString& mac, const quint64& rxSpeed, const quint64& txSpeed);
     void refreshData();
 
-    void swapCellsImpl(QPoint from, QPoint to);
+    void swapCellsImpl(const QPoint& from, const QPoint& to);
     void handleParsingCompletedImpl(const QVariant& result);
-    void handleNetworkStatsImpl(const QString& mac, quint64 rxSpeed, quint64 txSpeed);
+    void handleNetworkStatsImpl(const QString& mac, const quint64& rxSpeed, const quint64& txSpeed);
 
 private:
     void processDataAsync();

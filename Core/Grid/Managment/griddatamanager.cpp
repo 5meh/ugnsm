@@ -71,35 +71,35 @@ void GridDataManager::initializeGrid(int rows, int cols)
     emit gridDimensionsChanged();
 }
 
-void GridDataManager::swapCells(QPoint from, QPoint to)
+void GridDataManager::swapCells(const QPoint& from, const QPoint& to)
 {
-    m_scheduler->schedule("grid_swap",
+    m_scheduler->schedule(QString("grid_swap"),
                           this,
                           &GridDataManager::swapCellsImpl,
+                          QThread::HighPriority,
                           from,
-                          to,
-                          QThread::HighPriority);
+                          to);
 }
 
 void GridDataManager::handleParsingCompleted(const QVariant& result)
 {
     m_scheduler->scheduleAtomic(m_refreshInProgress,
-                                "data_processing",
+                                QString("data_processing"),
                                 this,
                                 &GridDataManager::handleParsingCompletedImpl,
-                                result,
-                                QThread::NormalPriority);
+                                QThread::NormalPriority,
+                                std::forward<const QVariant&>(result));
 }
 
-void GridDataManager::handleNetworkStats(const QString& mac, quint64 rxSpeed, quint64 txSpeed)
+void GridDataManager::handleNetworkStats(const QString& mac, const quint64& rxSpeed, const quint64& txSpeed)
 {
-    m_scheduler->schedule("stats_update",
+    m_scheduler->schedule(QString("stats_update"),
                           this,
                           &GridDataManager::handleNetworkStatsImpl,
-                          mac,
+                          QThread::LowPriority,
+                          std::forward<const QString&>(mac),
                           rxSpeed,
-                          txSpeed,
-                          QThread::LowPriority);
+                          txSpeed);
 }
 
 void GridDataManager::refreshData()
@@ -107,7 +107,7 @@ void GridDataManager::refreshData()
     m_parser->parse();
 }
 
-void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
+void GridDataManager::swapCellsImpl(const QPoint& from, const QPoint& to)
 {
     if(from.x() < 0 || from.x() >= getRows() || from.y() < 0 || from.y() >= getCols() ||
         to.x() < 0 || to.x() >= getRows() || to.y() < 0 || to.y() >= getCols())
@@ -208,7 +208,7 @@ void GridDataManager::handleParsingCompletedImpl(const QVariant &result)
     usedInfos.clear();
 }
 
-void GridDataManager::handleNetworkStatsImpl(const QString& mac, quint64 rxSpeed, quint64 txSpeed)
+void GridDataManager::handleNetworkStatsImpl(const QString& mac, const quint64& rxSpeed, const quint64& txSpeed)
 {
     if(m_macIndex.contains(mac))
     {

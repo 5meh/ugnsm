@@ -27,12 +27,12 @@ public:
     void schedule(const QString& resourceKey,
                   Receiver* receiver,
                   void (Receiver::*method)(Args...),
-                  Args... args,
-                  QThread::Priority priority = QThread::NormalPriority)
+                  QThread::Priority priority = QThread::NormalPriority,
+                  Args&&... args)
     {
         QMutex* mutex = getResourceMutex(resourceKey);
         MethodTask<Receiver, Args...>* task = new MethodTask<Receiver, Args...>(
-            receiver, method, priority, args...
+            receiver, method, priority, std::forward<Args>(args)...
             );
         task->setMutex(mutex);
         startTask(task, priority);
@@ -43,12 +43,12 @@ public:
                         const QString& resourceKey,
                         Receiver* receiver,
                         void (Receiver::*method)(Args...),
-                        Args... args,
-                        QThread::Priority priority = QThread::NormalPriority)
+                        QThread::Priority priority = QThread::NormalPriority,
+                        Args&&... args)
     {
         QMutex* mutex = getResourceMutex(resourceKey);
         AtomicMethodTask<Receiver, Args...>* task = new AtomicMethodTask<Receiver, Args...>(
-            flag, receiver, method, args...
+            flag, receiver, method, std::forward<Args>(args)...
             );
         task->setMutex(mutex);
         startTask(task, priority);
@@ -59,15 +59,15 @@ public:
                            int intervalMs,
                            Receiver* receiver,
                            void (Receiver::*method)(Args...),
-                           Args... args,
-                           QThread::Priority priority = QThread::NormalPriority)
+                           QThread::Priority priority = QThread::NormalPriority,
+                           Args&&... args)
     {
         QTimer* timer = new QTimer(this);
         timer->setInterval(intervalMs);
 
         connect(timer, &QTimer::timeout, this, [=]
                 {
-                    this->schedule(resourceKey, receiver, method, args..., priority);
+                    this->schedule(resourceKey, receiver, method, priority, std::forward<Args>(args)...);
                 });
 
         timer->start();
