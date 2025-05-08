@@ -43,7 +43,7 @@ void GridManager::initializeView()
 void GridManager::initializeData()
 {
     m_dataManager->initializeGrid(GRID_ROWS_DEFAULT, GRID_COLUMNS_DEFAUT);
-    QMetaObject::invokeMethod(m_dataManager, "refreshData", Qt::QueuedConnection);
+    //QMetaObject::invokeMethod(m_dataManager, "refreshData", Qt::QueuedConnection);
 }
 
 void GridManager::setupGridManager()
@@ -57,15 +57,14 @@ void GridManager::setupConnections()
     connect(m_dataManager, &GridDataManager::cellChanged,
             this, [=](QPoint indx)
             {
-                m_scheduler->schedule(
+                m_scheduler->scheduleMainThread(
                     "ui_update",
-                    m_viewManager.get(),
-                    &GridViewManager::updateCell,
-                    QThread::HighPriority,
-                    indx.x(),
-                    indx.y(),
-                    m_dataManager->cellData(indx)
-                    );
+                    [=]
+                    {
+                        m_viewManager->updateCell(indx.x(), indx.y(), m_dataManager->cellData(indx));
+                    },
+                    QThread::HighPriority
+                );
             });
 
     connect(m_dataManager, &GridDataManager::gridDimensionsChanged,

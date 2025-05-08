@@ -5,6 +5,7 @@
 #include "Core/Network/NetworkSortingStrategies/speedsortstrategy.h"
 #include "Utilities/Logger/logger.h"
 #include "Utilities/Parser/networkethernetparser.h"
+#include "Core/Network/Information/networkinfo.h"
 
 #include <QApplication>
 #include <QFile>
@@ -19,7 +20,11 @@ void configureSystem()
 
 int main(int argc, char *argv[])
 {
+    qRegisterMetaType<NetworkInfo*>("NetworkInfo*");
+    qRegisterMetaType<QList<NetworkInfo*>>("QList<NetworkInfo*>");
+
     QApplication a(argc, argv);
+
 
     QFile styleFile(QStringLiteral("://styles.qss"));
     if (!styleFile.open(QFile::ReadOnly | QFile::Text))//TODO:remove later

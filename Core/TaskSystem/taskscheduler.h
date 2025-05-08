@@ -3,6 +3,7 @@
 
 #include "Tasks/methodtask.h"
 #include "Tasks/atomicmethodtask.h"
+#include "Tasks/lambdatask.h"
 #include <QMap>
 #include <QThreadPool>
 #include <QTimer>
@@ -71,6 +72,18 @@ public:
                 });
 
         timer->start();
+    }
+    template<typename Functor>
+    void scheduleMainThread(const QString& resourceKey,
+                            Functor&& func,
+                            QThread::Priority priority = QThread::NormalPriority)
+    {
+        QMutex* mutex = getResourceMutex(resourceKey);
+        LambdaTask<Functor>* task = new LambdaTask<Functor>(std::forward<Functor>(func));
+        task->setMutex(mutex);
+        QMetaObject::invokeMethod(this, [this, task, priority]() {
+            startTask(task, priority);
+        }, Qt::QueuedConnection);
     }
 
 private:

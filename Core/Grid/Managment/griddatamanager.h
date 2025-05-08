@@ -46,7 +46,7 @@ private slots:
     void refreshData();
 
     void swapCellsImpl(const QPoint& from, const QPoint& to);
-    void handleParsingCompletedImpl(const QVariant& result);
+    void handleParsingCompletedImpl(QVariant result);
     void handleNetworkStatsImpl(const QString& mac, const quint64& rxSpeed, const quint64& txSpeed);
 
 private:

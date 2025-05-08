@@ -14,6 +14,7 @@ public:
         : m_priority(priority),
         m_mutex(nullptr)
     {
+        setAutoDelete(true);
     }
 
     virtual void executeTask() = 0;

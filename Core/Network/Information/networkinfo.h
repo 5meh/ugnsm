@@ -11,7 +11,7 @@ public:
     explicit NetworkInfo(QObject* parent = nullptr);
     NetworkInfo(const QString& mac, QObject* parent = nullptr);
     NetworkInfo(const QString& name, const QString& mac, bool isUp, bool isRunning, const QDateTime& timestamp, QObject* parent = nullptr);
-    NetworkInfo(const NetworkInfo& obj);
+    NetworkInfo(const NetworkInfo& obj, QObject* parent = nullptr);
     ~NetworkInfo() = default;
 
     bool operator==(const NetworkInfo& other) const;
@@ -104,5 +104,8 @@ private:
     qint64 m_txSpeed;
     qint64 m_lastUpdateTime;
 };
+
+Q_DECLARE_METATYPE(NetworkInfo*)
+Q_DECLARE_METATYPE(QList<NetworkInfo*>)
 
 #endif // NETWORKINFO_H

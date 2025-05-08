@@ -2,6 +2,7 @@
 
 #include "../Core/Network/NetworkSortingStrategies/speedsortstrategy.h"
 #include "../Core/Network/Information/networkinfo.h"
+#include <QApplication>
 
 NetworkEthernetParser::NetworkEthernetParser(QObject* parent)
     : IParser(parent)
@@ -29,12 +30,12 @@ void NetworkEthernetParser::parse()
         warnings << "No Ethernet interfaces detected";
     }
 
-    QVariant result = QVariant::fromValue(results);
+    QVariant result = QVariant::fromValue<QList<NetworkInfo*>>(results);
 
     if (validate(result, warnings))
     {
         emit parsingCompleted(result);
-        results.clear();
+        //results.clear();
     }
     else
     {
@@ -53,12 +54,12 @@ void NetworkEthernetParser::parse()
         emit parsingFailed(warnings.join("; "));
     }
 
-    results.clear();
+    //results.clear();
 }
 
 void NetworkEthernetParser::parseInterface(const QNetworkInterface& interface, QList<NetworkInfo*>& results)
 {
-    NetworkInfo* info = new NetworkInfo(this);
+    NetworkInfo* info = new NetworkInfo();
     info->setName(interface.name());
     info->setMac(interface.hardwareAddress());
     const bool isUp = interface.flags().testFlag(QNetworkInterface::IsUp);
@@ -98,6 +99,7 @@ void NetworkEthernetParser::parseInterface(const QNetworkInterface& interface, Q
     // }
 
     //qInfo() << "----------------------------------------";
+    //info->moveToThread(qApp->thread());
     results.append(info);
 }
 

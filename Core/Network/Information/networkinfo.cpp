@@ -30,9 +30,12 @@ NetworkInfo::NetworkInfo(const QString& name, const QString& mac, bool isUp, boo
     m_lastTxBytes(0),
     m_rxSpeed(0),
     m_txSpeed(0),
-    m_lastUpdateTime(0) {}
+    m_lastUpdateTime(0)
+{
+}
 
-NetworkInfo::NetworkInfo(const NetworkInfo& obj) : QObject(obj.parent()),
+NetworkInfo::NetworkInfo(const NetworkInfo& obj, QObject* parent)
+    : QObject(parent),
     m_name(obj.m_name),
     m_mac(obj.m_mac),
     m_ipv4(obj.m_ipv4),
@@ -45,7 +48,10 @@ NetworkInfo::NetworkInfo(const NetworkInfo& obj) : QObject(obj.parent()),
     m_lastTxBytes(obj.m_lastTxBytes),
     m_rxSpeed(obj.m_rxSpeed),
     m_txSpeed(obj.m_txSpeed),
-    m_lastUpdateTime(obj.m_lastUpdateTime) {}
+    m_lastUpdateTime(obj.m_lastUpdateTime)
+{
+    disconnect(this, 0, 0, 0);
+}
 
 bool NetworkInfo::operator==(const NetworkInfo& other) const
 {
