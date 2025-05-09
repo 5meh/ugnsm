@@ -185,7 +185,48 @@ GridCellWidget* GridViewManager::cellAt(int row, int col) const
 
 void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
 {
-    emit cellSwapRequestToDataManager(source, target);
+    // Validate indices
+    if (source.x() < 0 || source.x() >= gridRows() || source.y() < 0 || source.y() >= gridCols() ||
+        target.x() < 0 || target.x() >= gridRows() || target.y() < 0 || target.y() >= gridCols())
+        return;
+
+    // Check if we're trying to swap a cell with itself
+    if (source == target)
+        return;
+
+    // Get the source and target widgets
+    GridCellWidget* sourceWidget = cellAt(source.x(), source.y());
+    GridCellWidget* targetWidget = cellAt(target.x(), target.y());
+
+    // Check if either widget is null
+    if (!sourceWidget || !targetWidget)
+        return;
+
+    // Check if either widget is a placeholder
+    bool sourceIsPlaceholder = qobject_cast<PlaceHolderCellWidget*>(sourceWidget);
+    bool targetIsPlaceholder = qobject_cast<PlaceHolderCellWidget*>(targetWidget);
+
+    // Allow swap if at least one of the cells is not a placeholder
+    if (!sourceIsPlaceholder || !targetIsPlaceholder)
+    {
+        // Perform the swap
+        m_gridLayout->removeWidget(sourceWidget);
+        m_gridLayout->removeWidget(targetWidget);
+
+        // Update the grid indices
+        sourceWidget->setGridIndex(target);
+        targetWidget->setGridIndex(source);
+
+        // Swap the widgets in the layout
+        m_gridLayout->addWidget(sourceWidget, target.x(), target.y());
+        m_gridLayout->addWidget(targetWidget, source.x(), source.y());
+
+        // Update the cells vector
+        std::swap(m_cells[source.x()][source.y()], m_cells[target.x()][target.y()]);
+
+        // Emit the swap request to the data manager
+        emit cellSwapRequestToDataManager(source, target);
+    }
 }
 
 void GridViewManager::clearGrid()

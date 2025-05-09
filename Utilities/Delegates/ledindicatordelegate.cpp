@@ -23,42 +23,37 @@ void LedIndicatorDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 {
     if (index.column() == 2)
     {
-        QModelIndex firstColIndex = index.sibling(index.row(),0);
-        QModelIndex secondColIndex = index.sibling(index.row(),1);
+        QModelIndex firstColIndex = index.sibling(index.row(), 0);
+        QModelIndex secondColIndex = index.sibling(index.row(), 1);
         QVariant key = firstColIndex.data(Qt::DisplayRole);
         QVariant value = secondColIndex.data(Qt::DisplayRole);
 
         if (key.isValid() && value.isValid())
         {
-            if(key.toString().compare("Is Up:") == 0 || key.toString().compare("Is Running:") == 0)
+            if (key.toString().compare("Is Up:") == 0 || key.toString().compare("Is Running:") == 0)
             {
                 int state = determineStateFromValue(value);
                 QColor color = getColorForState(state);
 
-                if (state == 1)// Yellow state
-                {
-                    animateColor(color);
-                }
+                // Draw the LED indicator
+                painter->save();
+                painter->setRenderHint(QPainter::Antialiasing);
+                painter->setBrush(color);
+                painter->setPen(Qt::NoPen);
 
-                drawLED(painter, option, color);
+                // Draw a circle for the LED
+                QRect rect = option.rect;
+                rect.adjust(5, 5, -5, -5); // Add some padding
+                painter->drawEllipse(rect);
 
-                // Animation logic for yellow state
-                if (state == 1)
-                {
-                    qint64 ms = QDateTime::currentMSecsSinceEpoch();
-                    qreal progress = (ms % 1000) / 1000.0;
-                    qreal alpha = 0.5 + 0.5 * qSin(progress * 2 * M_PI);
-                    color.setAlphaF(alpha);
-                }
+                painter->restore();
+                return;
             }
         }
-        else
-        {
-            // Leave cell empty by letting base class handle it
-            QStyledItemDelegate::paint(painter, option, index);
-        }
-
     }
+
+    // Default painting for other cells
+    QStyledItemDelegate::paint(painter, option, index);
 }
 
 QSize LedIndicatorDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const

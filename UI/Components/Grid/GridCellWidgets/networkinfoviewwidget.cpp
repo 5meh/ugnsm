@@ -36,9 +36,9 @@ void NetworkInfoViewWidget::setViewModel(NetworkInfoModel* model)
     if (m_viewModel == model)
         return;
 
-    // Disconnect old model signals
     // if (m_viewModel)
     // {
+    //     // Disconnect specific signals instead of using nullptr
     //     disconnect(m_viewModel, &NetworkInfoModel::propertyChanged,
     //                this, &NetworkInfoViewWidget::updateProperty);
     //     disconnect(m_viewModel, &NetworkInfoModel::nameChanged,
@@ -167,50 +167,6 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
     keyValueTbl->setUpdatesEnabled(true);
 }
 
-// void NetworkInfoViewWidget::dragEnterEvent(QDragEnterEvent* event)
-// {
-//     if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
-//     {
-//         event->acceptProposedAction();
-//         setProperty("dragOver", true);
-//         //style()->unpolish(this);
-//         style()->polish(this);
-//         //update();
-//     }
-// }
-
-// void NetworkInfoViewWidget::dragLeaveEvent(QDragLeaveEvent* event)
-// {
-//     setProperty("dragOver", false);
-//     //style()->unpolish(this);
-//     style()->polish(this);
-//     QFrame::dragLeaveEvent(event);//TODO:mb remove?
-// }
-
-// void NetworkInfoViewWidget::dropEvent(QDropEvent *event)
-// {
-//     setProperty("dragOver", false);
-//     //style()->unpolish(this);
-//     style()->polish(this);
-
-//     // Only accept our own widget format
-//     if (event->mimeData()->hasFormat("application/x-networkinfoviewwidget"))
-//     {
-//         // We stored the pointer in a property on the MIME data
-//         QVariant v = event->mimeData()->property("widget");
-//         auto source = qobject_cast<NetworkInfoViewWidget*>(v.value<QObject*>());
-//         if (source && source != this)
-//         {
-//             emit swapRequested(source, this);
-//             event->acceptProposedAction();
-//             return;
-//         }
-//     }
-
-//     // Otherwise, ignore
-//     event->ignore();
-// }
-
 void NetworkInfoViewWidget::addKeyValue(QPair<QString, QString> keyVal)
 {
     QList<QStandardItem*> newRow;
@@ -239,7 +195,12 @@ void NetworkInfoViewWidget::setupTableView()
     keyValModel = new QStandardItemModel(this);
 
     keyValueTbl->setModel(keyValModel);
-    keyValueTbl->setItemDelegateForColumn(2, new LedIndicatorDelegate(this));
+
+    // Set up the LED indicator delegate
+    LedIndicatorDelegate* ledDelegate = new LedIndicatorDelegate(this);
+    keyValueTbl->setItemDelegateForColumn(2, ledDelegate);
+
+    // Configure table view properties
     keyValueTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
     keyValueTbl->setSelectionMode(QAbstractItemView::NoSelection);
     keyValueTbl->verticalHeader()->setVisible(false);
@@ -247,16 +208,19 @@ void NetworkInfoViewWidget::setupTableView()
     keyValueTbl->horizontalHeader()->setStretchLastSection(true);
     keyValueTbl->setShowGrid(false);
     keyValueTbl->setFocusPolicy(Qt::NoFocus);
-    //keyValueTbl->setDragEnabled(true);
-    //keyValueTbl->setAcceptDrops(true);
-    //keyValueTbl->setDropIndicatorShown(true);
-    //keyValueTbl->setDragDropMode(QAbstractItemView::InternalMove);
-    //keyValueTbl->setSelectionMode(QAbstractItemView::NoSelection);
+
+    // Set the table view to use transparent background
+    keyValueTbl->setAttribute(Qt::WA_TranslucentBackground);
+    keyValueTbl->viewport()->setAttribute(Qt::WA_TranslucentBackground);
+
+    // Set up the table view's style
+    keyValueTbl->setStyleSheet("QTableView { background: transparent; border: none; }");
+
     setKeyValueTbl();
     connectViewModel();
 
-    keyValueTbl->viewport()->setAttribute(Qt::WA_TransparentForMouseEvents);
-    //keyValueTbl->viewport()->installEventFilter(this);
+    // Install event filter for the viewport
+    keyValueTbl->viewport()->installEventFilter(this);
     layout()->addWidget(keyValueTbl);
 }
 

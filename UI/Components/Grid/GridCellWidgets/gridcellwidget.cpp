@@ -38,26 +38,36 @@ void GridCellWidget::mousePressEvent(QMouseEvent *event)
 
 void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    if(!(event->buttons() & Qt::LeftButton))
+    if (!(event->buttons() & Qt::LeftButton))
         return;
 
-    if((event->pos() - m_dragStartPos).manhattanLength()
-        >= QApplication::startDragDistance())
+    if ((event->pos() - m_dragStartPos).manhattanLength() < QApplication::startDragDistance())
+        return;
+
+    QDrag *drag = new QDrag(this);
+    QMimeData *mimeData = new QMimeData;
+
+    // Store the grid index in the mime data
+    QByteArray indexData;
+    QDataStream stream(&indexData, QIODevice::WriteOnly);
+    stream << getGridIndex();
+    mimeData->setData("application/x-grid-index", indexData);
+
+    // Create a semi-transparent drag pixmap
+    QPixmap pixmap(size());
+    pixmap.fill(Qt::transparent);
+    render(&pixmap);
+    drag->setPixmap(pixmap);
+    drag->setMimeData(mimeData);
+    drag->setHotSpot(event->pos() - rect().topLeft());
+
+    // Execute the drag operation
+    Qt::DropAction result = drag->exec(Qt::MoveAction);
+
+    // If the drag was cancelled, ensure we clean up properly
+    if (result == Qt::IgnoreAction)
     {
-        QDrag* drag = new QDrag(this);
-        QMimeData *mime = new QMimeData;
-
-        QByteArray indexData;
-        QDataStream stream(&indexData, QIODevice::WriteOnly);
-        stream << getGridIndex();
-        mime->setData("application/x-grid-index", indexData);
-
-        QPixmap pixmap(size());
-        pixmap.fill(Qt::transparent);
-        render(&pixmap);
-        drag->setPixmap(pixmap);
-        drag->setMimeData(mime);
-        drag->exec(Qt::MoveAction);
+        delete drag;
     }
 }
 
