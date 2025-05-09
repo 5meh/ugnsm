@@ -2,33 +2,44 @@
 #define TASKWRAPPERBASE_H
 
 #include <QRunnable>
-//#include <QAtomicInt>
-//#include <QMetaType>
 #include <QMutex>
 #include <QThread>
+#include <tuple>
 
 class TaskWrapperBase : public QRunnable
 {
 public:
-    explicit TaskWrapperBase(QThread::Priority priority = QThread::Priority::NormalPriority)
-        : m_priority(priority),
-        m_mutex(nullptr)
+    explicit TaskWrapperBase(QThread::Priority priority = QThread::NormalPriority)
+        : m_priority(priority), m_mutex(nullptr)
     {
         setAutoDelete(true);
     }
 
-    virtual void executeTask() = 0;
-    void run() final
-    {
-        executeTask();
-    }
-    void setMutex(QMutex* mutex) { m_mutex = mutex; }
+    virtual ~TaskWrapperBase() = default;
 
-    QThread::Priority taskPriority() const { return m_priority; }
+    void setMutex(QMutex* mutex) { m_mutex = mutex; }
+    QMutex* mutex() const { return m_mutex; }
+
+    virtual void executeTask() = 0;
+
+    void run() override
+    {
+        if(m_mutex)
+        {
+            QMutexLocker locker(m_mutex);
+            executeTask();
+        }
+        else
+        {
+            executeTask();
+        }
+    }
+
+    QThread::Priority priority() const { return m_priority; }
 
 protected:
-    QThread::Priority m_priority = QThread::NormalPriority;
-    QMutex* m_mutex = nullptr;
+    QThread::Priority m_priority;
+    QMutex* m_mutex;
 };
 
 #endif // TASKWRAPPERBASE_H

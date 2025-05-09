@@ -27,11 +27,12 @@ NetworkMonitor::NetworkMonitor(TaskScheduler* scheduler, QObject* parent)
 
 void NetworkMonitor::startMonitoring(int intervalMs)
 {
-    m_scheduler->scheduleRepeating("network_monitoring", intervalMs, this,
+    m_interval = intervalMs;
+    m_scheduler->scheduleRepeating("network_monitoring", m_interval, this,
                                    &NetworkMonitor::refreshStats,
                                    QThread::NormalPriority);
     Logger::instance().log(Logger::Info,
-                           QString("Network monitoring started (interval %1ms)").arg(intervalMs), "Network");
+                           QString("Network monitoring started (interval %1ms)").arg(m_interval), "Network");
 }
 
 void NetworkMonitor::stopMonitoring()

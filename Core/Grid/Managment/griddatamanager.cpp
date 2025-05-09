@@ -1,5 +1,5 @@
+// griddatamanager.cpp
 #include "griddatamanager.h"
-
 #include "../Utilities/Logger/logger.h"
 #include "../TaskSystem/taskscheduler.h"
 #include "../../Network/Information/networkinfo.h"
@@ -7,7 +7,6 @@
 #include "../Utilities/Parser/iparser.h"
 #include "../NetworkSortingStrategies/inetworksortstrategy.h"
 #include "../Utilities/Parser/networkethernetparser.h"
-
 #include "../NetworkSortingStrategies/speedsortstrategy.h"
 #include "../Monitoring/networkmonitor.h"
 #include "../../componentregistry.h"
@@ -17,7 +16,7 @@
 
 GridDataManager::GridDataManager(TaskScheduler* scheduler, QObject* parent)
     : m_scheduler(scheduler),
-    m_monitor{new NetworkMonitor{nullptr, this}},//TODO: mb use "old" syntaxis
+    m_monitor{new NetworkMonitor{nullptr, this}},
     m_sorter{ComponentRegistry::create<INetworkSortStrategy>()},
     m_parser{ComponentRegistry::create<IParser>(nullptr)},
     QObject{parent}
@@ -72,20 +71,23 @@ void GridDataManager::initializeGrid(int rows, int cols)
     emit gridDimensionsChanged();
 }
 
-void GridDataManager::swapCells(const QPoint& from, const QPoint& to)
+void GridDataManager::swapCells(QPoint from, QPoint to)
 {
-    m_scheduler->schedule(QString("grid_swap"),
-                          this,
-                          &GridDataManager::swapCellsImpl,
-                          QThread::HighPriority,
-                          from,
-                          to);
+    m_scheduler->scheduleMainThread(
+        QString("grid_swap"),
+        [this, from, to]()
+        {
+            swapCellsImpl(from, to);
+        },
+        QThread::HighPriority
+        );
 }
 
 void GridDataManager::handleParsingCompleted(const QVariant& result)
 {
     Q_ASSERT(result.canConvert<QList<NetworkInfo*>>());
     QVariant resultCopy = result;
+
     m_scheduler->scheduleAtomic(m_refreshInProgress,
                                 QString("data_processing"),
                                 this,
@@ -94,13 +96,14 @@ void GridDataManager::handleParsingCompleted(const QVariant& result)
                                 std::move(resultCopy));
 }
 
-void GridDataManager::handleNetworkStats(const QString& mac, const quint64& rxSpeed, const quint64& txSpeed)
+void GridDataManager::handleNetworkStats(QString mac, quint64 rxSpeed, quint64 txSpeed)
 {
+
     m_scheduler->schedule(QString("stats_update"),
                           this,
                           &GridDataManager::handleNetworkStatsImpl,
                           QThread::LowPriority,
-                          std::forward<const QString&>(mac),
+                          std::move(mac),
                           rxSpeed,
                           txSpeed);
 }
@@ -110,7 +113,7 @@ void GridDataManager::refreshData()
     m_parser->parse();
 }
 
-void GridDataManager::swapCellsImpl(const QPoint& from, const QPoint& to)
+void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
 {
     if(from.x() < 0 || from.x() >= getRows() || from.y() < 0 || from.y() >= getCols() ||
         to.x() < 0 || to.x() >= getRows() || to.y() < 0 || to.y() >= getCols())
@@ -134,15 +137,13 @@ void GridDataManager::handleParsingCompletedImpl(QVariant result)
     const int rows = getRows();
     const int cols = getCols();
     const int capacity = rows * cols;
-
     QList<NetworkInfo*> usedInfos = allInfos.mid(0, capacity);
     QList<NetworkInfo*> unusedInfos = allInfos.mid(capacity);
 
-    qDeleteAll(unusedInfos);
-    unusedInfos.clear();
-
     QHash<QString, QPoint> oldIndex = m_macIndex;
     m_macIndex.clear();
+
+    QVector<QPair<QPoint, NetworkInfo*>> cellsToCreate;
 
     for (int r = 0; r < rows; ++r)
     {
@@ -154,80 +155,42 @@ void GridDataManager::handleParsingCompletedImpl(QVariant result)
             if (info)
             {
                 const QString mac = info->getMac();
-
-                if (oldIndex.contains(mac))
+                if (!oldIndex.contains(mac))
                 {
-                    QPoint oldPos = oldIndex[mac];
-                    if (oldPos != QPoint(r, c))
-                    {
-                        std::swap(m_data[r][c], m_data[oldPos.x()][oldPos.y()]);
-                        emit cellChanged(oldPos);
-                    }
-                    m_data[r][c]->updateFromNetworkInfo(info);
+                    cellsToCreate.append(qMakePair(QPoint(r, c), info));
                 }
-                else
-                {
-                    delete m_data[r][c];
-                    auto* model = new NetworkInfoModel(info, this);
-                    //model->moveToThread(this->thread());
-                    m_data[r][c] = model;
-                    m_macIndex[info->getMac()] = QPoint(r, c);
-                    emit cellChanged(QPoint(r, c));
-
-                    // m_scheduler->scheduleMainThread("model_creation",
-                    //                                 [this, r, c, info]()
-                    //                                 {
-                    //                                     delete m_data[r][c];
-                    //                                     m_data[r][c] = new NetworkInfoModel(info, nullptr);
-                    //                                     m_macIndex[info->getMac()] = QPoint(r, c);
-                    //                                     emit cellChanged(QPoint(r, c));
-                    //                                 },
-                    //                                 QThread::HighPriority
-                    //                                 );
-                }
-                m_macIndex[mac] = QPoint(r, c);
-            }
-            else if (m_data[r][c])
-            {
-                // Schedule cleanup in main thread
-                m_scheduler->scheduleMainThread(
-                    "model_cleanup",
-                    [=] {
-                        delete m_data[r][c];
-                        m_data[r][c] = nullptr;
-                        emit cellChanged({r,c});
-                    }
-                    );
             }
         }
     }
 
-    // Cleanup remaining old entries
-    for (auto it = oldIndex.constBegin(); it != oldIndex.constEnd(); ++it)
+    // Schedule QObject creation in main thread
+    if (!cellsToCreate.isEmpty())
     {
-        const QPoint pos = it.value();
-        if (!m_macIndex.contains(it.key()) && m_data[pos.x()][pos.y()])
-        {
-            m_scheduler->scheduleMainThread("legacy_cleanup",
-                                            [this, pos]() {
-                                                delete m_data[pos.x()][pos.y()];
-                                                m_data[pos.x()][pos.y()] = nullptr;
-                                                emit cellChanged(pos);
-                                            },
-                                            QThread::NormalPriority
-                                            );
-        }
+        m_scheduler->scheduleMainThread(
+            QString("model_creation"),
+            [this, cellsToCreate]()
+            {
+                for (const auto& pair : cellsToCreate)
+                {
+                    QPoint pos = pair.first;
+                    NetworkInfo* info = pair.second;
+
+                    delete m_data[pos.x()][pos.y()];
+                    m_data[pos.x()][pos.y()] = new NetworkInfoModel(info, this);
+                    m_macIndex[info->getMac()] = pos;
+                    emit cellChanged(pos);
+                }
+            },
+            QThread::HighPriority
+            );
     }
 
-    //qDeleteAll(usedInfos);
-
-    // // Clear temporary lists after scheduling all tasks
-    // QMetaObject::invokeMethod(this, [usedInfos]() {
-    //     qDeleteAll(usedInfos);
-    // }, Qt::QueuedConnection);
+    // Cleanup in worker thread
+    qDeleteAll(unusedInfos);
+    unusedInfos.clear();
 }
 
-void GridDataManager::handleNetworkStatsImpl(const QString& mac, const quint64& rxSpeed, const quint64& txSpeed)
+void GridDataManager::handleNetworkStatsImpl(QString mac, quint64 rxSpeed, quint64 txSpeed)
 {
     if(m_macIndex.contains(mac))
     {

@@ -7,13 +7,15 @@ template<class Receiver, typename... Args>
 class AtomicMethodTask : public MethodTask<Receiver, Args...>
 {
 public:
-    AtomicMethodTask(QAtomicInt& flag, Receiver* receiver,
+    template<typename... ForwardArgs>
+    AtomicMethodTask(QAtomicInt& flag,
+                     Receiver* receiver,
                      typename MethodTask<Receiver, Args...>::Method method,
-                     Args... args)
-        : MethodTask<Receiver, Args...>(receiver, method, args...),
+                     ForwardArgs&&... args)
+        : MethodTask<Receiver, Args...>(receiver, method, QThread::NormalPriority,
+                                        std::forward<ForwardArgs>(args)...),
         m_flag(flag)
     {
-
     }
 
     void executeTask() override

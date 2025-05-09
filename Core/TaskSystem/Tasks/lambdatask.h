@@ -7,14 +7,14 @@ template<typename Functor>
 class LambdaTask : public TaskWrapperBase
 {
 public:
-    explicit LambdaTask(Functor&& func)
-        : m_func(std::forward<Functor>(func))
+    LambdaTask(Functor&& func, QThread::Priority priority = QThread::NormalPriority)
+        : TaskWrapperBase(priority),
+        m_func(std::forward<Functor>(func))
     {
     }
 
     void executeTask() override
     {
-        QMutexLocker lock(m_mutex);
         m_func();
     }
 

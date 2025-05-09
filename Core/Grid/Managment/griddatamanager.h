@@ -1,3 +1,4 @@
+// griddatamanager.h
 #ifndef GRIDDATAMANAGER_H
 #define GRIDDATAMANAGER_H
 
@@ -6,9 +7,6 @@
 #include <QHash>
 #include <QNetworkInterface>
 #include <QPoint>
-#include <QMutex>
-#include <QWaitCondition>
-#include <QAtomicInt>
 
 #include "../Utilities/Parser/iparser.h"
 
@@ -29,31 +27,26 @@ public:
     int getRows() const;
     int getCols() const;
     void initializeGrid(int rows, int cols);
-    void swapCells(const QPoint& from, const QPoint& to);
+    void swapCells(QPoint from, QPoint to);
 
 signals:
-    //void modelChanged();
     void gridDimensionsChanged();
     void parsingFailed(const QStringList& warnings);
     void networkHighlightChanged(int row, int col);
-
     void cellChanged(QPoint indx);
     void gridReset();
 
 private slots:
     void handleParsingCompleted(const QVariant& result);
-    void handleNetworkStats(const QString& mac, const quint64& rxSpeed, const quint64& txSpeed);
+    void handleNetworkStats(QString mac, quint64 rxSpeed, quint64 txSpeed);
     void refreshData();
 
-    void swapCellsImpl(const QPoint& from, const QPoint& to);
-    void handleParsingCompletedImpl(QVariant result);
-    void handleNetworkStatsImpl(const QString& mac, const quint64& rxSpeed, const quint64& txSpeed);
-
 private:
-    void processDataAsync();
-    void safeSwapCells(QPoint from, QPoint to);
+    void handleNetworkStatsImpl(QString mac, quint64 rxSpeed, quint64 txSpeed);
+    void handleParsingCompletedImpl(QVariant result);
+    void swapCellsImpl(QPoint from, QPoint to);
     void clearGrid();
-    void updateMacMap();//TODO: mb remove later
+    void updateMacMap();
 
     TaskScheduler* m_scheduler;
     QAtomicInt m_refreshInProgress{0};
