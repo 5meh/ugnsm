@@ -4,6 +4,7 @@
 #include "Tasks/methodtask.h"
 #include "Tasks/atomicmethodtask.h"
 #include "Tasks/lambdatask.h"
+#include "Tasks/qtinvoketask.h"
 #include <QThreadPool>
 #include <QTimer>
 #include <QHash>
@@ -68,13 +69,14 @@ public:
         QTimer* timer = new QTimer(this);
         timer->setInterval(intervalMs);
 
-        auto argsTuple = std::make_tuple(std::forward<Args>(args)...);
-        connect(timer, &QTimer::timeout, this, [=]() mutable
+        auto argsTuple = std::make_shared<std::tuple<Args...>>(std::forward<Args>(args)...);
+
+        connect(timer, &QTimer::timeout, this, [=, argsTuple]() mutable
                 {
                     std::apply([&](auto&&... args)
                                {
                                    this->schedule(resourceKey, receiver, method, priority, args...);
-                               }, argsTuple);
+                               }, *argsTuple);
                 });
 
         timer->start();
@@ -84,14 +86,23 @@ public:
     template<typename Functor>
     void scheduleMainThread(const QString& resourceKey,
                             Functor&& func,
-                            QThread::Priority priority = QThread::NormalPriority)
+                            QThread::Priority priority = QThread::NormalPriority,
+                            Qt::ConnectionType connectionType = Qt::QueuedConnection)
     {
-        Q_UNUSED(resourceKey);
-        Q_UNUSED(priority);
-        QMetaObject::invokeMethod(this, [func = std::forward<Functor>(func)]() mutable
-                                  {
-                                      func();
-                                  }, Qt::QueuedConnection);
+        auto task = new QtInvokeTask<Functor>(
+            std::forward<Functor>(func),
+            priority,
+            connectionType
+            );
+
+        // Since this is for main thread execution, we don't need resource locking
+        task->setAutoDelete(true);
+
+        // Use QMetaObject::invokeMethod to execute the task in the main thread
+        QMetaObject::invokeMethod(this, [this, task]() {
+            task->executeTask();
+            delete task;
+        }, connectionType);
     }
 
 private:

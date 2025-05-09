@@ -125,8 +125,8 @@ void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
     std::swap(m_data[from.x()][from.y()], m_data[to.x()][to.y()]);
     updateMacMap();
 
-    emit cellChanged(from);
-    emit cellChanged(to);
+    emit cellChanged(from, m_data[from.x()][from.y()]);
+    emit cellChanged(to, m_data[to.x()][to.y()]);
 }
 
 void GridDataManager::handleParsingCompletedImpl(QVariant result)
@@ -178,7 +178,7 @@ void GridDataManager::handleParsingCompletedImpl(QVariant result)
                     delete m_data[pos.x()][pos.y()];
                     m_data[pos.x()][pos.y()] = new NetworkInfoModel(info, this);
                     m_macIndex[info->getMac()] = pos;
-                    emit cellChanged(pos);
+                    emit cellChanged(pos, m_data[pos.x()][pos.y()]);
                 }
             },
             QThread::HighPriority

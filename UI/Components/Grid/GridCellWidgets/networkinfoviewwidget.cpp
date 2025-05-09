@@ -37,21 +37,21 @@ void NetworkInfoViewWidget::setViewModel(NetworkInfoModel* model)
         return;
 
     // Disconnect old model signals
-    if (m_viewModel)
-    {
-        disconnect(m_viewModel, &NetworkInfoModel::propertyChanged,
-                   this, &NetworkInfoViewWidget::updateProperty);
-        disconnect(m_viewModel, &NetworkInfoModel::nameChanged,
-                   this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        disconnect(m_viewModel, &NetworkInfoModel::macChanged,
-                   this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        disconnect(m_viewModel, &NetworkInfoModel::ipAddressChanged,
-                   this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        disconnect(m_viewModel, &NetworkInfoModel::netmaskChanged,
-                   this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        disconnect(m_viewModel, &NetworkInfoModel::speedChanged,
-                   this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    }
+    // if (m_viewModel)
+    // {
+    //     disconnect(m_viewModel, &NetworkInfoModel::propertyChanged,
+    //                this, &NetworkInfoViewWidget::updateProperty);
+    //     disconnect(m_viewModel, &NetworkInfoModel::nameChanged,
+    //                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    //     disconnect(m_viewModel, &NetworkInfoModel::macChanged,
+    //                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    //     disconnect(m_viewModel, &NetworkInfoModel::ipAddressChanged,
+    //                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    //     disconnect(m_viewModel, &NetworkInfoModel::netmaskChanged,
+    //                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    //     disconnect(m_viewModel, &NetworkInfoModel::speedChanged,
+    //                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    // }
 
     m_viewModel = model;
 

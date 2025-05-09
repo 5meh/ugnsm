@@ -55,17 +55,8 @@ void GridManager::setupGridManager()
 void GridManager::setupConnections()
 {
     connect(m_dataManager, &GridDataManager::cellChanged,
-            this, [=](QPoint indx)
-            {
-                m_scheduler->scheduleMainThread(
-                    "ui_update",
-                    [=]
-                    {
-                        m_viewManager->updateCell(indx.x(), indx.y(), m_dataManager->cellData(indx));
-                    },
-                    QThread::HighPriority
-                );
-            });
+            m_viewManager.get(), &GridViewManager::updateCell,
+            Qt::QueuedConnection);
 
     connect(m_dataManager, &GridDataManager::gridDimensionsChanged,
             m_viewManager.get(), [this]()

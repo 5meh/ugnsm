@@ -17,13 +17,15 @@ public:
 
     void setGridSize(int rows, int cols);
     GridCellWidget* cellAt(int row, int col) const;
-    void setCell(int row, int col, GridCellWidget* widget);
-    void updateCell(int row, int col, NetworkInfoModel* model);
+    void setCell(QPoint indx, GridCellWidget* widget);
+
     void clearCell(int row, int col);
 
     int gridRows() const { return m_cells.size(); }
     int gridCols() const { return m_cells.isEmpty() ? 0 : m_cells[0].size(); }
 
+public slots:
+    void updateCell(QPoint indx, NetworkInfoModel* model);
 signals:
     void cellSwapRequestToDataManager(QPoint from, QPoint to);
 

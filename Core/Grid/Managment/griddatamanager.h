@@ -33,7 +33,7 @@ signals:
     void gridDimensionsChanged();
     void parsingFailed(const QStringList& warnings);
     void networkHighlightChanged(int row, int col);
-    void cellChanged(QPoint indx);
+    void cellChanged(QPoint indx, NetworkInfoModel*);
     void gridReset();
 
 private slots:

@@ -48,12 +48,12 @@ void GridViewManager::setGridSize(int rows, int cols)
     }
 }
 
-void GridViewManager::setCell(int row, int col, GridCellWidget* widget)
+void GridViewManager::setCell(QPoint indx, GridCellWidget* widget)
 {
-    if(row < 0 || row >= m_cells.size() || col < 0 || col >= m_cells[row].size())
+    if(indx.x() < 0 || indx.x() >= m_cells.size() || indx.y() < 0 || indx.y() >= m_cells[indx.x()].size())
         return;
 
-    GridCellWidget* oldWidget = m_cells[row][col];
+    GridCellWidget* oldWidget = m_cells[indx.x()][indx.y()];
     if(oldWidget)
     {
         m_gridLayout->removeWidget(oldWidget);
@@ -61,20 +61,20 @@ void GridViewManager::setCell(int row, int col, GridCellWidget* widget)
     }
 
 
-    widget->setGridIndex(QPoint(row, col));
+    widget->setGridIndex(indx);
     connect(widget, &GridCellWidget::swapRequested,
             this, &GridViewManager::handleSwapRequested);
 
-    m_gridLayout->addWidget(widget, row, col);
-    m_cells[row][col] = widget;
+    m_gridLayout->addWidget(widget, indx.x(), indx.y());
+    m_cells[indx.x()][indx.y()] = widget;
 }
 
-void GridViewManager::updateCell(int row, int col, NetworkInfoModel* model)
+void GridViewManager::updateCell(QPoint indx, NetworkInfoModel* model)
 {
-    if (row < 0 || row >= gridRows() || col < 0 || col >= gridCols())
+    if (indx.x() < 0 || indx.x() >= gridRows() || indx.y() < 0 || indx.y() >= gridCols())
         return;
 
-    GridCellWidget* current = cellAt(row, col);
+    GridCellWidget* current = cellAt(indx.x(), indx.y());
     setUpdatesEnabled(false);
 
     if (model)
@@ -92,8 +92,8 @@ void GridViewManager::updateCell(int row, int col, NetworkInfoModel* model)
         {
             // Replace placeholder with new NetworkInfoViewWidget
             auto* newWidget = createCellWidgetForModel(model);
-            newWidget->setGridIndex(QPoint(row, col));
-            setCell(row, col, newWidget);
+            newWidget->setGridIndex(indx);
+            setCell(indx, newWidget);
         }
     }
     else
@@ -102,8 +102,8 @@ void GridViewManager::updateCell(int row, int col, NetworkInfoModel* model)
         if (!qobject_cast<PlaceHolderCellWidget*>(current))
         {
             PlaceHolderCellWidget* placeholder = new PlaceHolderCellWidget(this);
-            placeholder->setGridIndex(QPoint(row, col));
-            setCell(row, col, placeholder);
+            placeholder->setGridIndex(indx);
+            setCell(indx, placeholder);
         }
     }
     setUpdatesEnabled(true);
@@ -114,7 +114,7 @@ void GridViewManager::clearCell(int row, int col)
     if(auto* current = cellAt(row, col)) {
         if(current->metaObject()->className() != PlaceHolderCellWidget::staticMetaObject.className())
         {
-            setCell(row, col, new PlaceHolderCellWidget(this));
+            setCell(QPoint(row, col), new PlaceHolderCellWidget(this));
         }
     }
 }
@@ -262,7 +262,7 @@ void GridViewManager::updateCellContent(int row, int col, NetworkInfoModel* mode
     }
     else
     {
-        setCell(row, col, createCellWidgetForModel(model));
+        setCell(QPoint(row,col), createCellWidgetForModel(model));
     }
 }
 
