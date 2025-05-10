@@ -27,7 +27,8 @@ void PlaceHolderCellWidget::mouseMoveEvent(QMouseEvent* event)
 
 void PlaceHolderCellWidget::dragEnterEvent(QDragEnterEvent* event)
 {
-    if (event->mimeData()->hasFormat("application/x-grid-index")) {
+    if (event->mimeData()->hasFormat("application/x-grid-index"))
+    {
         setProperty("dragOver", true);
         style()->polish(this);
         event->acceptProposedAction();
