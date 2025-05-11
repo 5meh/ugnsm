@@ -75,9 +75,26 @@ void NetworkInfoModel::updateFromNetworkInfo(NetworkInfo* newInfo)
     if(!m_model || !newInfo)
         return;
 
+    m_model->blockSignals(true);
     m_model->updateFrom(newInfo);
+    m_model->blockSignals(false);
 
-    delete newInfo;//TODO:mb remove and use std::move
+    const QStringList allProperties =
+        {
+            "name",
+            "mac",
+            "ipAddress",
+            "netmask",
+            "status",
+            "downloadSpeed",
+            "uploadSpeed",
+            "totalSpeed",
+            "lastUpdate"
+        };
+
+    //emit propertyChanged(allProperties);
+
+    //delete newInfo;//TODO:mb remove and use std::move
 }
 
 QString NetworkInfoModel::getName() const
@@ -190,11 +207,12 @@ void NetworkInfoModel::connectModelSignals()
             });
 }
 
-void NetworkInfoModel::markPropertyChanged(const QString &property)
+void NetworkInfoModel::markPropertyChanged(const QString& property)
 {
     if(!m_changedProperties.contains(property))
     {
         m_changedProperties.append(property);
-        emit propertyChanged(property);
+        //emit propertyChanged(property);
     }
+
 }

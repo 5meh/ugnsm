@@ -26,7 +26,7 @@ GridDataManager::GridDataManager(TaskScheduler* scheduler, QObject* parent)
     connect(m_monitor, &NetworkMonitor::statsUpdated,
             this, &GridDataManager::handleNetworkStats);
 
-    m_scheduler->scheduleRepeating("data_refresh", 2000, this,
+    m_scheduler->scheduleRepeating("data_refresh", 5000, this,
                                    &GridDataManager::refreshData,
                                    QThread::NormalPriority);
 
@@ -98,7 +98,6 @@ void GridDataManager::handleParsingCompleted(const QVariant& result)
 
 void GridDataManager::handleNetworkStats(QString mac, quint64 rxSpeed, quint64 txSpeed)
 {
-
     m_scheduler->schedule(QString("stats_update"),
                           this,
                           &GridDataManager::handleNetworkStatsImpl,
@@ -110,7 +109,10 @@ void GridDataManager::handleNetworkStats(QString mac, quint64 rxSpeed, quint64 t
 
 void GridDataManager::refreshData()
 {
-    m_parser->parse();
+    m_scheduler->scheduleAtomic(m_refreshInProgress,
+                                "data_refresh_task",
+                                m_parser.get(),
+                                &IParser::parse);
 }
 
 void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
@@ -132,7 +134,7 @@ void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
 void GridDataManager::handleParsingCompletedImpl(QVariant result)
 {
     QList<NetworkInfo*> allInfos = result.value<QList<NetworkInfo*>>();
-    m_sorter->sort(allInfos);
+    //m_sorter->sort(allInfos);//TODO
 
     const int rows = getRows();
     const int cols = getCols();

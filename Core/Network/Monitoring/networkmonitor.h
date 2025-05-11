@@ -20,8 +20,6 @@ signals:
     void statsUpdated(const QString& mac,
                       quint64 downloadSpeedBps,
                       quint64 uploadSpeedBps);
-    // public slots:
-    //     void onNetworkStatsUpdated(const QString& interface, quint64 rx, quint64 tx);
 
 private slots:
     void refreshStats();

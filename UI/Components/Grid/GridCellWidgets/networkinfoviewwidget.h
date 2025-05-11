@@ -51,6 +51,7 @@ private:
 
     QTableView* keyValueTbl;
     QStandardItemModel* keyValModel;
+    QHash<QString, int> m_propertyRowMap;
 
     QLabel crownLbl;
     const QColor m_normalBorder = QColor(200, 200, 200);

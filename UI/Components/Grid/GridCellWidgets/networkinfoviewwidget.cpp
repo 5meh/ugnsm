@@ -23,6 +23,19 @@ NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfoModel *viewModel, QFrame
 {
     //setGeometry(m_widgetSize);
     setupUI();
+
+    m_propertyRowMap =
+        {
+            {"Interface", 0},
+            {"MAC Address", 1},
+            {"IP Address", 2},
+            {"Netmask", 3},
+            {"Status", 4},
+            {"Download Speed", 5},
+            {"Upload Speed", 6},
+            {"Total Speed", 7},
+            {"Last Update", 8}
+        };
 }
 
 NetworkInfoViewWidget::~NetworkInfoViewWidget()
@@ -36,40 +49,17 @@ void NetworkInfoViewWidget::setViewModel(NetworkInfoModel* model)
     if (m_viewModel == model)
         return;
 
-    // if (m_viewModel)
-    // {
-    //     // Disconnect specific signals instead of using nullptr
-    //     disconnect(m_viewModel, &NetworkInfoModel::propertyChanged,
-    //                this, &NetworkInfoViewWidget::updateProperty);
-    //     disconnect(m_viewModel, &NetworkInfoModel::nameChanged,
-    //                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    //     disconnect(m_viewModel, &NetworkInfoModel::macChanged,
-    //                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    //     disconnect(m_viewModel, &NetworkInfoModel::ipAddressChanged,
-    //                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    //     disconnect(m_viewModel, &NetworkInfoModel::netmaskChanged,
-    //                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    //     disconnect(m_viewModel, &NetworkInfoModel::speedChanged,
-    //                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    // }
+    if (m_viewModel)
+        disconnect(m_viewModel, &NetworkInfoModel::propertiesChanged,
+                   this, &NetworkInfoViewWidget::handlePropertiesChanged);
 
     m_viewModel = model;
 
-    // Connect new model signals
     if (m_viewModel)
     {
-        connect(m_viewModel, &NetworkInfoModel::propertyChanged,
-                this, &NetworkInfoViewWidget::updateProperty);
-        connect(m_viewModel, &NetworkInfoModel::nameChanged,
-                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        connect(m_viewModel, &NetworkInfoModel::macChanged,
-                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        connect(m_viewModel, &NetworkInfoModel::ipAddressChanged,
-                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        connect(m_viewModel, &NetworkInfoModel::netmaskChanged,
-                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-        connect(m_viewModel, &NetworkInfoModel::speedChanged,
-                this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+        connect(m_viewModel, &NetworkInfoModel::propertiesChanged,
+                this, &NetworkInfoViewWidget::handlePropertiesChanged);
+
     }
 
     // Full UI refresh
@@ -81,7 +71,7 @@ const NetworkInfoModel *NetworkInfoViewWidget::getModel() const
     return m_viewModel ? m_viewModel : nullptr;
 }
 
-void NetworkInfoViewWidget::updateProperty(const QString &propertyName)
+void NetworkInfoViewWidget::updateProperty(const QString& propertyName)
 {
     if (!m_viewModel)
         return;
@@ -219,6 +209,9 @@ void NetworkInfoViewWidget::setupTableView()
     setKeyValueTbl();
     connectViewModel();
 
+    keyValueTbl->setColumnWidth(0, 120); // Parameter column
+    keyValueTbl->setColumnWidth(1, 150); // Value column
+    keyValueTbl->setColumnWidth(2, 30);  // LED indicator
     // Install event filter for the viewport
     keyValueTbl->viewport()->installEventFilter(this);
     layout()->addWidget(keyValueTbl);

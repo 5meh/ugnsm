@@ -53,8 +53,6 @@ void NetworkEthernetParser::parse()
 
         emit parsingFailed(warnings.join("; "));
     }
-
-    //results.clear();
 }
 
 void NetworkEthernetParser::parseInterface(const QNetworkInterface& interface, QList<NetworkInfo*>& results)
