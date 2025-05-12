@@ -29,6 +29,7 @@ public:
 
 public slots:
     void updateNetworkInfoDisplay();
+    void handlePropertiesChanged(const QStringList& propertiesList);
 signals:
     void updatingChanged();
 protected:

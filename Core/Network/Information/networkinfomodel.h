@@ -44,6 +44,7 @@ public slots:
 
 signals:
     void propertyChanged(const QString& propertyName);
+    void propertiesChanged(const QStringList& propertiesName);
 
     void nameChanged(const QString& name);
     void macChanged(const QString& mac);

@@ -16,3 +16,8 @@ void StabilitySortStrategy::sort(QList<NetworkInfo*>& networks)
                   return a->getTimestamp() > b->getTimestamp();//TODO:mb change rework timesettings in NetworkInfo
               });
 }
+
+int StabilitySortStrategy::findBestNetwork(QList<NetworkInfo*>& networks)
+{
+    return -1;
+}

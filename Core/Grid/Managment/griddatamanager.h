@@ -11,6 +11,7 @@
 #include "../Utilities/Parser/iparser.h"
 
 class NetworkInfoModel;
+class NetworkInfo;
 class IParser;
 class INetworkSortStrategy;
 class NetworkMonitor;
@@ -47,6 +48,9 @@ private:
     void swapCellsImpl(QPoint from, QPoint to);
     void clearGrid();
     void updateMacMap();
+    void initializeGridWithData(const QList<NetworkInfo*>& allInfos);
+    void updateGridWithData(const QList<NetworkInfo*>& allInfos);
+    void showBestNetworkWarning();
 
     TaskScheduler* m_scheduler;
     QAtomicInt m_refreshInProgress{0};
@@ -55,6 +59,7 @@ private:
     std::shared_ptr<INetworkSortStrategy> m_sorter;
     QVector<QVector<NetworkInfoModel*>> m_data;
     QHash<QString, QPoint> m_macIndex;
+    bool m_showBestNetworkWarning = true;
 };
 
 #endif // GRIDDATAMANAGER_H

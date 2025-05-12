@@ -157,6 +157,14 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
     keyValueTbl->setUpdatesEnabled(true);
 }
 
+void NetworkInfoViewWidget::handlePropertiesChanged(const QStringList& propertiesList)
+{
+    for(const QString& prop: propertiesList)
+    {
+        updateProperty(prop);
+    }
+}
+
 void NetworkInfoViewWidget::addKeyValue(QPair<QString, QString> keyVal)
 {
     QList<QStandardItem*> newRow;

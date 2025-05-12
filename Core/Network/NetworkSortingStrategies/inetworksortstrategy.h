@@ -13,6 +13,7 @@ public:
     explicit INetworkSortStrategy(QObject *parent = nullptr);
     virtual ~INetworkSortStrategy() = default;
     virtual void sort(QList<NetworkInfo*>& networks) = 0;
+    virtual int bestNetwork(QList<NetworkInfo*>& networks) = 0;
 };
 
 #define INetworkSortStrategy_iid "com.ugnsm.INetworkSortStrategy"
