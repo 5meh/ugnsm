@@ -10,7 +10,7 @@ class SpeedSortStrategy : public INetworkSortStrategy
 public:
     Q_INVOKABLE explicit SpeedSortStrategy(QObject* parent = nullptr);
     void sort(QList<NetworkInfo*>& networks) override;
-    int bestNetwork(QList<NetworkInfo*>& networks) override;
+    int findBestNetwork(QList<NetworkInfo*>& networks) override;
 };
 
 #endif // SPEEDSORTSTRATEGY_H

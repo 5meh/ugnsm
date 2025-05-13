@@ -25,7 +25,6 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
-
     QFile styleFile(QStringLiteral("://styles.qss"));
     if (!styleFile.open(QFile::ReadOnly | QFile::Text))//TODO:remove later
     {

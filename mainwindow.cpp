@@ -1,14 +1,18 @@
 #include "mainwindow.h"
 #include "UI/Components/Grid/GridViewManager/gridviewmanager.h"
 #include "Core/Grid/Managment/gridmanager.h"
+#include "UI/Components/DialogWindows/settingsdialog.h"
 
 
 #include <QResizeEvent>
 #include <QStatusBar>
 #include <QMessageBox>
+#include <QMenuBar>
+#include <QMenu>
 
 MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent),
+    m_settingsDialog(new SettingsDialog(this))
 {
     //setWindowIcon(QIcon(":/icons/app_icon"));
 
@@ -22,6 +26,11 @@ MainWindow::~MainWindow() = default;
 
 void MainWindow::setupUI()
 {
+    QMenuBar* menuBar = this->menuBar();
+    QMenu* settingsMenu = menuBar->addMenu("Settings");
+    settingsMenu->addAction("Configure...", m_settingsDialog, &SettingsDialog::exec);
+    setMenuBar(menuBar);
+
     if (!m_gridManager || !m_gridManager->getView())
     {
         QMessageBox::critical(this, "Initialization Error",
@@ -42,6 +51,9 @@ void MainWindow::setupConnections()
 {
     connect(m_gridManager.data(), &GridManager::gridDimensionsChanged,
             this, &MainWindow::handleGridDimensionsChanged);
+
+    connect(m_settingsDialog, &SettingsDialog::settingsChanged,
+            this, &MainWindow::handleSettingsChanged);
 
     // connect(m_gridManager->getView(), &GridViewManager::cellClicked,
     //         this, &MainWindow::handleCellClicked);
@@ -80,6 +92,19 @@ void MainWindow::handleGridError(const QString& errorMessage)
 {
     QMessageBox::warning(this, "Grid Error", errorMessage);
     statusBar()->showMessage(errorMessage, 5000);
+}
+
+void MainWindow::handleSettingsChanged()
+{
+    if(m_gridManager)
+    {
+        QSettings settings;
+        settings.beginGroup("Settings");
+        m_gridManager->setGridDimensions(
+            settings.value("GridRows", 3).toInt(),
+            settings.value("GridCols", 3).toInt()
+            );
+    }
 }
 
 void MainWindow::updateWindowTitle()

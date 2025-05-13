@@ -6,6 +6,7 @@
 
 class GridManager;
 class QResizeEvent;
+class SettingsDialog;
 //class ComponentSystem;
 
 class MainWindow : public QMainWindow
@@ -24,6 +25,7 @@ private slots:
     void handleGridDimensionsChanged();
     void handleCellClicked(int row, int column);
     void handleGridError(const QString& errorMessage);
+    void handleSettingsChanged();
 
 private:
     void setupUI();
@@ -31,6 +33,7 @@ private:
     void updateWindowTitle();
 
     QScopedPointer<GridManager> m_gridManager;
+    SettingsDialog* m_settingsDialog;
 };
 
 #endif // MAINWINDOW_H

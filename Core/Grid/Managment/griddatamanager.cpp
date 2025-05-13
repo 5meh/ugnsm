@@ -14,6 +14,7 @@
 
 #include <QTimer>
 #include <QMessageBox>
+#include <QCheckBox>
 
 GridDataManager::GridDataManager(TaskScheduler* scheduler, QObject* parent)
     : m_scheduler(scheduler),
@@ -127,7 +128,9 @@ void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
 
     if ((from.x() == 0 && from.y() == 0) || (to.x() == 0 && to.y() == 0))
     {
-        showBestNetworkWarning();
+        if(m_showBestNetworkWarning)
+            if (!showBestNetworkWarning())
+                return;
     }
 
     std::swap(m_data[from.x()][from.y()], m_data[to.x()][to.y()]);
@@ -140,6 +143,7 @@ void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
 void GridDataManager::handleParsingCompletedImpl(QVariant result)
 {
     QList<NetworkInfo*> allInfos = result.value<QList<NetworkInfo*>>();
+    m_sorter->sort(allInfos);
 
     if (m_data.isEmpty())
         initializeGridWithData(allInfos);
@@ -186,8 +190,6 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfo*>& allInfos
 {
     Q_ASSERT(m_data.isEmpty());
 
-    m_sorter->sort(allInfos);
-
     const int rows = getRows();
     const int cols = getCols();
     const int capacity = rows * cols;
@@ -196,14 +198,19 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfo*>& allInfos
 
     m_scheduler->scheduleMainThread(
         QString("model_creation"),
-        [this]()
+        [this, rows, cols, usedInfos]()//TODO:change capture values
         {
             for(size_t x = 0; x < rows; x++)
             {
                 for(size_t y = 0; y < cols; y++)
                 {
                     const int linearIndex = x * cols + y;
-                    NetworkInfo* info = (linearIndex < usedInfos.size()) ? usedInfos[linearIndex] : continue;
+                    NetworkInfo* info;
+                    if(linearIndex < usedInfos.size())
+                        info = usedInfos[linearIndex];
+                    else
+                        continue;
+                    //NetworkInfo* info = (linearIndex < usedInfos.size()) ? usedInfos[linearIndex] : {continue;};
                     delete m_data[x][y];
                     m_data[x][y] = new NetworkInfoModel(info, this);
                     m_macIndex[info->getMac()] = QPoint(x,y);
@@ -222,13 +229,11 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfo*>& allInfos)
 {
     Q_ASSERT(!m_data.isEmpty());
 
+
 }
 
-void GridDataManager::showBestNetworkWarning()
+bool GridDataManager::showBestNetworkWarning()
 {
-    if (!m_showBestNetworkWarning)
-        return;
-
     QMessageBox msgBox;
     msgBox.setText("You are trying to swap the best network.");
     msgBox.setInformativeText("Do you want to continue?");
@@ -240,6 +245,5 @@ void GridDataManager::showBestNetworkWarning()
     if (msgBox.checkBox()->isChecked())
         m_showBestNetworkWarning = false;
 
-    if (ret == QMessageBox::No)
-        return;
+    return ret == QMessageBox::Yes;
 }

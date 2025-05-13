@@ -50,7 +50,7 @@ private:
     void updateMacMap();
     void initializeGridWithData(const QList<NetworkInfo*>& allInfos);
     void updateGridWithData(const QList<NetworkInfo*>& allInfos);
-    void showBestNetworkWarning();
+    bool showBestNetworkWarning();
 
     TaskScheduler* m_scheduler;
     QAtomicInt m_refreshInProgress{0};
