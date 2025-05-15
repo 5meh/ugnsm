@@ -11,6 +11,7 @@
 #include "../Monitoring/networkmonitor.h"
 #include "../../componentregistry.h"
 #include "../TaskSystem/taskscheduler.h"
+#include "../../globalmanager.h"
 
 #include <QTimer>
 #include <QMessageBox>
@@ -229,7 +230,115 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfo*>& allInfos)
 {
     Q_ASSERT(!m_data.isEmpty());
 
+    const int rows = getRows();
+    const int cols = getCols();
+    const int capacity = rows * cols;
 
+    QList<NetworkInfo*> sortableList = allInfos;
+    m_sorter->sort(sortableList);
+    QList<NetworkInfo*> usedInfos = sortableList.mid(0, capacity);
+
+    QHash<QString, NetworkInfo*> newMacs;
+    for(NetworkInfo* info : usedInfos)
+        newMacs.insert(info->getMac(), info);
+
+    QVector<QPair<QPoint, NetworkInfo*>> updates;
+
+    for(auto it = m_macIndex.begin(); it != m_macIndex.end();)
+    {
+        if(!newMacs.contains(it.key()))
+        {
+            updates.append({it.value(), nullptr});
+            it = m_macIndex.erase(it);
+        }
+        else
+            ++it;
+    }
+
+    for(auto it = newMacs.begin(); it != newMacs.end(); ++it)
+    {
+        const QString& mac = it.key();
+        NetworkInfo* info = it.value();
+
+        if(m_macIndex.contains(mac))
+            updates.append({m_macIndex[mac], info});
+        else
+        {
+            for(int r = 0; r < rows; ++r)
+            {
+                for(int c = 0; c < cols; ++c)
+                {
+                    QPoint pos(r, c);
+                    if(!m_macIndex.values().contains(pos))
+                    {
+                        updates.append({pos, info});
+                        m_macIndex.insert(mac, pos);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    const int bestIndex = m_sorter->findBestNetwork(sortableList);
+    if(bestIndex >= 0 && bestIndex < sortableList.size())
+    {
+        NetworkInfo* newBest = sortableList[bestIndex];
+        if(newBest && m_macIndex.contains(newBest->getMac()))
+        {
+            QPoint bestPos = m_macIndex[newBest->getMac()];
+            if(bestPos != QPoint(0, 0))
+            {
+                bool showWarning = GlobalManager::settingsManager().getBestNetworkCriteria();
+                if(showWarning)
+                {
+                    m_scheduler->scheduleMainThread("bestNetworkCheck", [=]() {
+                        QMessageBox::StandardButton reply = QMessageBox::question(
+                            nullptr,
+                            tr("Network Change"),
+                            tr("New best network detected. Move to primary position?"),
+                            QMessageBox::Yes | QMessageBox::No
+                            );
+                        if(reply == QMessageBox::Yes)
+                            swapCellsImpl(bestPos, QPoint(0,0));
+                    });
+                }
+                else
+                    swapCellsImpl(bestPos, QPoint(0,0));
+            }
+        }
+    }
+
+    m_scheduler->scheduleMainThread("gridUpdate", [=]() {
+
+        for(const QPair<QPoint, NetworkInfo*>& pair : updates)
+        {
+            if(!pair.second)
+            {
+                delete m_data[pair.first.x()][pair.first.y()];
+                m_data[pair.first.x()][pair.first.y()] = nullptr;
+                emit cellChanged(pair.first, nullptr);
+            }
+        }
+
+        for(const QPair<QPoint, NetworkInfo*>& pair : updates)
+        {
+            if(pair.second)
+            {
+                QPoint pos = pair.first;
+                NetworkInfo* info = pair.second;
+
+                if(m_data[pos.x()][pos.y()])
+                    m_data[pos.x()][pos.y()]->updateFromNetworkInfo(info);
+                else
+                    m_data[pos.x()][pos.y()] = new NetworkInfoModel(info, this);
+
+                emit cellChanged(pos, m_data[pos.x()][pos.y()]);
+            }
+        }
+
+        qDeleteAll(allInfos);
+    });
 }
 
 bool GridDataManager::showBestNetworkWarning()

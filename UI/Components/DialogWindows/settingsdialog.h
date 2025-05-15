@@ -2,20 +2,24 @@
 #define SETTINGSDIALOG_H
 
 #include <QDialog>
-#include <QSettings>
+QT_FORWARD_DECLARE_CLASS(QComboBox)
+QT_FORWARD_DECLARE_CLASS(QSpinBox)
+QT_FORWARD_DECLARE_CLASS(QCheckBox)
 
-class QComboBox;
-class QSpinBox;
-class QCheckBox;
+class SettingsManager;
 
 class SettingsDialog : public QDialog
 {
     Q_OBJECT
+
 public:
-    explicit SettingsDialog(QWidget* parent = nullptr);
+    explicit SettingsDialog(SettingsManager* settingsManager, QWidget* parent = nullptr);
 
     void loadSettings();
     void applySettings();
+
+signals:
+    void settingsChanged();
 
 public slots:
     void accept() override;
@@ -25,13 +29,16 @@ private:
     void setupUI();
     void createConnections();
 
-    QSettings m_settings;
-
+    SettingsManager* m_settingsManager;
     QComboBox* m_sortStrategyCombo;
     QSpinBox* m_updateIntervalSpin;
     QSpinBox* m_gridRowsSpin;
     QSpinBox* m_gridColsSpin;
     QCheckBox* m_showBestNetworkWarningCheck;
+    QComboBox* m_dataUnitsCombo;
+    QSpinBox* m_decimalPrecisionSpin;
+    QCheckBox* m_autoRefreshCheck;
+    QComboBox* m_bestNetworkCriteriaCombo;
 };
 
 #endif // SETTINGSDIALOG_H

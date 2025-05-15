@@ -96,15 +96,16 @@ void MainWindow::handleGridError(const QString& errorMessage)
 
 void MainWindow::handleSettingsChanged()
 {
-    if(m_gridManager)
-    {
-        QSettings settings;
-        settings.beginGroup("Settings");
-        m_gridManager->setGridDimensions(
-            settings.value("GridRows", 3).toInt(),
-            settings.value("GridCols", 3).toInt()
-            );
-    }
+    //TODO:rework this
+    // if(m_gridManager)
+    // {
+    //     QSettings settings;
+    //     settings.beginGroup("Settings");
+    //     m_gridManager->setGridDimensions(
+    //         settings.value("GridRows", 3).toInt(),
+    //         settings.value("GridCols", 3).toInt()
+    //         );
+    // }
 }
 
 void MainWindow::updateWindowTitle()

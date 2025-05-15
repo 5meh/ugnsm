@@ -6,6 +6,9 @@
 #include <QCheckBox>
 #include <QFormLayout>
 #include <QDialogButtonBox>
+#include <QPushButton>
+
+#include "../../Core/Settings/settingsmanager.h"
 
 SettingsDialog::SettingsDialog(QWidget* parent)
     : QDialog(parent),
@@ -18,7 +21,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
 
 void SettingsDialog::setupUI()
 {
-    auto* layout = new QFormLayout(this);
+    QFormLayout* layout = new QFormLayout(this);
 
     m_sortStrategyCombo = new QComboBox(this);
     m_sortStrategyCombo->addItem("Speed", "SpeedSortStrategy");
@@ -37,13 +40,29 @@ void SettingsDialog::setupUI()
 
     m_showBestNetworkWarningCheck = new QCheckBox(this);
 
+    m_unitsCombo = new QComboBox(this);
+    m_unitsCombo->addItems({"Bytes", "KB", "MB"});
+
+    m_decimalPrecisionSpin = new QSpinBox(this);
+    m_decimalPrecisionSpin->setRange(0, 4);
+
+    m_autoRefreshCheck = new QCheckBox("Enable auto-refresh", this);
+
+    m_bestNetworkCriteriaCombo = new QComboBox(this);
+    m_bestNetworkCriteriaCombo->addItems({"Speed", "Signal Strength", "Combined Score"});
+
+    layout->insertRow(2, "Data Units:", m_unitsCombo);
+    layout->insertRow(3, "Decimal Precision:", m_decimalPrecisionSpin);
+    layout->insertRow(4, m_autoRefreshCheck);
+    layout->insertRow(5, "Best Network Criteria:", m_bestNetworkCriteriaCombo);
+
     layout->addRow("Sorting Strategy:", m_sortStrategyCombo);
     layout->addRow("Update Interval:", m_updateIntervalSpin);
     layout->addRow("Grid Rows:", m_gridRowsSpin);
     layout->addRow("Grid Columns:", m_gridColsSpin);
     layout->addRow("Show Best Network Warning:", m_showBestNetworkWarningCheck);
 
-    auto* buttons = new QDialogButtonBox(
+    buttons = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Apply | QDialogButtonBox::Cancel, this);
 
     layout->addRow(buttons);
@@ -72,6 +91,14 @@ void SettingsDialog::loadSettings()
         m_settings.value("GridCols", 3).toInt());
     m_showBestNetworkWarningCheck->setChecked(
         m_settings.value("ShowBestNetworkWarning", true).toBool());
+    m_unitsCombo->setCurrentText(
+        m_settings.value("DataUnits", "MB").toString());
+    m_decimalPrecisionSpin->setValue(
+        m_settings.value("DecimalPrecision", 2).toInt());
+    m_autoRefreshCheck->setChecked(
+        m_settings.value("AutoRefresh", true).toBool());
+    m_bestNetworkCriteriaCombo->setCurrentText(
+        m_settings.value("BestNetworkCriteria", "Combined Score").toString());
     m_settings.endGroup();
 }
 
