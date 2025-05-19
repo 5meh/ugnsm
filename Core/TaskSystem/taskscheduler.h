@@ -71,7 +71,7 @@ public:
 
         auto argsTuple = std::make_shared<std::tuple<Args...>>(std::forward<Args>(args)...);
 
-        connect(timer, &QTimer::timeout, this, [=, argsTuple]() mutable
+        connect(timer, &QTimer::timeout, this, [=]() mutable
                 {
                     std::apply([&](auto&&... args)
                                {

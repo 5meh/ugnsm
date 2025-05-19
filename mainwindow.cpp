@@ -12,7 +12,7 @@
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
-    m_settingsDialog(new SettingsDialog(this))
+    m_settingsDialog(new SettingsDialog (this))
 {
     //setWindowIcon(QIcon(":/icons/app_icon"));
 

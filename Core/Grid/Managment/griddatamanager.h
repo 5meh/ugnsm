@@ -21,7 +21,7 @@ class GridDataManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit GridDataManager(TaskScheduler* scheduler, QObject* parent = nullptr);
+    explicit GridDataManager(QObject* parent = nullptr);
     virtual ~GridDataManager();
     NetworkInfoModel* cellData(QPoint indx) const;
 
@@ -52,7 +52,6 @@ private:
     void updateGridWithData(const QList<NetworkInfo*>& allInfos);
     bool showBestNetworkWarning();
 
-    TaskScheduler* m_scheduler;
     QAtomicInt m_refreshInProgress{0};
     NetworkMonitor* m_monitor;
     std::shared_ptr<IParser> m_parser;

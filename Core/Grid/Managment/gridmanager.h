@@ -37,7 +37,6 @@ private:
     void setupGridManager();
     void setupConnections();
 
-    TaskScheduler* m_scheduler;
     GridDataManager* m_dataManager;
     QScopedPointer<GridViewManager> m_viewManager;
 

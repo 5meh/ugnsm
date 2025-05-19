@@ -16,6 +16,8 @@ file(GLOB_RECURSE CORE_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/TaskSystem/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Settings/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Settings/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/globalmanager.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/globalmanager.cpp"
 )
 
 add_library(CoreLibrary STATIC ${CORE_SOURCES})

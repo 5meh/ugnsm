@@ -5,6 +5,7 @@
 QT_FORWARD_DECLARE_CLASS(QComboBox)
 QT_FORWARD_DECLARE_CLASS(QSpinBox)
 QT_FORWARD_DECLARE_CLASS(QCheckBox)
+QT_FORWARD_DECLARE_CLASS(QDialogButtonBox)
 
 class SettingsManager;
 
@@ -13,7 +14,7 @@ class SettingsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SettingsDialog(SettingsManager* settingsManager, QWidget* parent = nullptr);
+    explicit SettingsDialog(QWidget* parent = nullptr);
 
     void loadSettings();
     void applySettings();
@@ -29,7 +30,6 @@ private:
     void setupUI();
     void createConnections();
 
-    SettingsManager* m_settingsManager;
     QComboBox* m_sortStrategyCombo;
     QSpinBox* m_updateIntervalSpin;
     QSpinBox* m_gridRowsSpin;
@@ -39,6 +39,7 @@ private:
     QSpinBox* m_decimalPrecisionSpin;
     QCheckBox* m_autoRefreshCheck;
     QComboBox* m_bestNetworkCriteriaCombo;
+    QDialogButtonBox* buttons;
 };
 
 #endif // SETTINGSDIALOG_H

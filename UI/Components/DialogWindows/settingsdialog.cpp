@@ -8,11 +8,10 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 
-#include "../../Core/Settings/settingsmanager.h"
+#include "../../../Core/globalmanager.h"
 
 SettingsDialog::SettingsDialog(QWidget* parent)
-    : QDialog(parent),
-    m_settings("YourCompany", "NetworkDashboard")
+    : QDialog(parent)
 {
     setupUI();
     loadSettings();
@@ -40,8 +39,8 @@ void SettingsDialog::setupUI()
 
     m_showBestNetworkWarningCheck = new QCheckBox(this);
 
-    m_unitsCombo = new QComboBox(this);
-    m_unitsCombo->addItems({"Bytes", "KB", "MB"});
+    m_dataUnitsCombo = new QComboBox(this);
+    m_dataUnitsCombo->addItems({"Bytes", "KB", "MB"});
 
     m_decimalPrecisionSpin = new QSpinBox(this);
     m_decimalPrecisionSpin->setRange(0, 4);
@@ -51,7 +50,7 @@ void SettingsDialog::setupUI()
     m_bestNetworkCriteriaCombo = new QComboBox(this);
     m_bestNetworkCriteriaCombo->addItems({"Speed", "Signal Strength", "Combined Score"});
 
-    layout->insertRow(2, "Data Units:", m_unitsCombo);
+    layout->insertRow(2, "Data Units:", m_dataUnitsCombo);
     layout->insertRow(3, "Decimal Precision:", m_decimalPrecisionSpin);
     layout->insertRow(4, m_autoRefreshCheck);
     layout->insertRow(5, "Best Network Criteria:", m_bestNetworkCriteriaCombo);
@@ -80,40 +79,28 @@ void SettingsDialog::createConnections()
 
 void SettingsDialog::loadSettings()
 {
-    m_settings.beginGroup("Settings");
-    m_sortStrategyCombo->setCurrentText(
-        m_settings.value("SortStrategy", "Speed").toString());
-    m_updateIntervalSpin->setValue(
-        m_settings.value("UpdateInterval", 2000).toInt());
-    m_gridRowsSpin->setValue(
-        m_settings.value("GridRows", 3).toInt());
-    m_gridColsSpin->setValue(
-        m_settings.value("GridCols", 3).toInt());
-    m_showBestNetworkWarningCheck->setChecked(
-        m_settings.value("ShowBestNetworkWarning", true).toBool());
-    m_unitsCombo->setCurrentText(
-        m_settings.value("DataUnits", "MB").toString());
-    m_decimalPrecisionSpin->setValue(
-        m_settings.value("DecimalPrecision", 2).toInt());
-    m_autoRefreshCheck->setChecked(
-        m_settings.value("AutoRefresh", true).toBool());
-    m_bestNetworkCriteriaCombo->setCurrentText(
-        m_settings.value("BestNetworkCriteria", "Combined Score").toString());
-    m_settings.endGroup();
+    m_sortStrategyCombo->setCurrentText(GlobalManager::settingsManager()->getSortStrategy());
+    m_updateIntervalSpin->setValue(GlobalManager::settingsManager()->getUpdateInterval());
+    m_gridRowsSpin->setValue(GlobalManager::settingsManager()->getGridRows());
+    m_gridColsSpin->setValue(GlobalManager::settingsManager()->getGridCols());
+    m_showBestNetworkWarningCheck->setChecked(GlobalManager::settingsManager()->getShowBestNetworkWarning());
+    m_dataUnitsCombo->setCurrentText(GlobalManager::settingsManager()->getDataUnits());
+    m_decimalPrecisionSpin->setValue(GlobalManager::settingsManager()->getDecimalPrecision());
+    m_autoRefreshCheck->setChecked(GlobalManager::settingsManager()->getAutoRefresh());
+    m_bestNetworkCriteriaCombo->setCurrentText(GlobalManager::settingsManager()->getBestNetworkCriteria());
 }
 
 void SettingsDialog::applySettings()
 {
-    m_settings.beginGroup("Settings");
-    m_settings.setValue("SortStrategy", m_sortStrategyCombo->currentText());
-    m_settings.setValue("UpdateInterval", m_updateIntervalSpin->value());
-    m_settings.setValue("GridRows", m_gridRowsSpin->value());
-    m_settings.setValue("GridCols", m_gridColsSpin->value());
-    m_settings.setValue("ShowBestNetworkWarning",
-                        m_showBestNetworkWarningCheck->isChecked());
-    m_settings.endGroup();
-
-    emit settingsChanged();
+    GlobalManager::settingsManager()->setSortStrategy(m_sortStrategyCombo->currentText());
+    GlobalManager::settingsManager()->setUpdateInterval(m_updateIntervalSpin->value());
+    GlobalManager::settingsManager()->setGridRows(m_gridRowsSpin->value());
+    GlobalManager::settingsManager()->setGridCols(m_gridColsSpin->value());
+    GlobalManager::settingsManager()->setDataUnits(m_dataUnitsCombo->currentData().toString());
+    GlobalManager::settingsManager()->setDecimalPrecision(m_decimalPrecisionSpin->value());
+    GlobalManager::settingsManager()->setShowBestNetworkWarning(m_showBestNetworkWarningCheck->isChecked());
+    GlobalManager::settingsManager()->setAutoRefresh(m_autoRefreshCheck->isChecked());
+    GlobalManager::settingsManager()->setBestNetworkCriteria(m_bestNetworkCriteriaCombo->currentData().toString());
 }
 
 void SettingsDialog::accept()

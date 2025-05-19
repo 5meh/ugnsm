@@ -5,8 +5,7 @@
 #include "../TaskSystem/taskscheduler.h"
 
 GridManager::GridManager(QObject* parent)
-    :m_scheduler(new TaskScheduler(this)),
-    m_dataManager(new GridDataManager(m_scheduler, this)),
+    : m_dataManager(new GridDataManager (this)),
     m_viewManager(new GridViewManager()),
     QObject(parent)
 {

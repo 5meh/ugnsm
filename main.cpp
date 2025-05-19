@@ -6,14 +6,15 @@
 #include "Utilities/Logger/logger.h"
 #include "Utilities/Parser/networkethernetparser.h"
 #include "Core/Network/Information/networkinfo.h"
+#include "Core/globalmanager.h"
 
 #include <QApplication>
 #include <QFile>
 
 void configureSystem()
 {
-    ComponentRegistry::registerComponent<INetworkSortStrategy, SpeedSortStrategy>();
-    ComponentRegistry::registerComponent<IParser, NetworkEthernetParser>();
+    GlobalManager::componentRegistry()->registerComponent<INetworkSortStrategy, SpeedSortStrategy>();
+    GlobalManager::componentRegistry()->registerComponent<IParser, NetworkEthernetParser>();
 
     Logger::instance().log(Logger::Info, "Components registered", "MainWindow");
 }

@@ -1,7 +1,6 @@
 // griddatamanager.cpp
 #include "griddatamanager.h"
 #include "../Utilities/Logger/logger.h"
-#include "../TaskSystem/taskscheduler.h"
 #include "../../Network/Information/networkinfo.h"
 #include "../../Network/Information/networkinfomodel.h"
 #include "../Utilities/Parser/iparser.h"
@@ -9,19 +8,16 @@
 #include "../Utilities/Parser/networkethernetparser.h"
 #include "../NetworkSortingStrategies/speedsortstrategy.h"
 #include "../Monitoring/networkmonitor.h"
-#include "../../componentregistry.h"
-#include "../TaskSystem/taskscheduler.h"
 #include "../../globalmanager.h"
 
 #include <QTimer>
 #include <QMessageBox>
 #include <QCheckBox>
 
-GridDataManager::GridDataManager(TaskScheduler* scheduler, QObject* parent)
-    : m_scheduler(scheduler),
-    m_monitor{new NetworkMonitor{nullptr, this}},
-    m_sorter{ComponentRegistry::create<INetworkSortStrategy>()},
-    m_parser{ComponentRegistry::create<IParser>(nullptr)},
+GridDataManager::GridDataManager(QObject* parent)
+    :m_monitor{new NetworkMonitor{nullptr, this}},
+    m_sorter{GlobalManager::componentRegistry()->create<INetworkSortStrategy>(this)},
+    m_parser{GlobalManager::componentRegistry()->create<IParser>(nullptr)},
     QObject{parent}
 {
     connect(m_parser.get(), &IParser::parsingCompleted,
@@ -29,7 +25,7 @@ GridDataManager::GridDataManager(TaskScheduler* scheduler, QObject* parent)
     connect(m_monitor, &NetworkMonitor::statsUpdated,
             this, &GridDataManager::handleNetworkStats);
 
-    m_scheduler->scheduleRepeating("data_refresh", 5000, this,
+    GlobalManager::taskScheduler()->scheduleRepeating("data_refresh", 5000, this,
                                    &GridDataManager::refreshData,
                                    QThread::NormalPriority);
 
@@ -76,7 +72,7 @@ void GridDataManager::initializeGrid(int rows, int cols)
 
 void GridDataManager::swapCells(QPoint from, QPoint to)
 {
-    m_scheduler->scheduleMainThread(
+    GlobalManager::taskScheduler()->scheduleMainThread(
         QString("grid_swap"),
         [this, from, to]()
         {
@@ -91,7 +87,7 @@ void GridDataManager::handleParsingCompleted(const QVariant& result)
     Q_ASSERT(result.canConvert<QList<NetworkInfo*>>());
     QVariant resultCopy = result;
 
-    m_scheduler->scheduleAtomic(m_refreshInProgress,
+    GlobalManager::taskScheduler()->scheduleAtomic(m_refreshInProgress,
                                 QString("data_processing"),
                                 this,
                                 &GridDataManager::handleParsingCompletedImpl,
@@ -101,7 +97,7 @@ void GridDataManager::handleParsingCompleted(const QVariant& result)
 
 void GridDataManager::handleNetworkStats(QString mac, quint64 rxSpeed, quint64 txSpeed)
 {
-    m_scheduler->schedule(QString("stats_update"),
+    GlobalManager::taskScheduler()->schedule(QString("stats_update"),
                           this,
                           &GridDataManager::handleNetworkStatsImpl,
                           QThread::LowPriority,
@@ -112,7 +108,7 @@ void GridDataManager::handleNetworkStats(QString mac, quint64 rxSpeed, quint64 t
 
 void GridDataManager::refreshData()
 {
-    m_scheduler->scheduleAtomic(m_refreshInProgress,
+    GlobalManager::taskScheduler()->scheduleAtomic(m_refreshInProgress,
                                 "data_refresh_task",
                                 m_parser.get(),
                                 &IParser::parse);
@@ -197,7 +193,7 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfo*>& allInfos
     QList<NetworkInfo*> usedInfos = allInfos.mid(0, capacity);
     QList<NetworkInfo*> unusedInfos = allInfos.mid(capacity);
 
-    m_scheduler->scheduleMainThread(
+    GlobalManager::taskScheduler()->scheduleMainThread(
         QString("model_creation"),
         [this, rows, cols, usedInfos]()//TODO:change capture values
         {
@@ -289,10 +285,10 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfo*>& allInfos)
             QPoint bestPos = m_macIndex[newBest->getMac()];
             if(bestPos != QPoint(0, 0))
             {
-                bool showWarning = GlobalManager::settingsManager().getBestNetworkCriteria();
+                bool showWarning = GlobalManager::settingsManager()->getShowBestNetworkWarning();
                 if(showWarning)
                 {
-                    m_scheduler->scheduleMainThread("bestNetworkCheck", [=]() {
+                    GlobalManager::taskScheduler()->scheduleMainThread("bestNetworkCheck", [=]() {
                         QMessageBox::StandardButton reply = QMessageBox::question(
                             nullptr,
                             tr("Network Change"),
@@ -309,7 +305,7 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfo*>& allInfos)
         }
     }
 
-    m_scheduler->scheduleMainThread("gridUpdate", [=]() {
+    GlobalManager::taskScheduler()->scheduleMainThread("gridUpdate", [=]() {
 
         for(const QPair<QPoint, NetworkInfo*>& pair : updates)
         {

@@ -43,6 +43,8 @@ public:
     void setAutoRefresh(bool enable);
     void setBestNetworkCriteria(const QString& criteria);
 
+
+
 signals:
     void settingsChanged();
     void sortStrategyChanged(const QString& strategy);
@@ -56,11 +58,11 @@ signals:
     void bestNetworkCriteriaChanged(const QString& criteria);
 
 private:
-    //mutable QMutex m_mutex;
-    QSettings m_settings;
 
     QVariant readSetting(const QString& key, const QVariant& defaultValue = QVariant()) const;
     void writeSetting(const QString& key, const QVariant& value);
+    //mutable QMutex m_mutex;
+    mutable QSettings m_settings;
 };
 
 #endif // SETTINGSMANAGER_H

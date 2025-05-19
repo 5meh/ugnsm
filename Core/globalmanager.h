@@ -6,8 +6,9 @@
 #include "componentregistry.h"
 
 #include <QCoreApplication>
+#include <QtCore/qglobalstatic.h>
 
-class GlobalManager
+class GlobalManager//mb somehow make though globalstatic
 {
 public:
     static TaskScheduler* taskScheduler();
@@ -18,7 +19,7 @@ private:
     GlobalManager() = delete;
     ~GlobalManager() = delete;
 
-    struct Holder
+    struct Holder//Why the fuck i need Holder? D: rastrelyat later
     {
         TaskScheduler scheduler;
         SettingsManager settings;
@@ -28,19 +29,10 @@ private:
 
     static Holder& instance()
     {
-        static QBasicAtomicInt flag = Q_BASIC_ATOMIC_INITIALIZER(Uninitialized);
-        static Holder* holder = nullptr;
-
-        if (!QGlobalStatic::testAndSetAcquire(&flag, &holder, Uninitialized, Initialized))
-        {
-            if (holder == nullptr)
-            {
-                holder = new Holder();
-                qAddPostRoutine([](){ delete holder; });
-            }
-        }
-        return *holder;
+        static Holder holder;
+        return holder;
     }
+
 };
 
 #endif // GLOBALMANAGER_H
