@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QDateTime>
+#include <QSharedPointer>
 
 class NetworkInfo : public QObject
 {
@@ -105,7 +106,11 @@ private:
     qint64 m_lastUpdateTime;
 };
 
+using NetworkInfoPtr = QSharedPointer<NetworkInfo>;
+
 Q_DECLARE_METATYPE(NetworkInfo*)
 Q_DECLARE_METATYPE(QList<NetworkInfo*>)
+Q_DECLARE_METATYPE(NetworkInfoPtr)
+Q_DECLARE_METATYPE(QList<NetworkInfoPtr>)
 
 #endif // NETWORKINFO_H

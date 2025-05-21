@@ -10,6 +10,8 @@
 
 #include "../Utilities/Parser/iparser.h"
 
+#include "../Network/Information/networkinfo.h"
+
 class NetworkInfoModel;
 class NetworkInfo;
 class IParser;
@@ -48,8 +50,8 @@ private:
     void swapCellsImpl(QPoint from, QPoint to);
     void clearGrid();
     void updateMacMap();
-    void initializeGridWithData(const QList<NetworkInfo*>& allInfos);
-    void updateGridWithData(const QList<NetworkInfo*>& allInfos);
+    void initializeGridWithData(const QList<NetworkInfoPtr>& allInfos);
+    void updateGridWithData(const QList<NetworkInfoPtr>& allInfos);
     bool showBestNetworkWarning();
 
     QAtomicInt m_refreshInProgress{0};

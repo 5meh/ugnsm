@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QtPlugin>
 
-class NetworkInfo;
+#include "../Network/Information/networkinfo.h"
 
 class INetworkSortStrategy : public QObject
 {
@@ -12,8 +12,8 @@ class INetworkSortStrategy : public QObject
 public:
     explicit INetworkSortStrategy(QObject *parent = nullptr);
     virtual ~INetworkSortStrategy() = default;
-    virtual void sort(QList<NetworkInfo*>& networks) = 0;
-    virtual int findBestNetwork(QList<NetworkInfo*>& networks) = 0;
+    virtual void sort(QList<NetworkInfoPtr>& networks) = 0;
+    virtual int findBestNetwork(QList<NetworkInfoPtr>& networks) = 0;
 };
 
 #define INetworkSortStrategy_iid "com.ugnsm.INetworkSortStrategy"

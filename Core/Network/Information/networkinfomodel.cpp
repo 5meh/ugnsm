@@ -1,7 +1,7 @@
 #include "networkinfomodel.h"
-#include "networkinfo.h"
 
-NetworkInfoModel::NetworkInfoModel(NetworkInfo *model, QObject *parent)
+
+NetworkInfoModel::NetworkInfoModel(NetworkInfoPtr model, QObject *parent)
     : QObject(parent),
     m_model(model)
 {
@@ -70,13 +70,13 @@ void NetworkInfoModel::clearChangedProperties()
     m_changedProperties.clear();
 }
 
-void NetworkInfoModel::updateFromNetworkInfo(NetworkInfo* newInfo)
+void NetworkInfoModel::updateFromNetworkInfo(NetworkInfoPtr newInfo)
 {
     if(!m_model || !newInfo)
         return;
 
     m_model->blockSignals(true);
-    m_model->updateFrom(newInfo);
+    m_model->updateFrom(newInfo.get());
     m_model->blockSignals(false);
 
     const QStringList allProperties =
@@ -177,7 +177,7 @@ void NetworkInfoModel::connectModelSignals()
 {
     auto connectProperty = [this](const QString& property, auto signal)
     {
-        connect(m_model, signal, this, [this, property]()
+        connect(m_model.data(), signal, this, [this, property]()
                 {
                     markPropertyChanged(property);
                 });
@@ -189,19 +189,19 @@ void NetworkInfoModel::connectModelSignals()
     connectProperty("netmask", &NetworkInfo::netmaskChanged);
     connectProperty("status", &NetworkInfo::isUpChanged);
 
-    connect(m_model, &NetworkInfo::rxSpeedChanged, this, [this]()
+    connect(m_model.data(), &NetworkInfo::rxSpeedChanged, this, [this]()
             {
                 markPropertyChanged("downloadSpeed");
                 markPropertyChanged("totalSpeed");
             });
 
-    connect(m_model, &NetworkInfo::txSpeedChanged, this, [this]()
+    connect(m_model.data(), &NetworkInfo::txSpeedChanged, this, [this]()
             {
                 markPropertyChanged("uploadSpeed");
                 markPropertyChanged("totalSpeed");
             });
 
-    connect(m_model, &NetworkInfo::lastUpdateTimeChanged, this, [this]()
+    connect(m_model.data(), &NetworkInfo::lastUpdateTimeChanged, this, [this]()
             {
                 markPropertyChanged("lastUpdate");
             });

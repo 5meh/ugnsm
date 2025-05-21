@@ -8,16 +8,16 @@ SpeedSortStrategy::SpeedSortStrategy(QObject* parent)
 
 }
 
-void SpeedSortStrategy::sort(QList<NetworkInfo*>& networks)
+void SpeedSortStrategy::sort(QList<NetworkInfoPtr>& networks)
 {
     std::sort(networks.begin(), networks.end(),
-              [](NetworkInfo* a, NetworkInfo* b)
+              [](NetworkInfoPtr a, NetworkInfoPtr b)
               {
-                  return a->getTotalSpeed() > b->getTotalSpeed();
+                  return a.data()->getTotalSpeed() > b.data()->getTotalSpeed();
               });
 }
 
-int SpeedSortStrategy::findBestNetwork(QList<NetworkInfo*>& networks)
+int SpeedSortStrategy::findBestNetwork(QList<NetworkInfoPtr>& networks)
 {
     if (networks.isEmpty())
         return -1;
@@ -25,7 +25,7 @@ int SpeedSortStrategy::findBestNetwork(QList<NetworkInfo*>& networks)
     int bestIndex = 0;
     for (int i = 1; i < networks.size(); ++i)
     {
-        if (networks[i]->getTotalSpeed() > networks[bestIndex]->getTotalSpeed())
+        if (networks[i].data()->getTotalSpeed() > networks[bestIndex].data()->getTotalSpeed())
         {
             bestIndex = i;
         }

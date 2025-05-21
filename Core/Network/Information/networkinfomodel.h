@@ -3,8 +3,7 @@
 
 #include <QObject>
 #include <QHash>
-
-class NetworkInfo;
+#include "networkinfo.h"
 
 class NetworkInfoModel : public QObject
 {
@@ -20,14 +19,14 @@ class NetworkInfoModel : public QObject
     Q_PROPERTY(QString lastUpdate READ getLastUpdate NOTIFY timestampChanged)
 
 public:
-    explicit NetworkInfoModel(NetworkInfo* model, QObject* parent = nullptr);
+    explicit NetworkInfoModel(NetworkInfoPtr model, QObject* parent = nullptr);
 
     const QHash<QString, QString>& propertyMap() const { return m_propertyMap; }//TODO:mb remove
     QList<QPair<QString, QString>> getAllKeyValuesAsList() const;
     QPair<QString, QString> getKeyValue(const QString& key) const;
     QStringList changedProperties() const;
     void clearChangedProperties();
-    void updateFromNetworkInfo(NetworkInfo* newInfo);
+    void updateFromNetworkInfo(NetworkInfoPtr newInfo);
 
     QString getName() const;
     QString getMac() const;
@@ -60,7 +59,7 @@ private:
     QString formatTimestamp() const;
     QString formatSpeed(quint64 bytes) const;
 
-    NetworkInfo* m_model;
+    NetworkInfoPtr m_model;
     QStringList m_changedProperties;
     QHash<QString, QString> m_propertyMap;
 };

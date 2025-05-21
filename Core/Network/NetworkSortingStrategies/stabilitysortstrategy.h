@@ -9,8 +9,8 @@ class StabilitySortStrategy : public INetworkSortStrategy
     Q_INTERFACES(INetworkSortStrategy)
 public:
     Q_INVOKABLE explicit StabilitySortStrategy(QObject *parent = nullptr);
-    void sort(QList<NetworkInfo *> &networks) override;
-    int findBestNetwork(QList<NetworkInfo*>& networks) override;
+    void sort(QList<NetworkInfoPtr> &networks) override;
+    int findBestNetwork(QList<NetworkInfoPtr>& networks) override;
 };
 
 #endif // STABILITYSORTSTRATEGY_H

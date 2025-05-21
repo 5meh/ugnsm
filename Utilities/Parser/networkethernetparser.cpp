@@ -119,11 +119,11 @@ bool NetworkEthernetParser::validate(QVariant& result, QStringList& warnings)
             warnings << "Invalid MAC for " + info->getName();
             isValid = false;
         }
-        if (info->getIpv4().isEmpty())
-        {
-            warnings << "Missing IPv4 for " + info->getName();
-            isValid = false;
-        }
+        // if (info->getIpv4().isEmpty())
+        // {
+        //     warnings << "Missing IPv4 for " + info->getName();
+        //     isValid = false;
+        // }
 
         if (isValid)
         {
@@ -131,6 +131,8 @@ bool NetworkEthernetParser::validate(QVariant& result, QStringList& warnings)
         }
     }
 
+    if(validNetworks.isEmpty())
+        return false;
     result.setValue(validNetworks);
-    return !validNetworks.isEmpty();
+    return true;
 }

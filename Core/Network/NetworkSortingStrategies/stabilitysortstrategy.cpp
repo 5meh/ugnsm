@@ -8,16 +8,16 @@ StabilitySortStrategy::StabilitySortStrategy(QObject *parent)
 
 }
 
-void StabilitySortStrategy::sort(QList<NetworkInfo*>& networks)
+void StabilitySortStrategy::sort(QList<NetworkInfoPtr>& networks)
 {
     std::sort(networks.begin(), networks.end(),
-              [](NetworkInfo* a, NetworkInfo* b)
+              [](NetworkInfoPtr a, NetworkInfoPtr b)
               {
-                  return a->getTimestamp() > b->getTimestamp();//TODO:mb change rework timesettings in NetworkInfo
+                  return a.data()->getTimestamp() > b.data()->getTimestamp();//TODO:mb change rework timesettings in NetworkInfo
               });
 }
 
-int StabilitySortStrategy::findBestNetwork(QList<NetworkInfo*>& networks)
+int StabilitySortStrategy::findBestNetwork(QList<NetworkInfoPtr>& networks)
 {
     return -1;
 }

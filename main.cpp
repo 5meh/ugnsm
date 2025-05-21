@@ -21,8 +21,10 @@ void configureSystem()
 
 int main(int argc, char *argv[])
 {
-    qRegisterMetaType<NetworkInfo*>("NetworkInfo*");
-    qRegisterMetaType<QList<NetworkInfo*>>("QList<NetworkInfo*>");
+    qRegisterMetaType<NetworkInfo*>();
+    qRegisterMetaType<QList<NetworkInfo*>>();
+    qRegisterMetaType<NetworkInfoPtr>();
+    qRegisterMetaType<QList<NetworkInfoPtr>>();
 
     QApplication a(argc, argv);
 
