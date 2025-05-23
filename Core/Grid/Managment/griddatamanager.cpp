@@ -25,6 +25,7 @@ GridDataManager::GridDataManager(QObject* parent)
             this, &GridDataManager::handleParsingCompleted, Qt::QueuedConnection);
     connect(m_monitor, &NetworkMonitor::statsUpdated,
             this, &GridDataManager::handleNetworkStats);
+    GlobalManager::messageBoxManager()->addBlockingRelationship("BestNetworkMove","SwapWarning");
 
     GlobalManager::taskScheduler()->scheduleRepeating("data_refresh", 5000, this,
                                                       &GridDataManager::refreshData,
@@ -214,7 +215,6 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
                         info = usedInfos[linearIndex];
                     else
                         continue;
-                    //NetworkInfo* info = (linearIndex < usedInfos.size()) ? usedInfos[linearIndex] : {continue;};
                     delete m_data[x][y];
                     m_data[x][y] = new NetworkInfoModel(info, this);
                     m_macIndex[info->getMac()] = QPoint(x,y);
@@ -225,7 +225,6 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
         QThread::HighPriority
         );
 
-    //qDeleteAll(unusedInfos);
     unusedInfos.clear();
 }
 
@@ -292,26 +291,23 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
             QPoint bestPos = m_macIndex[newBest->getMac()];
             const QString dialogId = "BestNetworkMove";
 
-            if(bestPos != QPoint(0, 0))
+            if(bestPos != QPoint(0, 0) && GlobalManager::messageBoxManager()->shouldShowDialog(dialogId))
             {
-                if (GlobalManager::messageBoxManager()->shouldShowDialog(dialogId))
-                {
-                    GlobalManager::messageBoxManager()->showDialog(
+                GlobalManager::taskScheduler()->scheduleMainThread("show_dialog", [dialogId, bestPos, this]{
+                    auto result = GlobalManager::messageBoxManager()->showDialog(
                         dialogId,
                         "Network Change",
                         "New best network detected. Move to primary position?",
-                        "Do not show this message again",
-                        QMessageBox::Yes | QMessageBox::No
+                        "Do not show this message again"
                         );
 
-                    connect(GlobalManager::messageBoxManager(), &MessageBoxManager::dialogFinished,
-                            this, [this, bestPos](const QString& id, QMessageBox::StandardButton result) {
-                                if (id == "BestNetworkMove" && result == QMessageBox::Yes)
-                                    swapCellsImpl(bestPos, QPoint(0, 0));
-                            });
-                }
-                swapCellsImpl(bestPos, QPoint(0, 0));
+                    if (result == QMessageBox::Yes)
+                        swapCellsImpl(bestPos, QPoint(0, 0));
+                });
+
             }
+            else if (!GlobalManager::messageBoxManager()->isDialogEnabled(dialogId))
+                swapCells(bestPos, QPoint(0, 0));
         }
 
         GlobalManager::taskScheduler()->scheduleMainThread("gridUpdate", [=]() {
@@ -352,22 +348,12 @@ bool GridDataManager::showBestNetworkWarning()
     if (!GlobalManager::messageBoxManager()->shouldShowDialog(dialogId))
         return false;
 
-    GlobalManager::messageBoxManager()->showDialog(
+    auto result = GlobalManager::messageBoxManager()->showDialog(
         dialogId,
         "Best Network Swap Warning",
         "You are trying to swap the best network.\nDo you want to continue?",
         "Do not show this message again"
         );
 
-    bool result = false;
-    connect(GlobalManager::messageBoxManager(), &MessageBoxManager::dialogFinished,
-            this, [this, &result, dialogId](const QString& id, QMessageBox::StandardButton buttonResult) {
-                if (id == dialogId)
-                {
-                    if (buttonResult == QMessageBox::Yes)
-                        result = true;
-                }
-            });
-
-    return result;
+    return (result == QMessageBox::Yes);
 }

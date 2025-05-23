@@ -35,7 +35,6 @@ void NetworkEthernetParser::parse()
     if (validate(result, warnings))
     {
         emit parsingCompleted(result);
-        //results.clear();
     }
     else
     {

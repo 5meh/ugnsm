@@ -11,30 +11,50 @@ MessageBoxManager::MessageBoxManager(QObject* parent)
 
 bool MessageBoxManager::shouldShowDialog(const QString& dialogId)
 {
+    QMutexLocker locker(&m_mutex);
+    for (const auto& [blocker, blockedDialogs] : m_blockingRelations.asKeyValueRange())
+        if (m_activeDialogs.contains(blocker) && blockedDialogs.contains(dialogId))
+            return false;
+
     return m_dialogFlags.value(dialogId, true) && !m_activeDialogs.contains(dialogId);
+}
+
+void MessageBoxManager::addBlockingRelationship(const QString& blockingDialog, const QString& blockedDialog)
+{
+    QMutexLocker locker(&m_mutex);
+    m_blockingRelations[blockingDialog].insert(blockedDialog);
+}
+
+void MessageBoxManager::clearBlockingRelationship(const QString& dialogId)
+{
+    QMutexLocker locker(&m_mutex);
+    m_blockingRelations[dialogId].clear();
 }
 
 bool MessageBoxManager::isDialogEnabled(const QString& dialogId) const
 {
+    QMutexLocker locker(&m_mutex);
     return m_dialogFlags.value(dialogId, true);
 }
 
-void MessageBoxManager::showDialog(
-                                    const QString& dialogId,
-                                    const QString& title,
-                                    const QString& message,
-                                    const QString& checkboxText,
-                                    QMessageBox::StandardButtons buttons
-                                    )
+QMessageBox::StandardButtons MessageBoxManager::showDialog(
+    const QString& dialogId,
+    const QString& title,
+    const QString& message,
+    const QString& checkboxText,
+    bool isModal,
+    QMessageBox::StandardButtons buttons
+    )
 {
-    if (!shouldShowDialog(dialogId))
-        return;
+    QMutexLocker locker(&m_mutex);
+    m_activeDialogs.insert(dialogId);
 
     QMessageBox* msgBox = new QMessageBox();
     msgBox->setWindowTitle(title);
     msgBox->setText(message);
     msgBox->setStandardButtons(buttons);
     msgBox->setAttribute(Qt::WA_DeleteOnClose);
+    msgBox->setModal(isModal);
 
     if (!checkboxText.isEmpty())
     {
@@ -44,14 +64,13 @@ void MessageBoxManager::showDialog(
 
     m_activeDialogs.insert(dialogId);
 
-    QObject::connect(msgBox, &QMessageBox::finished, [this, dialogId, msgBox](int result) {
+    QMessageBox::StandardButton result = QMessageBox::NoButton;
+    result = static_cast<QMessageBox::StandardButton>(msgBox->exec());
 
-        if (msgBox->checkBox() && msgBox->checkBox()->isChecked())
-            m_dialogFlags[dialogId] = false;
+    if (msgBox->checkBox() && msgBox->checkBox()->isChecked())
+        m_dialogFlags[dialogId] = false;
 
-        m_activeDialogs.remove(dialogId);
-        emit dialogFinished(dialogId, static_cast<QMessageBox::StandardButton>(result));
-    });
-
-    msgBox->show();
+    m_activeDialogs.remove(dialogId);
+    return result;
+    //emit dialogFinished(dialogId, static_cast<QMessageBox::StandardButton>(result));//TODO:mb remove
 }

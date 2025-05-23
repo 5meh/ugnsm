@@ -5,6 +5,8 @@
 #include <QMessageBox>
 #include <QSet>
 #include <QMap>
+#include <QHash>
+#include <QMutexLocker>
 
 class MessageBoxManager : public QObject
 {
@@ -14,11 +16,15 @@ public:
 
     bool shouldShowDialog(const QString& dialogId);
 
-    void showDialog(
+    void addBlockingRelationship(const QString& blockingDialog, const QString& blockedDialog);
+    void clearBlockingRelationship(const QString& dialogId);
+
+    QMessageBox::StandardButtons showDialog(
         const QString& dialogId,
         const QString& title,
         const QString& message,
         const QString& checkboxText = "",
+        bool isModal = true,
         QMessageBox::StandardButtons buttons = QMessageBox::Yes | QMessageBox::No
         );
 
@@ -28,8 +34,10 @@ signals:
     void dialogFinished(const QString& dialogId, QMessageBox::StandardButton result);
 
 private:
+    mutable QMutex m_mutex;
     QSet<QString> m_activeDialogs;      // Track visible dialogs
     QMap<QString, bool> m_dialogFlags;  // Store "show again" flags
+    QHash<QString, QSet<QString>> m_blockingRelations;
 };
 
 #endif // MESSAGEBOXMANAGER_H
