@@ -9,6 +9,7 @@
 #include "../NetworkSortingStrategies/speedsortstrategy.h"
 #include "../Monitoring/networkmonitor.h"
 #include "../../globalmanager.h"
+#include "../Utilities/MessageBoxManager/messageboxmanager.h"
 
 #include <QTimer>
 #include <QMessageBox>
@@ -26,8 +27,8 @@ GridDataManager::GridDataManager(QObject* parent)
             this, &GridDataManager::handleNetworkStats);
 
     GlobalManager::taskScheduler()->scheduleRepeating("data_refresh", 5000, this,
-                                   &GridDataManager::refreshData,
-                                   QThread::NormalPriority);
+                                                      &GridDataManager::refreshData,
+                                                      QThread::NormalPriority);
 
     Logger::instance().log(Logger::Info, "GridDataManager initialized", "Grid");
 }
@@ -88,30 +89,30 @@ void GridDataManager::handleParsingCompleted(const QVariant& result)
     QVariant resultCopy = result;
 
     GlobalManager::taskScheduler()->scheduleAtomic(m_refreshInProgress,
-                                QString("data_processing"),
-                                this,
-                                &GridDataManager::handleParsingCompletedImpl,
-                                QThread::NormalPriority,
-                                std::move(resultCopy));
+                                                   QString("data_processing"),
+                                                   this,
+                                                   &GridDataManager::handleParsingCompletedImpl,
+                                                   QThread::NormalPriority,
+                                                   std::move(resultCopy));
 }
 
 void GridDataManager::handleNetworkStats(QString mac, quint64 rxSpeed, quint64 txSpeed)
 {
     GlobalManager::taskScheduler()->schedule(QString("stats_update"),
-                          this,
-                          &GridDataManager::handleNetworkStatsImpl,
-                          QThread::LowPriority,
-                          std::move(mac),
-                          rxSpeed,
-                          txSpeed);
+                                             this,
+                                             &GridDataManager::handleNetworkStatsImpl,
+                                             QThread::LowPriority,
+                                             std::move(mac),
+                                             rxSpeed,
+                                             txSpeed);
 }
 
 void GridDataManager::refreshData()
 {
     GlobalManager::taskScheduler()->scheduleAtomic(m_refreshInProgress,
-                                "data_refresh_task",
-                                m_parser.get(),
-                                &IParser::parse);
+                                                   "data_refresh_task",
+                                                   m_parser.get(),
+                                                   &IParser::parse);
 }
 
 void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
@@ -125,9 +126,8 @@ void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
 
     if ((from.x() == 0 && from.y() == 0) || (to.x() == 0 && to.y() == 0))
     {
-        if(m_showBestNetworkWarning)
-            if (!showBestNetworkWarning())
-                return;
+        if(showBestNetworkWarning())
+            return;
     }
 
     std::swap(m_data[from.x()][from.y()], m_data[to.x()][to.y()]);
@@ -290,72 +290,84 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
         if(newBest && m_macIndex.contains(newBest->getMac()))
         {
             QPoint bestPos = m_macIndex[newBest->getMac()];
+            const QString dialogId = "BestNetworkMove";
+
             if(bestPos != QPoint(0, 0))
             {
-                bool showWarning = GlobalManager::settingsManager()->getShowBestNetworkWarning();
-                if(showWarning)
+                if (GlobalManager::messageBoxManager()->shouldShowDialog(dialogId))
                 {
-                    GlobalManager::taskScheduler()->scheduleMainThread("bestNetworkCheck", [=]() {
-                        QMessageBox::StandardButton reply = QMessageBox::question(
-                            nullptr,
-                            tr("Network Change"),
-                            tr("New best network detected. Move to primary position?"),
-                            QMessageBox::Yes | QMessageBox::No
-                            );
-                        if(reply == QMessageBox::Yes)
-                            swapCellsImpl(bestPos, QPoint(0,0));
-                    });
+                    GlobalManager::messageBoxManager()->showDialog(
+                        dialogId,
+                        "Network Change",
+                        "New best network detected. Move to primary position?",
+                        "Do not show this message again",
+                        QMessageBox::Yes | QMessageBox::No
+                        );
+
+                    connect(GlobalManager::messageBoxManager(), &MessageBoxManager::dialogFinished,
+                            this, [this, bestPos](const QString& id, QMessageBox::StandardButton result) {
+                                if (id == "BestNetworkMove" && result == QMessageBox::Yes)
+                                    swapCellsImpl(bestPos, QPoint(0, 0));
+                            });
                 }
-                else
-                    swapCellsImpl(bestPos, QPoint(0,0));
+                swapCellsImpl(bestPos, QPoint(0, 0));
             }
         }
+
+        GlobalManager::taskScheduler()->scheduleMainThread("gridUpdate", [=]() {
+
+            for(const QPair<QPoint, NetworkInfoPtr>& pair : updates)
+            {
+                if(!pair.second)
+                {
+                    delete m_data[pair.first.x()][pair.first.y()];
+                    m_data[pair.first.x()][pair.first.y()] = nullptr;
+                    emit cellChanged(pair.first, nullptr);
+                }
+            }
+
+            for(const QPair<QPoint, NetworkInfoPtr>& pair : updates)
+            {
+                if(pair.second)
+                {
+                    QPoint pos = pair.first;
+                    NetworkInfoPtr info = pair.second;
+
+                    if(m_data[pos.x()][pos.y()])
+                        m_data[pos.x()][pos.y()]->updateFromNetworkInfo(info);
+                    else
+                        m_data[pos.x()][pos.y()] = new NetworkInfoModel(info, this);
+
+                    emit cellChanged(pos, m_data[pos.x()][pos.y()]);
+                }
+            }
+        });
     }
-
-    GlobalManager::taskScheduler()->scheduleMainThread("gridUpdate", [=]() {
-
-        for(const QPair<QPoint, NetworkInfoPtr>& pair : updates)
-        {
-            if(!pair.second)
-            {
-                delete m_data[pair.first.x()][pair.first.y()];
-                m_data[pair.first.x()][pair.first.y()] = nullptr;
-                emit cellChanged(pair.first, nullptr);
-            }
-        }
-
-        for(const QPair<QPoint, NetworkInfoPtr>& pair : updates)
-        {
-            if(pair.second)
-            {
-                QPoint pos = pair.first;
-                NetworkInfoPtr info = pair.second;
-
-                if(m_data[pos.x()][pos.y()])
-                    m_data[pos.x()][pos.y()]->updateFromNetworkInfo(info);
-                else
-                    m_data[pos.x()][pos.y()] = new NetworkInfoModel(info, this);
-
-                emit cellChanged(pos, m_data[pos.x()][pos.y()]);
-            }
-        }
-
-        //qDeleteAll(allInfos);
-    });
 }
 
 bool GridDataManager::showBestNetworkWarning()
 {
-    QMessageBox msgBox;
-    msgBox.setText("You are trying to swap the best network.");
-    msgBox.setInformativeText("Do you want to continue?");
-    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    msgBox.setDefaultButton(QMessageBox::No);
-    msgBox.setCheckBox(new QCheckBox("Do not show this message again"));
+    const QString dialogId = "SwapWarning";
 
-    int ret = msgBox.exec();
-    if (msgBox.checkBox()->isChecked())
-        m_showBestNetworkWarning = false;
+    if (!GlobalManager::messageBoxManager()->shouldShowDialog(dialogId))
+        return false;
 
-    return ret == QMessageBox::Yes;
+    GlobalManager::messageBoxManager()->showDialog(
+        dialogId,
+        "Best Network Swap Warning",
+        "You are trying to swap the best network.\nDo you want to continue?",
+        "Do not show this message again"
+        );
+
+    bool result = false;
+    connect(GlobalManager::messageBoxManager(), &MessageBoxManager::dialogFinished,
+            this, [this, &result, dialogId](const QString& id, QMessageBox::StandardButton buttonResult) {
+                if (id == dialogId)
+                {
+                    if (buttonResult == QMessageBox::Yes)
+                        result = true;
+                }
+            });
+
+    return result;
 }

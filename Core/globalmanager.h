@@ -4,6 +4,7 @@
 #include "TaskSystem/taskscheduler.h"
 #include "Settings/settingsmanager.h"
 #include "componentregistry.h"
+#include "../Utilities/MessageBoxManager/messageboxmanager.h"
 
 #include <QCoreApplication>
 #include <QtCore/qglobalstatic.h>
@@ -12,6 +13,7 @@ class GlobalManager//mb somehow make though globalstatic
 {
 public:
     static TaskScheduler* taskScheduler();
+    static MessageBoxManager* messageBoxManager();
     static SettingsManager* settingsManager();
     static ComponentRegistry* componentRegistry();
 
@@ -24,6 +26,7 @@ private:
         TaskScheduler scheduler;
         SettingsManager settings;
         ComponentRegistry components;
+        MessageBoxManager messageBoxManager;
         QMutex mutex;
     };
 

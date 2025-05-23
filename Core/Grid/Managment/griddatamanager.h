@@ -7,6 +7,7 @@
 #include <QHash>
 #include <QNetworkInterface>
 #include <QPoint>
+#include <QMessageBox>
 
 #include "../Utilities/Parser/iparser.h"
 
@@ -60,7 +61,6 @@ private:
     std::shared_ptr<INetworkSortStrategy> m_sorter;
     QVector<QVector<NetworkInfoModel*>> m_data;
     QHash<QString, QPoint> m_macIndex;
-    bool m_showBestNetworkWarning = true;
 };
 
 #endif // GRIDDATAMANAGER_H

@@ -21,7 +21,6 @@ class SettingsManager : public QObject
 public:
     explicit SettingsManager(QObject* parent = nullptr);
 
-    // Getters
     QString getSortStrategy() const;
     int getUpdateInterval() const;
     int getGridRows() const;
@@ -32,7 +31,6 @@ public:
     bool getAutoRefresh() const;
     QString getBestNetworkCriteria() const;
 
-    // Setters
     void setSortStrategy(const QString& strategy);
     void setUpdateInterval(int interval);
     void setGridRows(int rows);
@@ -42,8 +40,6 @@ public:
     void setDecimalPrecision(int precision);
     void setAutoRefresh(bool enable);
     void setBestNetworkCriteria(const QString& criteria);
-
-
 
 signals:
     void settingsChanged();
@@ -61,7 +57,7 @@ private:
 
     QVariant readSetting(const QString& key, const QVariant& defaultValue = QVariant()) const;
     void writeSetting(const QString& key, const QVariant& value);
-    //mutable QMutex m_mutex;
+
     mutable QSettings m_settings;
 };
 

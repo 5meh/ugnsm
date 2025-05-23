@@ -6,6 +6,12 @@ TaskScheduler* GlobalManager::taskScheduler()
     return &instance().scheduler;
 }
 
+MessageBoxManager *GlobalManager::messageBoxManager()
+{
+    QMutexLocker locker(&instance().mutex);
+    return &instance().messageBoxManager;
+}
+
 SettingsManager* GlobalManager::settingsManager()
 {
     QMutexLocker locker(&instance().mutex);
