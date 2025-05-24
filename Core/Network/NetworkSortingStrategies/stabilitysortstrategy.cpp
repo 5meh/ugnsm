@@ -2,7 +2,7 @@
 
 #include "Network/Information/networkinfo.h"
 
-StabilitySortStrategy::StabilitySortStrategy(QObject *parent)
+StabilitySortStrategy::StabilitySortStrategy(QObject* parent)
     : INetworkSortStrategy{parent}
 {
 
@@ -17,7 +17,7 @@ void StabilitySortStrategy::sort(QList<NetworkInfoPtr>& networks)
               });
 }
 
-int StabilitySortStrategy::findBestNetwork(QList<NetworkInfoPtr>& networks)
+int StabilitySortStrategy::findBestNetwork(const QList<NetworkInfoPtr>& networks)
 {
     return -1;
 }

@@ -29,12 +29,6 @@ public slots:
 signals:
     void cellSwapRequestToDataManager(QPoint from, QPoint to);
 
-// protected:
-//     void dragEnterEvent(QDragEnterEvent* event) override;
-//     void dragMoveEvent(QDragMoveEvent* event) override;
-//     void dragLeaveEvent(QDragLeaveEvent* event) override;
-//     void dropEvent(QDropEvent* event) override;
-
 private slots:
     void handleSwapRequested(QPoint source, QPoint target);
 
@@ -45,6 +39,7 @@ private:
     QPoint getCellIndexFromPos(const QPoint& indx);
     void updateCellContent(int row, int col, NetworkInfoModel* model);
     GridCellWidget* createCellWidgetForModel(NetworkInfoModel* model);
+    bool showBestNetworkWarning();
 
     QGridLayout* m_gridLayout;
     QVector<QVector<GridCellWidget*>> m_cells;

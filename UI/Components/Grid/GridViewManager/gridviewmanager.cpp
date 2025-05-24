@@ -3,6 +3,7 @@
 #include "../GridCellWidgets/networkinfoviewwidget.h"
 #include "../GridCellWidgets/placeholdercellwidget.h"
 #include "../Core/Network/Information/networkinfomodel.h"
+#include "../Core/globalmanager.h"
 
 #include <QMimeData>
 #include <QDrag>
@@ -127,35 +128,65 @@ GridCellWidget* GridViewManager::cellAt(int row, int col) const
     return nullptr;
 }
 
+// bool GridViewManager::showBestNetworkWarning()
+// {
+//     const QString dialogId = "SwapWarning";
+
+//     if (!GlobalManager::messageBoxManager()->shouldShowDialog(dialogId))
+//         return false;
+
+//     auto result = GlobalManager::messageBoxManager()->showDialog(
+//         dialogId,
+//         "Best Network Swap Warning",
+//         "You are trying to swap the best network.\nDo you want to continue?",
+//         "Do not show this message again"
+//         );
+
+//     return (result == QMessageBox::No);
+// }
+
 void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
 {
     if (source.x() < 0 || source.x() >= gridRows() || source.y() < 0 || source.y() >= gridCols() ||
         target.x() < 0 || target.x() >= gridRows() || target.y() < 0 || target.y() >= gridCols())
         return;
 
-    // Allow swapping with placeholders - remove the placeholder check
+    //TODO:implement proper check
+    if ((source.x() == 0 && source.y() == 0) || (target.x() == 0 && target.y() == 0))
+    {
+        const QString dialogId = "SwapWarning";//TODO:rework MessageBoxManager to make this all through one method
+
+        if (!GlobalManager::messageBoxManager()->shouldShowDialog(dialogId))
+            return;
+
+        auto result = GlobalManager::messageBoxManager()->showDialog(
+            dialogId,
+            "Best Network Swap Warning",
+            "You are trying to swap the best network.\nDo you want to continue?",
+            "Do not show this message again"
+            );
+
+        if(result == QMessageBox::No)
+            return;
+    }
+
     GridCellWidget* sourceWidget = cellAt(source.x(), source.y());
     GridCellWidget* targetWidget = cellAt(target.x(), target.y());
 
-    if (!sourceWidget || !targetWidget)
+    if (!sourceWidget || !targetWidget)//TODO: Why we need this?mb remove later
         return;
 
-    // Perform the swap regardless of placeholder status
     m_gridLayout->removeWidget(sourceWidget);
     m_gridLayout->removeWidget(targetWidget);
 
-    // Update the grid indices
     sourceWidget->setGridIndex(target);
     targetWidget->setGridIndex(source);
 
-    // Swap the widgets in the layout
     m_gridLayout->addWidget(sourceWidget, target.x(), target.y());
     m_gridLayout->addWidget(targetWidget, source.x(), source.y());
 
-    // Update the cells vector
     std::swap(m_cells[source.x()][source.y()], m_cells[target.x()][target.y()]);
 
-    // Emit the swap request to the data manager
     emit cellSwapRequestToDataManager(source, target);
 }
 

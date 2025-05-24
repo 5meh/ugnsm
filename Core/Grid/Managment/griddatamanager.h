@@ -30,6 +30,7 @@ public:
 
     int getRows() const;
     int getCols() const;
+    int getCapacity() const;
     void initializeGrid(int rows, int cols);
     void swapCells(QPoint from, QPoint to);
 
@@ -61,6 +62,8 @@ private:
     std::shared_ptr<INetworkSortStrategy> m_sorter;
     QVector<QVector<NetworkInfoModel*>> m_data;
     QHash<QString, QPoint> m_macIndex;
+    //bool m_isInitializedWithData = false;
+    size_t m_validDataCount;
 };
 
 #endif // GRIDDATAMANAGER_H

@@ -17,7 +17,7 @@ void SpeedSortStrategy::sort(QList<NetworkInfoPtr>& networks)
               });
 }
 
-int SpeedSortStrategy::findBestNetwork(QList<NetworkInfoPtr>& networks)
+int SpeedSortStrategy::findBestNetwork(const QList<NetworkInfoPtr>& networks)
 {
     if (networks.isEmpty())
         return -1;
