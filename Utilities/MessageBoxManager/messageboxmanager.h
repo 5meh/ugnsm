@@ -14,8 +14,6 @@ class MessageBoxManager : public QObject
 public:
     explicit MessageBoxManager(QObject* parent = nullptr);
 
-    bool shouldShowDialog(const QString& dialogId);
-
     void addBlockingRelationship(const QString& blockingDialog, const QString& blockedDialog);
     void clearBlockingRelationship(const QString& dialogId);
 
@@ -34,6 +32,8 @@ signals:
     void dialogFinished(const QString& dialogId, QMessageBox::StandardButton result);
 
 private:
+    bool shouldShowDialog(const QString& dialogId);
+
     mutable QMutex m_mutex;
     QSet<QString> m_activeDialogs;      // Track visible dialogs
     QMap<QString, bool> m_dialogFlags;  // Store "show again" flags

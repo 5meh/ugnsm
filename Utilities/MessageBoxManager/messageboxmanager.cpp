@@ -9,7 +9,7 @@ MessageBoxManager::MessageBoxManager(QObject* parent)
     m_dialogFlags["BestNetworkMove"] = true;
 }
 
-bool MessageBoxManager::shouldShowDialog(const QString& dialogId)
+bool MessageBoxManager::shouldShowDialog(const QString& dialogId)//TODO:mb make prive an move to showDIalog method
 {
     QMutexLocker locker(&m_mutex);
     for (const auto& [blocker, blockedDialogs] : m_blockingRelations.asKeyValueRange())
@@ -47,6 +47,10 @@ QMessageBox::StandardButtons MessageBoxManager::showDialog(
     )
 {
     QMutexLocker locker(&m_mutex);
+
+    if(!shouldShowDialog(dialogId))
+        return QMessageBox::Ok;
+
     m_activeDialogs.insert(dialogId);
 
     QMessageBox* msgBox = new QMessageBox();
@@ -62,15 +66,13 @@ QMessageBox::StandardButtons MessageBoxManager::showDialog(
         msgBox->setCheckBox(checkBox);
     }
 
-    m_activeDialogs.insert(dialogId);
-
     QMessageBox::StandardButton result = QMessageBox::NoButton;
     result = static_cast<QMessageBox::StandardButton>(msgBox->exec());
+    m_activeDialogs.remove(dialogId);
 
     if (msgBox->checkBox() && msgBox->checkBox()->isChecked())
         m_dialogFlags[dialogId] = false;
 
-    m_activeDialogs.remove(dialogId);
     return result;
     //emit dialogFinished(dialogId, static_cast<QMessageBox::StandardButton>(result));//TODO:mb remove
 }

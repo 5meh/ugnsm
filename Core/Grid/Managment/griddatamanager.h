@@ -54,7 +54,6 @@ private:
     void updateMacMap();
     void initializeGridWithData(const QList<NetworkInfoPtr>& allInfos);
     void updateGridWithData(const QList<NetworkInfoPtr>& allInfos);
-    bool showBestNetworkWarning();
 
     QAtomicInt m_refreshInProgress{0};
     NetworkMonitor* m_monitor;

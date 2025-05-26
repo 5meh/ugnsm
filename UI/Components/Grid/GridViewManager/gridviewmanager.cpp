@@ -128,23 +128,6 @@ GridCellWidget* GridViewManager::cellAt(int row, int col) const
     return nullptr;
 }
 
-// bool GridViewManager::showBestNetworkWarning()
-// {
-//     const QString dialogId = "SwapWarning";
-
-//     if (!GlobalManager::messageBoxManager()->shouldShowDialog(dialogId))
-//         return false;
-
-//     auto result = GlobalManager::messageBoxManager()->showDialog(
-//         dialogId,
-//         "Best Network Swap Warning",
-//         "You are trying to swap the best network.\nDo you want to continue?",
-//         "Do not show this message again"
-//         );
-
-//     return (result == QMessageBox::No);
-// }
-
 void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
 {
     if (source.x() < 0 || source.x() >= gridRows() || source.y() < 0 || source.y() >= gridCols() ||
@@ -154,10 +137,7 @@ void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
     //TODO:implement proper check
     if ((source.x() == 0 && source.y() == 0) || (target.x() == 0 && target.y() == 0))
     {
-        const QString dialogId = "SwapWarning";//TODO:rework MessageBoxManager to make this all through one method
-
-        if (!GlobalManager::messageBoxManager()->shouldShowDialog(dialogId))
-            return;
+        const QString dialogId = "SwapWarning";
 
         auto result = GlobalManager::messageBoxManager()->showDialog(
             dialogId,

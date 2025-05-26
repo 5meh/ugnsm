@@ -130,6 +130,18 @@ void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
         return;
     }
 
+    if(to == QPoint{0,0})
+    {
+        const QString dialogId = "BestNetworkMove";
+        auto result = GlobalManager::messageBoxManager()->showDialog(dialogId,
+                                                                     "Network Change",
+                                                                     "New best network detected. Move to primary position?",
+                                                                     "Do not show this message again"
+                                                                     );
+        if(result == QMessageBox::No)
+            return;
+    }
+
     std::swap(m_data[from.x()][from.y()], m_data[to.x()][to.y()]);
     updateMacMap();
 
@@ -274,7 +286,7 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
             QPoint bestPos = m_macIndex[newBest->getMac()];
             const QString dialogId = "BestNetworkMove";
 
-            if(bestPos != QPoint(0, 0) && GlobalManager::messageBoxManager()->shouldShowDialog(dialogId))
+            if(bestPos != QPoint(0, 0))
             {
                 GlobalManager::taskScheduler()->scheduleMainThread("show_dialog", [dialogId, bestPos, this]{
                     auto result = GlobalManager::messageBoxManager()->showDialog(
@@ -326,21 +338,4 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
             }
         });
     }
-}
-
-bool GridDataManager::showBestNetworkWarning()//TODO:remove
-{
-    const QString dialogId = "SwapWarning";
-
-    if (!GlobalManager::messageBoxManager()->shouldShowDialog(dialogId))
-        return false;
-
-    auto result = GlobalManager::messageBoxManager()->showDialog(
-        dialogId,
-        "Best Network Swap Warning",
-        "You are trying to swap the best network.\nDo you want to continue?",
-        "Do not show this message again"
-        );
-
-    return (result == QMessageBox::Yes);
 }
