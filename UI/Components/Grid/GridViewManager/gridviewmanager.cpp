@@ -49,7 +49,7 @@ void GridViewManager::setGridSize(int rows, int cols)
 
 void GridViewManager::setCell(QPoint indx, GridCellWidget* widget)
 {
-    if(indx.x() < 0 || indx.x() >= m_cells.size() || indx.y() < 0 || indx.y() >= m_cells[indx.x()].size())
+    if(indx.x() < 0 || indx.x() >= m_cells.size() || indx.y() < 0 || indx.y() >= m_cells[indx.x()].size())//TODO:mb remove range check everywhere?
         return;
 
     GridCellWidget* oldWidget = m_cells[indx.x()][indx.y()];
@@ -58,6 +58,9 @@ void GridViewManager::setCell(QPoint indx, GridCellWidget* widget)
         m_gridLayout->removeWidget(oldWidget);
         oldWidget->deleteLater();
     }
+
+    if(indx.x() == 0 && indx.y() == 0)
+        highlightCell(indx.x(), indx.y());
 
     widget->setGridIndex(indx);
 
@@ -148,6 +151,7 @@ void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
 
         if(result == QMessageBox::No)
             return;
+
     }
 
     GridCellWidget* sourceWidget = cellAt(source.x(), source.y());
@@ -188,7 +192,7 @@ void GridViewManager::highlightCell(int row, int col)
     clearHighlight();
     auto* cell = cellAt(row, col);
     if (!cell)
-        return;
+       return;
     cell->setProperty("highlighted", true);
     cell->style()->unpolish(cell);
     cell->style()->polish(cell);
@@ -200,7 +204,7 @@ void GridViewManager::clearHighlight()
     if (!m_highlightedCell)
         return;
     m_highlightedCell->setProperty("highlighted", false);
-    m_highlightedCell->style()->unpolish(m_highlightedCell);
+    //m_highlightedCell->style()->unpolish(m_highlightedCell);
     m_highlightedCell->style()->polish(m_highlightedCell);
     m_highlightedCell = nullptr;
 }

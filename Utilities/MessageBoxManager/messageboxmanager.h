@@ -22,7 +22,7 @@ public:
         const QString& title,
         const QString& message,
         const QString& checkboxText = "",
-        bool isModal = true,
+        bool isModal = false,
         QMessageBox::StandardButtons buttons = QMessageBox::Yes | QMessageBox::No
         );
 

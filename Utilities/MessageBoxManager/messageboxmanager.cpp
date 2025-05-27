@@ -11,7 +11,6 @@ MessageBoxManager::MessageBoxManager(QObject* parent)
 
 bool MessageBoxManager::shouldShowDialog(const QString& dialogId)//TODO:mb make prive an move to showDIalog method
 {
-    QMutexLocker locker(&m_mutex);
     for (const auto& [blocker, blockedDialogs] : m_blockingRelations.asKeyValueRange())
         if (m_activeDialogs.contains(blocker) && blockedDialogs.contains(dialogId))
             return false;

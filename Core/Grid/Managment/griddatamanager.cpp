@@ -1,5 +1,5 @@
-// griddatamanager.cpp
 #include "griddatamanager.h"
+
 #include "../Utilities/Logger/logger.h"
 #include "../../Network/Information/networkinfo.h"
 #include "../../Network/Information/networkinfomodel.h"
@@ -115,10 +115,7 @@ void GridDataManager::handleNetworkStats(QString mac, quint64 rxSpeed, quint64 t
 
 void GridDataManager::refreshData()
 {
-    GlobalManager::taskScheduler()->scheduleAtomic(m_refreshInProgress,
-                                                   "data_refresh_task",
-                                                   m_parser.get(),
-                                                   &IParser::parse);
+    m_parser->parse();
 }
 
 void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
@@ -284,25 +281,7 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
         if(newBest && m_macIndex.contains(newBest->getMac()))
         {
             QPoint bestPos = m_macIndex[newBest->getMac()];
-            const QString dialogId = "BestNetworkMove";
-
-            if(bestPos != QPoint(0, 0))
-            {
-                GlobalManager::taskScheduler()->scheduleMainThread("show_dialog", [dialogId, bestPos, this]{
-                    auto result = GlobalManager::messageBoxManager()->showDialog(
-                        dialogId,
-                        "Network Change",
-                        "New best network detected. Move to primary position?",
-                        "Do not show this message again"
-                        );
-
-                    if (result == QMessageBox::Yes)
-                        swapCellsImpl(bestPos, QPoint(0, 0));
-                });
-
-            }
-            else //if (!GlobalManager::messageBoxManager()->isDialogEnabled(dialogId))
-                swapCells(bestPos, QPoint(0, 0));
+            swapCells(bestPos, QPoint(0, 0));
         }
 
         GlobalManager::taskScheduler()->scheduleMainThread("gridUpdate", [=]() {
