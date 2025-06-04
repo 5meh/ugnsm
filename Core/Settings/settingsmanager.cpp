@@ -129,15 +129,15 @@ void SettingsManager::setGridUpdateStrategy(const QString &strategy)
 
 QVariant SettingsManager::readSetting(const QString& key, const QVariant& defaultValue) const
 {
-    m_settings.beginGroup("Settings");
+    //m_settings.beginGroup("Settings");
     QVariant value = m_settings.value(key, defaultValue);
-    m_settings.endGroup();
+    //m_settings.endGroup();
     return value;
 }
 
 void SettingsManager::writeSetting(const QString& key, const QVariant& value)
 {
-    m_settings.beginGroup("Settings");
+   // m_settings.beginGroup("Settings");
     m_settings.setValue(key, value);
-    m_settings.endGroup();
+    //m_settings.endGroup();
 }

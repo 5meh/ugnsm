@@ -66,14 +66,18 @@ void GridViewManager::setCell(QPoint indx, GridCellWidget* widget)
 
     if (indx == QPoint(0, 0))
     {
+        widget->setProperty("bestNetwork", true);
+
         if (!isPlaceholder(widget))
             highlightCell(0, 0);
-        else if (m_highlightedCell && m_highlightedCell->getGridIndex() == QPoint(0, 0))
+        else
             clearHighlight(0, 0);
     }
+    else
+        widget->setProperty("bestNetwork", false);
 
-    connect(widget, &GridCellWidget::swapRequested,
-                                                this, &GridViewManager::handleSwapRequested);
+connect(widget, &GridCellWidget::swapRequested,
+        this, &GridViewManager::handleSwapRequested);
 }
 
 void GridViewManager::updateCell(QPoint indx, NetworkInfoModel* model)
@@ -255,9 +259,9 @@ void GridViewManager::clearGrid()
 
 void GridViewManager::highlightCell(int row, int col)
 {
-    if(!m_highlightedCell)
-        return;
-    m_highlightedCell->clearHighlight();
+    if (m_highlightedCell)
+        m_highlightedCell->clearHighlight();
+
     auto* cell = cellAt(row, col);
     cell->highlightCell();
     m_highlightedCell = cell;

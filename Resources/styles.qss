@@ -27,8 +27,31 @@ GridCellWidget[highlighted="true"] {
 }
 
 GridCellWidget[bestNetwork="true"] {
-    border: 2px solid #2196F3;
-    background-color: #e3f2fd;
+    border: 3px solid #4CAF50;
+    background-color: #e8f5e9;
+}
+
+/* Placeholder at best position (red border) */
+PlaceHolderCellWidget[bestNetworkPlaceholder="true"] {
+    border: 2px dashed #f44336;
+    background-color: #ffebee;
+}
+
+/* Highlight for best network placeholder text */
+PlaceHolderCellWidget[bestNetworkPlaceholder="true"] QLabel {
+    color: #d32f2f;
+    font-size: 12px;
+}
+
+/* Update existing highlight styles */
+GridCellWidget[highlighted="true"] {
+    border: 2px solid #ff9900;
+    background-color: #fff4e6;
+}
+
+PlaceHolderCellWidget[highlighted="true"] {
+    border: 2px dashed #4CAF50;
+    background-color: #e8f5e9;
 }
 
 NetworkInfoViewWidget {

@@ -1,16 +1,47 @@
 #include "placeholdercellwidget.h"
 
 #include <QStyle>
+#include <QVBoxLayout>
+#include <QLabel>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QIODevice>
 #include <QMimeData>
 
 PlaceHolderCellWidget::PlaceHolderCellWidget(QWidget* parent)
-    : GridCellWidget(parent)
+    : GridCellWidget(parent),
+    m_infoLabel(new QLabel(this))
 {
     //setProperty("isPlaceholder", true);
     setAcceptDrops(true); // Allow drops but not drags
+
+    m_infoLabel->setAlignment(Qt::AlignCenter);
+    m_infoLabel->setStyleSheet("color: #888888; font-weight: bold;");
+    m_infoLabel->setWordWrap(true);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(m_infoLabel);
+    layout->setContentsMargins(5, 5, 5, 5);
+    setLayout(layout);
+}
+
+void PlaceHolderCellWidget::setGridIndex(QPoint newGridIndex)
+{
+    GridCellWidget::setGridIndex(newGridIndex);
+
+    if (newGridIndex == QPoint(0, 0))
+    {
+        m_infoLabel->setText("No Active Network");
+        setProperty("bestNetworkPlaceholder", true);
+    }
+    else
+    {
+        m_infoLabel->setText("");
+        setProperty("bestNetworkPlaceholder", false);
+    }
+
+    //style()->unpolish(this);
+    style()->polish(this);
 }
 
 void PlaceHolderCellWidget::mousePressEvent(QMouseEvent* event)

@@ -74,6 +74,14 @@ void SettingsDialog::setupUI()
 
     layout->addRow(buttons);
 
+    setStyleSheet(
+        "QComboBox QAbstractItemView {"
+        "   background-color: white;"
+        "   selection-background-color: #3daee9;"
+        "   selection-color: black;"
+        "}"
+        );
+
     createConnections();
 }
 
