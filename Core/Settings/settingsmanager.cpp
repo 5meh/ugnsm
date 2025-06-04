@@ -2,7 +2,7 @@
 
 SettingsManager::SettingsManager(QObject* parent)
     : QObject(parent),
-    m_settings("YourCompany", "NetworkDashboard")
+    m_settings("Pobeda4isto", "NetworkDashboard")
 {
 
 }

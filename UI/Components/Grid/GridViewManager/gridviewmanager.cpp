@@ -64,8 +64,13 @@ void GridViewManager::setCell(QPoint indx, GridCellWidget* widget)
     m_gridLayout->addWidget(widget, indx.x(), indx.y());
     m_cells[indx.x()][indx.y()] = widget;
 
-    if(indx.x() == 0 && indx.y() == 0)
-        highlightCell(indx.x(), indx.y());
+    if (indx == QPoint(0, 0))
+    {
+        if (!isPlaceholder(widget))
+            highlightCell(0, 0);
+        else if (m_highlightedCell && m_highlightedCell->getGridIndex() == QPoint(0, 0))
+            clearHighlight(0, 0);
+    }
 
     connect(widget, &GridCellWidget::swapRequested,
                                                 this, &GridViewManager::handleSwapRequested);
@@ -222,13 +227,13 @@ void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
 
     // Perform the swap operation
     m_gridLayout->removeWidget(sourceWidget);
-    m_gridLayout->removeWidget(targetWidget);
-
-    sourceWidget->setGridIndex(target);
-    targetWidget->setGridIndex(source);
+    m_gridLayout->removeWidget(targetWidget);    
 
     m_gridLayout->addWidget(sourceWidget, target.x(), target.y());
     m_gridLayout->addWidget(targetWidget, source.x(), source.y());
+
+    sourceWidget->setGridIndex(target);
+    targetWidget->setGridIndex(source);
 
     std::swap(m_cells[source.x()][source.y()], m_cells[target.x()][target.y()]);
 
@@ -258,12 +263,18 @@ void GridViewManager::highlightCell(int row, int col)
     m_highlightedCell = cell;
 }
 
-void GridViewManager::clearHighlight()
+void GridViewManager::clearHighlight(int row, int col)
 {
     if (!m_highlightedCell)
         return;
-    m_highlightedCell->clearHighlight();
-    m_highlightedCell = nullptr;
+    GridCellWidget* cell = cellAt(row, col);
+    if (cell && !isPlaceholder(cell))
+    {
+        cell->highlightCell();
+        m_highlightedCell = cell;
+    }
+    else
+        m_highlightedCell = nullptr;
 }
 
 QPoint GridViewManager::getCellIndexFromPos(const QPoint& indx)
@@ -327,5 +338,5 @@ GridCellWidget* GridViewManager::createCellWidgetForModel(NetworkInfoModel* mode
 
 bool GridViewManager::isPlaceholder(GridCellWidget *widget) const
 {
-    return widget->property("isPlaceholder").toBool();//TODO:mb implement via cast?
+    return qobject_cast<PlaceHolderCellWidget*>(widget) != nullptr;
 }

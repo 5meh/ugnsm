@@ -9,7 +9,7 @@
 PlaceHolderCellWidget::PlaceHolderCellWidget(QWidget* parent)
     : GridCellWidget(parent)
 {
-    setProperty("isPlaceholder", true);
+    //setProperty("isPlaceholder", true);
     setAcceptDrops(true); // Allow drops but not drags
 }
 

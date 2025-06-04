@@ -35,7 +35,7 @@ private slots:
 private:
     void clearGrid();
     void highlightCell(int row, int col);
-    void clearHighlight();
+    void clearHighlight(int row, int col);
     QPoint getCellIndexFromPos(const QPoint& indx);
     void updateCellContent(int row, int col, NetworkInfoModel* model);
     GridCellWidget* createCellWidgetForModel(NetworkInfoModel* model);

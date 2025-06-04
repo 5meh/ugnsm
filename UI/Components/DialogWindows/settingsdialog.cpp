@@ -46,7 +46,7 @@ void SettingsDialog::setupUI()
     m_showBestNetworkWarningCheck = new QCheckBox(this);
 
     m_dataUnitsCombo = new QComboBox(this);
-    m_dataUnitsCombo->addItems({"Bytes", "KB", "MB"});
+    m_dataUnitsCombo->addItems({"Bytes", "KB", "MB", "GB"});
 
     m_decimalPrecisionSpin = new QSpinBox(this);
     m_decimalPrecisionSpin->setRange(0, 4);

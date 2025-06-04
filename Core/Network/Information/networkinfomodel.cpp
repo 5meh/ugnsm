@@ -1,5 +1,6 @@
 #include "networkinfomodel.h"
 
+#include "globalmanager.h"
 
 NetworkInfoModel::NetworkInfoModel(NetworkInfoPtr model, QObject *parent)
     : QObject(parent),
@@ -161,16 +162,46 @@ QString NetworkInfoModel::formatTimestamp() const
 
 QString NetworkInfoModel::formatSpeed(quint64 bytes) const
 {
-    const QStringList units = {"B", "KB", "MB", "GB"};
-    int unitIndex = 0;
-    double speed = bytes;
+    QString unitSetting = GlobalManager::settingsManager()->getDataUnits();
+    int precision = GlobalManager::settingsManager()->getDecimalPrecision();
+    double value = bytes;
+    QString unit;
 
-    while (speed >= 1024 && unitIndex < units.size() - 1)
+    if (unitSetting == "Bytes")
+        unit = "B";
+    else if (unitSetting == "KB")
     {
-        speed /= 1024;
-        unitIndex++;
+        unit = "KB";
+        value /= 1024.0;
     }
-    return QString("%1 %2").arg(speed, 0, 'f', unitIndex > 0 ? 2 : 0).arg(units[unitIndex]);
+    else if (unitSetting == "MB")
+    {
+        unit = "MB";
+        value /= (1024.0 * 1024.0);
+    }
+    else if (unitSetting == "GB")
+    {
+        unit = "GB";
+        value /= (1024.0 * 1024.0 * 1024.0);
+    }
+    else
+    {
+        // Fallback to automatic scaling for unknown units
+        const QStringList units = {"B", "KB", "MB", "GB"};
+        int unitIndex = 0;
+        double speed = bytes;
+
+        while (speed >= 1024 && unitIndex < units.size() - 1)
+        {
+            speed /= 1024;
+            unitIndex++;
+        }
+        // Use settings precision for non-byte units
+        int displayPrecision = (unitIndex > 0) ? precision : 0;
+        return QString("%1 %2").arg(speed, 0, 'f', displayPrecision).arg(units[unitIndex]);
+    }
+
+    return QString("%1 %2").arg(value, 0, 'f', precision).arg(unit);
 }
 
 void NetworkInfoModel::connectModelSignals()
