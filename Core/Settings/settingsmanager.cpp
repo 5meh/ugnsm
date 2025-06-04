@@ -52,6 +52,11 @@ QString SettingsManager::getBestNetworkCriteria() const
     return readSetting("BestNetworkCriteria", "Speed").toString();
 }
 
+QString SettingsManager::getGridUpdateStrategy() const
+{
+    return readSetting("GridUpdateStrategy", "FullUpdate").toString();
+}
+
 void SettingsManager::setSortStrategy(const QString& strategy)
 {
     writeSetting("SortStrategy", strategy);
@@ -112,6 +117,13 @@ void SettingsManager::setBestNetworkCriteria(const QString& criteria)
 {
     writeSetting("BestNetworkCriteria", criteria);
     emit bestNetworkCriteriaChanged(criteria);
+    emit settingsChanged();
+}
+
+void SettingsManager::setGridUpdateStrategy(const QString &strategy)
+{
+    writeSetting("GridUpdateStrategy", strategy);
+    emit gridUpdateStrategyChanged(strategy);
     emit settingsChanged();
 }
 

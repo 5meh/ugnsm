@@ -22,6 +22,12 @@ void SettingsDialog::setupUI()
 {
     QFormLayout* layout = new QFormLayout(this);
 
+    m_updateStrategyCombo = new QComboBox(this);
+    m_updateStrategyCombo->addItem("Full Grid Update", "FullUpdate");
+    m_updateStrategyCombo->addItem("Incremental Update", "IncrementalUpdate");
+    m_updateStrategyCombo->addItem("Keep Best Network", "KeepBestUpdate");
+
+
     m_sortStrategyCombo = new QComboBox(this);
     m_sortStrategyCombo->addItem("Speed", "SpeedSortStrategy");
     m_sortStrategyCombo->addItem("Signal Strength", "SignalSortStrategy");
@@ -50,6 +56,7 @@ void SettingsDialog::setupUI()
     m_bestNetworkCriteriaCombo = new QComboBox(this);
     m_bestNetworkCriteriaCombo->addItems({"Speed", "Signal Strength", "Combined Score"});
 
+    layout->insertRow(0, "Grid Update Strategy:", m_updateStrategyCombo);
     layout->insertRow(2, "Data Units:", m_dataUnitsCombo);
     layout->insertRow(3, "Decimal Precision:", m_decimalPrecisionSpin);
     layout->insertRow(4, m_autoRefreshCheck);
@@ -60,6 +67,7 @@ void SettingsDialog::setupUI()
     layout->addRow("Grid Rows:", m_gridRowsSpin);
     layout->addRow("Grid Columns:", m_gridColsSpin);
     layout->addRow("Show Best Network Warning:", m_showBestNetworkWarningCheck);
+
 
     buttons = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Apply | QDialogButtonBox::Cancel, this);
@@ -79,6 +87,7 @@ void SettingsDialog::createConnections()
 
 void SettingsDialog::loadSettings()
 {
+    m_updateStrategyCombo->setCurrentText(GlobalManager::settingsManager()->getGridUpdateStrategy());
     m_sortStrategyCombo->setCurrentText(GlobalManager::settingsManager()->getSortStrategy());
     m_updateIntervalSpin->setValue(GlobalManager::settingsManager()->getUpdateInterval());
     m_gridRowsSpin->setValue(GlobalManager::settingsManager()->getGridRows());
@@ -92,6 +101,7 @@ void SettingsDialog::loadSettings()
 
 void SettingsDialog::applySettings()
 {
+    GlobalManager::settingsManager()->setGridUpdateStrategy(m_updateStrategyCombo->currentData().toString());
     GlobalManager::settingsManager()->setSortStrategy(m_sortStrategyCombo->currentText());
     GlobalManager::settingsManager()->setUpdateInterval(m_updateIntervalSpin->value());
     GlobalManager::settingsManager()->setGridRows(m_gridRowsSpin->value());

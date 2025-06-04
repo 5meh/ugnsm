@@ -1,6 +1,8 @@
 #include "messageboxmanager.h"
 
 #include <QCheckBox>
+#include <QCoreApplication>
+#include <QThread>
 
 MessageBoxManager::MessageBoxManager(QObject* parent)
     : QObject(parent)
@@ -11,6 +13,7 @@ MessageBoxManager::MessageBoxManager(QObject* parent)
 
 bool MessageBoxManager::shouldShowDialog(const QString& dialogId)//TODO:mb make prive an move to showDIalog method
 {
+    QMutexLocker locker(&m_mutex);
     for (const auto& [blocker, blockedDialogs] : m_blockingRelations.asKeyValueRange())
         if (m_activeDialogs.contains(blocker) && blockedDialogs.contains(dialogId))
             return false;
@@ -42,15 +45,21 @@ QMessageBox::StandardButtons MessageBoxManager::showDialog(
     const QString& message,
     const QString& checkboxText,
     bool isModal,
-    QMessageBox::StandardButtons buttons
-    )
+    QMessageBox::StandardButtons buttons,
+    int timeoutMs
+    )//TODO:mb later somehow separate warning, info, critical message boxes
 {
-    QMutexLocker locker(&m_mutex);
+    bool shouldShow = false;
+    {
+        QMutexLocker locker(&m_mutex);
+        shouldShow = shouldShowDialog(dialogId);
+        if (shouldShow)
+            m_activeDialogs.insert(dialogId);
+    }
 
-    if(!shouldShowDialog(dialogId))
+
+    if (!shouldShow)
         return QMessageBox::Ok;
-
-    m_activeDialogs.insert(dialogId);
 
     QMessageBox* msgBox = new QMessageBox();
     msgBox->setWindowTitle(title);
@@ -65,13 +74,31 @@ QMessageBox::StandardButtons MessageBoxManager::showDialog(
         msgBox->setCheckBox(checkBox);
     }
 
-    QMessageBox::StandardButton result = QMessageBox::NoButton;
-    result = static_cast<QMessageBox::StandardButton>(msgBox->exec());
-    m_activeDialogs.remove(dialogId);
+    msgBox->show();
+    QElapsedTimer timer;
 
-    if (msgBox->checkBox() && msgBox->checkBox()->isChecked())
-        m_dialogFlags[dialogId] = false;
+    while (msgBox->isVisible())
+    {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+        if (timeoutMs > 0 && timer.elapsed() > timeoutMs)
+        {
+            msgBox->reject();
+            break;
+        }
+
+        QThread::msleep(50);
+    }
+
+    bool checkBoxChecked = msgBox->checkBox() && msgBox->checkBox()->isChecked();
+    auto result = static_cast<QMessageBox::StandardButton>(msgBox->result());
+
+    {
+        QMutexLocker locker(&m_mutex);
+        m_activeDialogs.remove(dialogId);
+        if (checkBoxChecked)
+            m_dialogFlags[dialogId] = false;
+    }
 
     return result;
-    //emit dialogFinished(dialogId, static_cast<QMessageBox::StandardButton>(result));//TODO:mb remove
 }

@@ -28,6 +28,8 @@ public:
     void clearChangedProperties();
     void updateFromNetworkInfo(NetworkInfoPtr newInfo);
 
+    NetworkInfoPtr getNetworkInfo() const { return m_model; }
+
     QString getName() const;
     QString getMac() const;
     QString getIpAddress() const;

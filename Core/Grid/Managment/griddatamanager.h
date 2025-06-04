@@ -53,6 +53,11 @@ private:
     void clearGrid();
     void updateMacMap();
     void initializeGridWithData(const QList<NetworkInfoPtr>& allInfos);
+    void showBestNetworkChangedMessage(NetworkInfoPtr newBest);
+    void applyUpdates(const QVector<QPair<QPoint, NetworkInfoPtr>>& updates);
+    void fullGridUpdate(const QList<NetworkInfoPtr>& allInfos);
+    void incrementalUpdate(const QList<NetworkInfoPtr>& allInfos);
+    void keepBestUpdate(const QList<NetworkInfoPtr>& allInfos);
     void updateGridWithData(const QList<NetworkInfoPtr>& allInfos);
 
     QAtomicInt m_refreshInProgress{0};
@@ -61,7 +66,6 @@ private:
     std::shared_ptr<INetworkSortStrategy> m_sorter;
     QVector<QVector<NetworkInfoModel*>> m_data;
     QHash<QString, QPoint> m_macIndex;
-    //bool m_isInitializedWithData = false;
     size_t m_validDataCount;
 };
 

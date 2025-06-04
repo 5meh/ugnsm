@@ -8,6 +8,8 @@
 class SettingsManager : public QObject
 {
     Q_OBJECT
+
+    //TODO:mb remove Q_PROPERTY
     Q_PROPERTY(QString sortStrategy READ getSortStrategy WRITE setSortStrategy NOTIFY sortStrategyChanged)
     Q_PROPERTY(int updateInterval READ getUpdateInterval WRITE setUpdateInterval NOTIFY updateIntervalChanged)
     Q_PROPERTY(int gridRows READ getGridRows WRITE setGridRows NOTIFY gridRowsChanged)
@@ -17,6 +19,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(int decimalPrecision READ getDecimalPrecision WRITE setDecimalPrecision NOTIFY decimalPrecisionChanged)
     Q_PROPERTY(bool autoRefresh READ getAutoRefresh WRITE setAutoRefresh NOTIFY autoRefreshChanged)
     Q_PROPERTY(QString bestNetworkCriteria READ getBestNetworkCriteria WRITE setBestNetworkCriteria NOTIFY bestNetworkCriteriaChanged)
+    Q_PROPERTY(QString gridUpdateStrategy READ getGridUpdateStrategy WRITE setGridUpdateStrategy NOTIFY gridUpdateStrategyChanged)
 
 public:
     explicit SettingsManager(QObject* parent = nullptr);
@@ -30,6 +33,7 @@ public:
     int getDecimalPrecision() const;
     bool getAutoRefresh() const;
     QString getBestNetworkCriteria() const;
+    QString getGridUpdateStrategy() const;
 
     void setSortStrategy(const QString& strategy);
     void setUpdateInterval(int interval);
@@ -40,6 +44,7 @@ public:
     void setDecimalPrecision(int precision);
     void setAutoRefresh(bool enable);
     void setBestNetworkCriteria(const QString& criteria);
+    void setGridUpdateStrategy(const QString& strategy);
 
 signals:
     void settingsChanged();
@@ -52,6 +57,7 @@ signals:
     void decimalPrecisionChanged(int precision);
     void autoRefreshChanged(bool enable);
     void bestNetworkCriteriaChanged(const QString& criteria);
+    void gridUpdateStrategyChanged(const QString& strategy);
 
 private:
 

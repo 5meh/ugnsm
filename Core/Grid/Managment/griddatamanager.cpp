@@ -115,7 +115,10 @@ void GridDataManager::handleNetworkStats(QString mac, quint64 rxSpeed, quint64 t
 
 void GridDataManager::refreshData()
 {
-    m_parser->parse();
+    GlobalManager::taskScheduler()->scheduleAtomic(m_refreshInProgress,
+                                                   "data_refresh_task",
+                                                   m_parser.get(),
+                                                   &IParser::parse);
 }
 
 void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
@@ -130,11 +133,13 @@ void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
     if(to == QPoint{0,0})
     {
         const QString dialogId = "BestNetworkMove";
-        auto result = GlobalManager::messageBoxManager()->showDialog(dialogId,
-                                                                     "Network Change",
-                                                                     "New best network detected. Move to primary position?",
-                                                                     "Do not show this message again"
-                                                                     );
+
+        auto result = GlobalManager::messageBoxManager()->showDialog(
+            dialogId,
+            "Network Change",
+            "New best network detected. Move to primary position?",
+            "Do not show this message again"
+            );
         if(result == QMessageBox::No)
             return;
     }
@@ -201,6 +206,7 @@ void GridDataManager::updateMacMap()
 
 void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInfos)
 {
+
     QList<NetworkInfoPtr> usedInfos = allInfos.mid(0, getCapacity());
     QList<NetworkInfoPtr> unusedInfos = allInfos.mid(getCapacity());
 
@@ -218,7 +224,7 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
                     m_data[x][y] = new NetworkInfoModel(usedInfos[linearIndex], this);
                     m_macIndex[usedInfos[linearIndex]->getMac()] = QPoint(x,y);
                     ++m_validDataCount;
-                    cellChanged(QPoint(x,y), m_data[x][y]);
+                    emit cellChanged(QPoint(x,y), m_data[x][y]);
                 }
             }
         },
@@ -228,25 +234,125 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
     unusedInfos.clear();//TODO:mb rework
 }
 
-void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
+void GridDataManager::showBestNetworkChangedMessage(NetworkInfoPtr newBest)
 {
-    QList<NetworkInfoPtr> usedInfos = allInfos.mid(0, getCapacity());
+    GlobalManager::taskScheduler()->scheduleMainThread("bestNetworkChanged", [this, newBest]() {
+        GlobalManager::messageBoxManager()->showDialog(
+            "NewBestNetwork",
+            "New Best Network Detected",
+            QString("A new best network '%1' has been detected with speed %2 Mbps")
+                .arg(newBest->getMac())
+                .arg(newBest->getTotalSpeed()),
+            "",
+            QMessageBox::Ok
+            );
+    });
+}
 
+void GridDataManager::applyUpdates(const QVector<QPair<QPoint, NetworkInfoPtr>>& updates)
+{
+    GlobalManager::taskScheduler()->scheduleMainThread("gridUpdate", [this, updates]() {
+        // Process removals first
+        for(const auto& pair : updates)
+        {
+            if(!pair.second)
+            {
+                QPoint pos = pair.first;
+                if(m_data[pos.x()][pos.y()])
+                {
+                    delete m_data[pos.x()][pos.y()];
+                    m_data[pos.x()][pos.y()] = nullptr;
+                    --m_validDataCount;
+                    emit cellChanged(pos, nullptr);
+                }
+            }
+        }
+        for(const auto& pair : updates)
+        {
+            if(pair.second)
+            {
+                QPoint pos = pair.first;
+                NetworkInfoPtr info = pair.second;
+
+                if(m_data[pos.x()][pos.y()])
+                    m_data[pos.x()][pos.y()]->updateFromNetworkInfo(info);
+                else
+                {
+                    m_data[pos.x()][pos.y()] = new NetworkInfoModel(info, this);
+                    ++m_validDataCount;
+                }
+                emit cellChanged(pos, m_data[pos.x()][pos.y()]);
+            }
+        }
+
+        // Rebuild MAC index
+        m_macIndex.clear();
+        for(int r = 0; r < getRows(); ++r)
+        {
+            for(int c = 0; c < getCols(); ++c)
+            {
+                if(m_data[r][c] && !m_data[r][c]->getMac().isEmpty())
+                    m_macIndex.insert(m_data[r][c]->getMac(), QPoint(r, c));
+            }
+        }
+    });
+}
+
+void GridDataManager::fullGridUpdate(const QList<NetworkInfoPtr>& allInfos)
+{
+    QVector<QPair<QPoint, NetworkInfoPtr>> updates;
+    const int capacity = getCapacity();
+
+    for(int r = 0; r < getRows(); ++r)
+    {
+        for(int c = 0; c < getCols(); ++c)
+        {
+            if(m_data[r][c])
+                updates.append({QPoint(r, c), nullptr});
+        }
+    }
+
+    for(int i = 0; i < qMin(capacity, allInfos.size()); ++i)
+    {
+        const int r = i / getCols();
+        const int c = i % getCols();
+        updates.append({QPoint(r, c), allInfos[i]});
+    }
+
+    applyUpdates(updates);
+
+    if(!allInfos.isEmpty() && m_data[0][0])
+    {
+        const QString currentBest = m_data[0][0]->getMac();
+        if(currentBest != allInfos[0]->getMac())
+            showBestNetworkChangedMessage(allInfos[0]);
+    }
+}
+
+void GridDataManager::incrementalUpdate(const QList<NetworkInfoPtr>& allInfos)
+{
+    QVector<QPair<QPoint, NetworkInfoPtr>> updates;
     QHash<QString, NetworkInfoPtr> newMacs;
-    for(NetworkInfoPtr info : usedInfos)
+
+    for(NetworkInfoPtr info : allInfos)
         newMacs.insert(info->getMac(), info);
 
-    QVector<QPair<QPoint, NetworkInfoPtr>> updates;
-
-    for(auto it = m_macIndex.begin(); it != m_macIndex.end();)
+    // Identify removed networks
+    for(auto it = m_macIndex.begin(); it != m_macIndex.end(); ++it)
     {
         if(!newMacs.contains(it.key()))
-        {
             updates.append({it.value(), nullptr});
-            it = m_macIndex.erase(it);
+    }
+
+    // Identify changed or new networks
+    QList<QPoint> emptySlots;
+    for(int r = 0; r < getRows(); ++r)
+    {
+        for(int c = 0; c < getCols(); ++c)
+        {
+            if(!m_data[r][c])
+                emptySlots.append(QPoint(r, c));
         }
-        else
-            ++it;
     }
 
     for(auto it = newMacs.begin(); it != newMacs.end(); ++it)
@@ -255,66 +361,73 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
         NetworkInfoPtr info = it.value();
 
         if(m_macIndex.contains(mac))
+            // Update existing
             updates.append({m_macIndex[mac], info});
-        else
-        {
-            for(int r = 0; r < getRows(); ++r)
-            {
-                for(int c = 0; c < getCols(); ++c)
-                {
-                    QPoint pos(r, c);
-                    if(!m_macIndex.values().contains(pos))
-                    {
-                        updates.append({pos, info});
-                        m_macIndex.insert(mac, pos);
-                        break;
-                    }
-                }
-            }
-        }
+        else if(!emptySlots.isEmpty())
+            // Add to first empty slot
+            updates.append({emptySlots.takeFirst(), info});
     }
 
-    const int bestIndex = m_sorter->findBestNetwork(allInfos);
-    if(bestIndex >= 0 && bestIndex < allInfos.size())
+    applyUpdates(updates);
+}
+
+void GridDataManager::keepBestUpdate(const QList<NetworkInfoPtr>& allInfos)
+{
+    QVector<QPair<QPoint, NetworkInfoPtr>> updates;
+    NetworkInfoPtr currentBest = m_data[0][0] ? m_data[0][0]->getNetworkInfo() : nullptr;
+
+    bool bestExists = false;
+    for(NetworkInfoPtr info : allInfos)
     {
-        NetworkInfoPtr newBest = allInfos[bestIndex];
-        if(newBest && m_macIndex.contains(newBest->getMac()))
+        if(currentBest && info->getMac() == currentBest->getMac())
         {
-            QPoint bestPos = m_macIndex[newBest->getMac()];
-            swapCells(bestPos, QPoint(0, 0));
+            bestExists = true;
+            break;
         }
-
-        GlobalManager::taskScheduler()->scheduleMainThread("gridUpdate", [=]() {
-
-            for(const QPair<QPoint, NetworkInfoPtr>& pair : updates)
-            {
-                if(!pair.second)
-                {
-                    delete m_data[pair.first.x()][pair.first.y()];
-                    m_data[pair.first.x()][pair.first.y()] = nullptr;
-                    --m_validDataCount;
-                    emit cellChanged(pair.first, nullptr);
-                }
-            }
-
-            for(const QPair<QPoint, NetworkInfoPtr>& pair : updates)
-            {
-                if(pair.second)
-                {
-                    QPoint pos = pair.first;
-                    NetworkInfoPtr info = pair.second;
-
-                    if(m_data[pos.x()][pos.y()])
-                        m_data[pos.x()][pos.y()]->updateFromNetworkInfo(info);
-                    else
-                    {
-                        m_data[pos.x()][pos.y()] = new NetworkInfoModel(info, this);
-                        ++m_validDataCount;
-                    }
-
-                    emit cellChanged(pos, m_data[pos.x()][pos.y()]);
-                }
-            }
-        });
     }
+
+    if(!bestExists)
+    {
+        fullGridUpdate(allInfos);
+        return;
+    }
+
+    updates.append({QPoint(0, 0), currentBest});
+
+    QList<NetworkInfoPtr> otherInfos;
+    for(NetworkInfoPtr info : allInfos)
+    {
+        if(!currentBest || info->getMac() != currentBest->getMac())
+            otherInfos.append(info);
+    }
+
+    m_sorter->sort(otherInfos);
+    int index = 0;
+    for(int r = 0; r < getRows(); ++r)
+    {
+        for(int c = 0; c < getCols(); ++c)
+        {
+            if(r == 0 && c == 0)
+                continue; // Skip best position
+
+            if(index < otherInfos.size())
+                updates.append({QPoint(r, c), otherInfos[index++]});
+            else if(m_data[r][c])
+                updates.append({QPoint(r, c), nullptr});
+        }
+    }
+
+    applyUpdates(updates);
+}
+
+void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
+{
+    const QString strategy = GlobalManager::settingsManager()->getGridUpdateStrategy();
+
+    if(strategy == "FullUpdate")
+        fullGridUpdate(allInfos);
+    else if(strategy == "IncrementalUpdate")
+        incrementalUpdate(allInfos);
+    else if(strategy == "KeepBestUpdate")
+        keepBestUpdate(allInfos);
 }

@@ -30,9 +30,7 @@ public:
             executeTask();
         }
         else
-        {
             executeTask();
-        }
     }
 
     QThread::Priority priority() const { return m_priority; }

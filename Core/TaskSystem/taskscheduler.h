@@ -7,14 +7,17 @@
 #include "Tasks/qtinvoketask.h"
 #include <QThreadPool>
 #include <QTimer>
+#include <QWaitCondition>
 #include <QHash>
+#include <QCoreApplication>
 
 class TaskScheduler : public QObject
 {
     Q_OBJECT
 public:
     explicit TaskScheduler(QObject* parent = nullptr)
-        : QObject(parent), m_pool(new QThreadPool(this))
+        : QObject(parent),
+        m_pool(new QThreadPool(this))
     {
         m_pool->setMaxThreadCount(4);
     }
@@ -95,6 +98,8 @@ public:
             connectionType
             );
 
+        //QMutex* mutex = getResourceMutex(resourceKey);
+        //task->setMutex(mutex);
         // Since this is for main thread execution, we don't need resource locking
         task->setAutoDelete(true);
 
@@ -103,6 +108,76 @@ public:
             task->executeTask();
             delete task;
         }, connectionType);
+    }
+
+    template<typename Func, typename ResultType = typename std::result_of<Func()>::type>
+    ResultType executeBlocking(const QString& resourceKey,
+                               Func&& func,
+                               int timeoutMs = -1,
+                               QThread::Priority priority = QThread::NormalPriority)
+    {
+        // QMutex localMutex;
+        // QWaitCondition condition;
+        // ResultType result;
+        // bool finished = false;
+        // bool success = false;
+        // std::exception_ptr exception;
+        // bool isMainThread = (QThread::currentThread() == QCoreApplication::instance()->thread());
+
+        // QMutex* resourceMutex = getResourceMutex(resourceKey);
+
+        // // Schedule the task
+        // schedule(resourceKey, [&]() {
+
+        //     QMutexLocker resourceLocker(resourceMutex);
+        //     QMutexLocker localLocker(&localMutex);
+
+        //     try
+        //     {
+        //         result = func();
+        //         success = true;
+        //     }
+        //     catch(...)
+        //     {
+        //         exception = std::current_exception();
+        //     }
+
+        //     finished = true;
+        //     condition.wakeAll();
+        // }, priority);
+
+        // // Cooperative waiting
+        // QMutexLocker locker(&localMutex);
+        // QElapsedTimer timer;
+        // timer.start();
+
+        // while (!finished)
+        // {
+        //     int remaining = (timeoutMs < 0) ? -1 : (timeoutMs - timer.elapsed());
+
+        //     if (remaining <= 0 && timeoutMs >= 0)
+        //         throw std::runtime_error("Operation timed out");
+
+        //     // Process events only if we're on main thread
+        //     if (isMainThread)
+        //     {
+        //         // Release local mutex temporarily to avoid deadlock
+        //         {
+        //             QMutexUnlocker unlocker(&localMutex);
+        //             QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        //         }
+
+        //         condition.wait(&localMutex, 100);
+        //     }
+        //     else
+        //         condition.wait(&localMutex, remaining > 0 ? std::min(100, remaining) : 100);
+        // }
+        // if (exception)
+        //     std::rethrow_exception(exception);
+        // if (!success)
+        //     throw std::runtime_error("Task failed");
+
+        // return result;
     }
 
 private:
@@ -116,10 +191,10 @@ private:
 
     QMutex* getResourceMutex(const QString& key)
     {
+        QMutexLocker mapLocker(&m_mapMutex);
         if(!m_mutexes.contains(key))
-        {
             m_mutexes[key] = new QMutex();
-        }
+
         return m_mutexes[key];
     }
 

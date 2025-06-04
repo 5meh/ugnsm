@@ -97,8 +97,8 @@ void GridCellWidget::dropEvent(QDropEvent *event)
     QDataStream stream(&receivedData, QIODevice::ReadOnly);
     QPoint sourceIndex;
     stream >> sourceIndex;
-
-    emit swapRequested(sourceIndex, getGridIndex());
+    if(sourceIndex != getGridIndex())
+        emit swapRequested(sourceIndex, getGridIndex());
     event->acceptProposedAction();
 
     QFrame::dropEvent(event);
@@ -122,5 +122,18 @@ void GridCellWidget::setGridIndex(QPoint newGridIndex)
         return;
     m_gridIndex = newGridIndex;
     emit gridIndexChanged();//TODO; mb change
+}
+
+void GridCellWidget::highlightCell()
+{
+    clearHighlight();
+    setProperty("highlighted", true);
+    style()->polish(this);
+}
+
+void GridCellWidget::clearHighlight()
+{
+    setProperty("highlighted", false);
+    style()->polish(this);
 }
 

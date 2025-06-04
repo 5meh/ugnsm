@@ -39,6 +39,7 @@ private:
     QPoint getCellIndexFromPos(const QPoint& indx);
     void updateCellContent(int row, int col, NetworkInfoModel* model);
     GridCellWidget* createCellWidgetForModel(NetworkInfoModel* model);
+    bool isPlaceholder(GridCellWidget* widget) const;
 
     QGridLayout* m_gridLayout;
     QVector<QVector<GridCellWidget*>> m_cells;

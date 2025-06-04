@@ -19,6 +19,8 @@ public:
 
     QPoint getGridIndex() const;
     void setGridIndex(QPoint newGridIndex);
+    void highlightCell();
+    void clearHighlight();
 
 signals:
     void swapRequested(QPoint source, QPoint target);

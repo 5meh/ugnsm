@@ -23,7 +23,8 @@ public:
         const QString& message,
         const QString& checkboxText = "",
         bool isModal = false,
-        QMessageBox::StandardButtons buttons = QMessageBox::Yes | QMessageBox::No
+        QMessageBox::StandardButtons buttons = QMessageBox::Yes | QMessageBox::No,
+        int timeoutMs = 5000
         );
 
     bool isDialogEnabled(const QString& dialogId) const;
@@ -34,7 +35,7 @@ signals:
 private:
     bool shouldShowDialog(const QString& dialogId);
 
-    mutable QMutex m_mutex;
+    mutable QRecursiveMutex m_mutex;
     QSet<QString> m_activeDialogs;      // Track visible dialogs
     QMap<QString, bool> m_dialogFlags;  // Store "show again" flags
     QHash<QString, QSet<QString>> m_blockingRelations;

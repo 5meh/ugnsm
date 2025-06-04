@@ -30,6 +30,7 @@ private:
     void setupUI();
     void createConnections();
 
+    QComboBox* m_updateStrategyCombo;
     QComboBox* m_sortStrategyCombo;
     QSpinBox* m_updateIntervalSpin;
     QSpinBox* m_gridRowsSpin;
