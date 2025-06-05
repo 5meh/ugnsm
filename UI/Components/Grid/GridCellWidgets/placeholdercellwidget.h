@@ -11,7 +11,7 @@ class PlaceHolderCellWidget: public GridCellWidget
 public:
     PlaceHolderCellWidget(QWidget* parent = nullptr);
     ~PlaceHolderCellWidget() = default;
-    void setGridIndex(QPoint newGridIndex) override;
+    void setGridIndex(QPoint newGridIndex);
 protected:
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;

@@ -146,6 +146,10 @@ void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
         target.x() < 0 || target.x() >= gridRows() || target.y() < 0 || target.y() >= gridCols())
         return;
 
+    // Prevent self-swap
+    if (source == target)//TODO:no need because checkin GridCellWidget
+        return;
+
     GridCellWidget* sourceWidget = cellAt(source.x(), source.y());
     GridCellWidget* targetWidget = cellAt(target.x(), target.y());
 
@@ -154,20 +158,17 @@ void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
     {
         GridCellWidget* bestNetworkCell = nullptr;
         GridCellWidget* otherCell = nullptr;
-        QPoint otherPos;
 
         // Identify which cell is at (0,0)
         if (source == QPoint(0,0))
         {
             bestNetworkCell = sourceWidget;
             otherCell = targetWidget;
-            otherPos = target;
         }
         else
         {
             bestNetworkCell = targetWidget;
             otherCell = sourceWidget;
-            otherPos = source;
         }
 
         // Case 1: Swap between two networks (one is best network)
@@ -229,17 +230,36 @@ void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
     if (!sourceWidget || !targetWidget)
         return;
 
-    // Perform the swap operation
+    // Block signals during swap to prevent re-entrancy
+    sourceWidget->blockSignals(true);
+    targetWidget->blockSignals(true);
+
     m_gridLayout->removeWidget(sourceWidget);
-    m_gridLayout->removeWidget(targetWidget);    
+    m_gridLayout->removeWidget(targetWidget);
 
     m_gridLayout->addWidget(sourceWidget, target.x(), target.y());
     m_gridLayout->addWidget(targetWidget, source.x(), source.y());
 
+    std::swap(m_cells[source.x()][source.y()], m_cells[target.x()][target.y()]);
+
     sourceWidget->setGridIndex(target);
     targetWidget->setGridIndex(source);
 
-    std::swap(m_cells[source.x()][source.y()], m_cells[target.x()][target.y()]);
+    if (source == QPoint(0, 0) || target == QPoint(0, 0))
+    {
+        GridCellWidget* bestCell = cellAt(0, 0);
+        bestCell->setProperty("bestNetwork", true);
+        bestCell->style()->unpolish(bestCell);
+        bestCell->style()->polish(bestCell);
+
+        if (!isPlaceholder(bestCell))
+            highlightCell(0, 0);
+        else
+            clearHighlight(0, 0);
+    }
+
+    sourceWidget->blockSignals(false);
+    targetWidget->blockSignals(false);
 
     emit cellSwapRequestToDataManager(source, target);
 }
@@ -262,15 +282,6 @@ void GridViewManager::highlightCell(int row, int col)
     if (m_highlightedCell)
         m_highlightedCell->clearHighlight();
 
-    auto* cell = cellAt(row, col);
-    cell->highlightCell();
-    m_highlightedCell = cell;
-}
-
-void GridViewManager::clearHighlight(int row, int col)
-{
-    if (!m_highlightedCell)
-        return;
     GridCellWidget* cell = cellAt(row, col);
     if (cell && !isPlaceholder(cell))
     {
@@ -279,6 +290,15 @@ void GridViewManager::clearHighlight(int row, int col)
     }
     else
         m_highlightedCell = nullptr;
+}
+
+void GridViewManager::clearHighlight(int row, int col)
+{
+    if (m_highlightedCell)
+    {
+        m_highlightedCell->clearHighlight();
+        m_highlightedCell = nullptr;
+    }
 }
 
 QPoint GridViewManager::getCellIndexFromPos(const QPoint& indx)
