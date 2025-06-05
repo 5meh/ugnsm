@@ -40,6 +40,7 @@ private:
     void updateCellContent(int row, int col, NetworkInfoModel* model);
     GridCellWidget* createCellWidgetForModel(NetworkInfoModel* model);
     bool isPlaceholder(GridCellWidget* widget) const;
+    void performSwap(QPoint source, QPoint target);
 
     QGridLayout* m_gridLayout;
     QVector<QVector<GridCellWidget*>> m_cells;

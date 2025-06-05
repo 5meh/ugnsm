@@ -76,8 +76,8 @@ void GridViewManager::setCell(QPoint indx, GridCellWidget* widget)
     else
         widget->setProperty("bestNetwork", false);
 
-connect(widget, &GridCellWidget::swapRequested,
-        this, &GridViewManager::handleSwapRequested);
+    connect(widget, &GridCellWidget::swapRequested,
+            this, &GridViewManager::handleSwapRequested);
 }
 
 void GridViewManager::updateCell(QPoint indx, NetworkInfoModel* model)
@@ -147,11 +147,18 @@ void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
         return;
 
     // Prevent self-swap
-    if (source == target)//TODO:no need because checkin GridCellWidget
-        return;
+    // if (source == target)//TODO:no need because checkin GridCellWidget
+    //     return;
 
     GridCellWidget* sourceWidget = cellAt(source.x(), source.y());
     GridCellWidget* targetWidget = cellAt(target.x(), target.y());
+
+    // Flag to track if we need to show a dialog
+    bool showDialog = false;
+    QString dialogId;
+    QString title;
+    QString message;
+    QString checkboxText = "Do not show this message again";
 
     // Check if swap involves best network position (0,0)
     if (source == QPoint(0,0) || target == QPoint(0,0))
@@ -174,94 +181,37 @@ void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
         // Case 1: Swap between two networks (one is best network)
         if (!isPlaceholder(bestNetworkCell) && !isPlaceholder(otherCell))
         {
-            const QString dialogId = "SwapWarning";
-            auto result = GlobalManager::messageBoxManager()->showDialog(
-                dialogId,
-                "Best Network Swap Warning",
-                "You are trying to swap the best network.\nDo you want to continue?",
-                "Do not show this message again"
-                );
-
-            if (result == QMessageBox::No)
-            {
-                sourceWidget->clearHighlight();
-                targetWidget->highlightCell();
-                return;
-            }
+            showDialog = true;
+            dialogId = "SwapWarning";
+            title = "Best Network Swap Warning";
+            message = "You are trying to swap the best network.\nDo you want to continue?";
         }
         // Case 2: Swap best network with placeholder
         else if (!isPlaceholder(bestNetworkCell) && isPlaceholder(otherCell))
         {
-            const QString dialogId = "CancelNetworkWarning";
-            auto result = GlobalManager::messageBoxManager()->showDialog(
-                dialogId,
-                "Cancel Network Connection",
-                "You are disconnecting the best network.\nDo you want to continue?",
-                "Do not show this message again"
-                );
-
-            if (result == QMessageBox::No)
-            {
-                sourceWidget->clearHighlight();
-                targetWidget->highlightCell();
-                return;
-            }
+            showDialog = true;
+            dialogId = "CancelNetworkWarning";
+            title = "Cancel Network Connection";
+            message = "You are disconnecting the best network.\nDo you want to continue?";
         }
         // Case 3: Swap placeholder at (0,0) with network
         else if (isPlaceholder(bestNetworkCell) && !isPlaceholder(otherCell))
         {
-            const QString dialogId = "SetActiveWarning";
-            auto result = GlobalManager::messageBoxManager()->showDialog(
-                dialogId,
-                "Set Active Network",
-                "You are setting this network as active.\nDo you want to continue?",
-                "Do not show this message again"
-                );
-
-            if (result == QMessageBox::No)
-            {
-                sourceWidget->clearHighlight();
-                targetWidget->highlightCell();
-                return;
-            }
+            showDialog = true;
+            dialogId = "SetActiveWarning";
+            title = "Set Active Network";
+            message = "You are setting this network as active.\nDo you want to continue?";
         }
     }
 
-    if (!sourceWidget || !targetWidget)
-        return;
-
-    // Block signals during swap to prevent re-entrancy
-    sourceWidget->blockSignals(true);
-    targetWidget->blockSignals(true);
-
-    m_gridLayout->removeWidget(sourceWidget);
-    m_gridLayout->removeWidget(targetWidget);
-
-    m_gridLayout->addWidget(sourceWidget, target.x(), target.y());
-    m_gridLayout->addWidget(targetWidget, source.x(), source.y());
-
-    std::swap(m_cells[source.x()][source.y()], m_cells[target.x()][target.y()]);
-
-    sourceWidget->setGridIndex(target);
-    targetWidget->setGridIndex(source);
-
-    if (source == QPoint(0, 0) || target == QPoint(0, 0))
+    if (showDialog)
     {
-        GridCellWidget* bestCell = cellAt(0, 0);
-        bestCell->setProperty("bestNetwork", true);
-        bestCell->style()->unpolish(bestCell);
-        bestCell->style()->polish(bestCell);
-
-        if (!isPlaceholder(bestCell))
-            highlightCell(0, 0);
-        else
-            clearHighlight(0, 0);
+        auto result = GlobalManager::messageBoxManager()->showDialog(dialogId, title, message);
+        if(result == QMessageBox::No)
+            return;
     }
 
-    sourceWidget->blockSignals(false);
-    targetWidget->blockSignals(false);
-
-    emit cellSwapRequestToDataManager(source, target);
+    performSwap(source, target);
 }
 
 void GridViewManager::clearGrid()
@@ -315,21 +265,17 @@ void GridViewManager::updateCellContent(int row, int col, NetworkInfoModel* mode
 {
     GridCellWidget* current = cellAt(row, col);
 
-    // Handle existing NetworkInfoViewWidget updates
     if (current && qobject_cast<NetworkInfoViewWidget*>(current))
     {
         NetworkInfoViewWidget* viewWidget = static_cast<NetworkInfoViewWidget*>(current);
 
-        // Only update if model changed
-        if (viewWidget->getMac() != model->getMac())
+        if (viewWidget->getMac() != model->getMac())//TODO:rework
         {
             viewWidget->setUpdatesEnabled(false);
 
-            // Disconnect old model signals
             disconnect(viewWidget->getModel(), &NetworkInfoModel::propertyChanged,
                        viewWidget, &NetworkInfoViewWidget::updateProperty);
 
-            // Connect to new model
             viewWidget->setViewModel(model);
             connect(model, &NetworkInfoModel::propertyChanged,
                     viewWidget, &NetworkInfoViewWidget::updateProperty,
@@ -339,9 +285,7 @@ void GridViewManager::updateCellContent(int row, int col, NetworkInfoModel* mode
         }
     }
     else
-    {
         setCell(QPoint(row,col), createCellWidgetForModel(model));
-    }
 }
 
 GridCellWidget* GridViewManager::createCellWidgetForModel(NetworkInfoModel* model)
@@ -363,4 +307,45 @@ GridCellWidget* GridViewManager::createCellWidgetForModel(NetworkInfoModel* mode
 bool GridViewManager::isPlaceholder(GridCellWidget *widget) const
 {
     return qobject_cast<PlaceHolderCellWidget*>(widget) != nullptr;
+}
+
+void GridViewManager::performSwap(QPoint source, QPoint target)
+{
+    GridCellWidget* sourceWidget = cellAt(source.x(), source.y());
+    GridCellWidget* targetWidget = cellAt(target.x(), target.y());
+
+    if (!sourceWidget || !targetWidget)
+        return;
+
+    sourceWidget->blockSignals(true);
+    targetWidget->blockSignals(true);
+
+    m_gridLayout->removeWidget(sourceWidget);
+    m_gridLayout->removeWidget(targetWidget);
+
+    m_gridLayout->addWidget(sourceWidget, target.x(), target.y());
+    m_gridLayout->addWidget(targetWidget, source.x(), source.y());
+
+    std::swap(m_cells[source.x()][source.y()], m_cells[target.x()][target.y()]);
+
+    sourceWidget->setGridIndex(target);
+    targetWidget->setGridIndex(source);
+
+    if (source == QPoint(0, 0) || target == QPoint(0, 0))
+    {
+        GridCellWidget* bestCell = cellAt(0, 0);
+        bestCell->setProperty("bestNetwork", true);
+        bestCell->style()->unpolish(bestCell);
+        bestCell->style()->polish(bestCell);
+
+        if (!isPlaceholder(bestCell))
+            highlightCell(0, 0);
+        else
+            clearHighlight(0, 0);
+    }
+
+    sourceWidget->blockSignals(false);
+    targetWidget->blockSignals(false);
+
+    emit cellSwapRequestToDataManager(source, target);
 }

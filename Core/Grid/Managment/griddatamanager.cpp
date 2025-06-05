@@ -251,6 +251,7 @@ void GridDataManager::showBestNetworkChangedMessage(NetworkInfoPtr newBest)
 
 void GridDataManager::applyUpdates(const QVector<QPair<QPoint, NetworkInfoPtr>>& updates)
 {
+    //TODO:mb instead of using main thread just simple mutex lock here?
     GlobalManager::taskScheduler()->scheduleMainThread("gridUpdate", [this, updates]() {
         // Process removals first
         for(const auto& pair : updates)

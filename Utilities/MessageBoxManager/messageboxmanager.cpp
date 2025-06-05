@@ -3,6 +3,7 @@
 #include <QCheckBox>
 #include <QCoreApplication>
 #include <QThread>
+#include <QTimer>
 
 MessageBoxManager::MessageBoxManager(QObject* parent)
     : QObject(parent)
@@ -74,21 +75,30 @@ QMessageBox::StandardButtons MessageBoxManager::showDialog(
         msgBox->setCheckBox(checkBox);
     }
 
-    msgBox->show();
+    QEventLoop loop;
+    connect(msgBox, &QMessageBox::finished, &loop, &QEventLoop::quit);
+
     QElapsedTimer timer;
+    timer.start();
 
-    while (msgBox->isVisible())
-    {
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    if (timeoutMs > 0)
+        QTimer::singleShot(timeoutMs, msgBox, &QMessageBox::reject);
 
-        if (timeoutMs > 0 && timer.elapsed() > timeoutMs)
-        {
-            msgBox->reject();
-            break;
-        }
+    msgBox->show();
+    loop.exec();
 
-        QThread::msleep(50);
-    }
+    // while (msgBox->isVisible())
+    // {
+    //     QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+    //     if (timeoutMs > 0 && timer.elapsed() > timeoutMs)
+    //     {
+    //         msgBox->reject();
+    //         break;
+    //     }
+
+    //     QThread::msleep(50);
+    // }
 
     bool checkBoxChecked = msgBox->checkBox() && msgBox->checkBox()->isChecked();
     auto result = static_cast<QMessageBox::StandardButton>(msgBox->result());
