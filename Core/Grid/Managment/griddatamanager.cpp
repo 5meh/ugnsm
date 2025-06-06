@@ -90,6 +90,20 @@ void GridDataManager::swapCells(QPoint from, QPoint to)
         );
 }
 
+void GridDataManager::setUpdatesPaused(bool paused)
+{
+    m_updatesPaused = paused;
+
+    // Apply queued updates when unpausing
+    if (!paused && !m_queuedUpdates.isEmpty())
+    {
+        // Only process the latest update
+        QList<NetworkInfoPtr> latest = m_queuedUpdates.last();
+        m_queuedUpdates.clear();
+        updateGridWithData(latest);
+    }
+}
+
 void GridDataManager::handleParsingCompleted(const QVariant& result)
 {
     QVariant resultCopy = result;
@@ -423,6 +437,11 @@ void GridDataManager::keepBestUpdate(const QList<NetworkInfoPtr>& allInfos)
 
 void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
 {
+    if (m_updatesPaused)
+    {
+        m_queuedUpdates.append(allInfos);
+        return;
+    }
     const QString strategy = GlobalManager::settingsManager()->getGridUpdateStrategy();
 
     if(strategy == "FullUpdate")

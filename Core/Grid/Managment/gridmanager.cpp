@@ -66,6 +66,9 @@ void GridManager::setupConnections()
 
     connect(m_viewManager.get(), &GridViewManager::cellSwapRequestToDataManager,
             m_dataManager, &GridDataManager::swapCells);
+
+    connect(m_viewManager.get(), &GridViewManager::pauseGridUpdates,
+            m_dataManager, &GridDataManager::setUpdatesPaused);
 }
 
 GridViewManager* GridManager::getView() const

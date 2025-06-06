@@ -24,10 +24,13 @@ public:
     int gridRows() const { return m_cells.size(); }
     int gridCols() const { return m_cells.isEmpty() ? 0 : m_cells[0].size(); }
 
+    void setUpdatesEnabled(bool enable);
+
 public slots:
     void updateCell(QPoint indx, NetworkInfoModel* model);
 signals:
     void cellSwapRequestToDataManager(QPoint from, QPoint to);
+    void pauseGridUpdates(bool paused);
 
 private slots:
     void handleSwapRequested(QPoint source, QPoint target);
@@ -42,6 +45,7 @@ private:
     bool isPlaceholder(GridCellWidget* widget) const;
     void performSwap(QPoint source, QPoint target);
 
+    bool m_updatesEnabled = true;
     QGridLayout* m_gridLayout;
     QVector<QVector<GridCellWidget*>> m_cells;
     GridCellWidget* m_highlightedCell = nullptr;

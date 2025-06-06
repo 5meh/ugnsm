@@ -130,6 +130,15 @@ void GridViewManager::clearCell(int row, int col)
     }
 }
 
+void GridViewManager::setUpdatesEnabled(bool enable)
+{
+    if (m_updatesEnabled == enable)
+        return;
+
+    m_updatesEnabled = enable;
+    emit pauseGridUpdates(!enable);
+}
+
 GridCellWidget* GridViewManager::cellAt(int row, int col) const
 {
     if(row >= 0 && row < m_cells.size() &&
@@ -142,6 +151,15 @@ GridCellWidget* GridViewManager::cellAt(int row, int col) const
 
 void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
 {
+    if (!m_updatesEnabled)
+    {
+        // If updates are paused, queue the swap request
+        QTimer::singleShot(0, this, [=]() {
+            handleSwapRequested(source, target);
+        });
+        return;
+    }
+
     if (source.x() < 0 || source.x() >= gridRows() || source.y() < 0 || source.y() >= gridCols() ||
         target.x() < 0 || target.x() >= gridRows() || target.y() < 0 || target.y() >= gridCols())
         return;

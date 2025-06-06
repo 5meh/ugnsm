@@ -1,5 +1,7 @@
 #include "gridcellwidget.h"
 
+#include "../GridViewManager/gridviewmanager.h"
+
 #include <QMouseEvent>
 #include <QDragEnterEvent>
 #include <QDropEvent>
@@ -9,6 +11,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QStyle>
+#include <QPointer>
 
 GridCellWidget::GridCellWidget(QWidget* parent)
     :QFrame(parent)
@@ -44,6 +47,16 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
     if ((event->pos() - m_dragStartPos).manhattanLength() < QApplication::startDragDistance())
         return;
 
+    QPointer<GridViewManager> gridManager;
+    if (QWidget* parent = parentWidget())
+    {
+        if (QWidget* grandParent = parent->parentWidget())
+            gridManager = qobject_cast<GridViewManager*>(grandParent);
+    }
+
+    if (gridManager)
+        gridManager->setUpdatesEnabled(false);
+
     QDrag *drag = new QDrag(this);
     QMimeData *mimeData = new QMimeData;
 
@@ -61,8 +74,10 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
     drag->setMimeData(mimeData);
     drag->setHotSpot(event->pos() - rect().topLeft());
 
-    // Execute the drag operation
     Qt::DropAction result = drag->exec(Qt::MoveAction);
+
+    if (gridManager)
+        gridManager->setUpdatesEnabled(true);
 
     // If the drag was cancelled, ensure we clean up properly
     if (result == Qt::IgnoreAction)

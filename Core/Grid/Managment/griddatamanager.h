@@ -33,6 +33,7 @@ public:
     int getCapacity() const;
     void initializeGrid(int rows, int cols);
     void swapCells(QPoint from, QPoint to);
+    void setUpdatesPaused(bool paused);
 
 signals:
     void gridDimensionsChanged();
@@ -67,6 +68,8 @@ private:
     QVector<QVector<NetworkInfoModel*>> m_data;
     QHash<QString, QPoint> m_macIndex;
     size_t m_validDataCount;
+    bool m_updatesPaused = false;
+    QList<QList<NetworkInfoPtr>> m_queuedUpdates;
 };
 
 #endif // GRIDDATAMANAGER_H
