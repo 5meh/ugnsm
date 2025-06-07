@@ -80,7 +80,7 @@ void GridDataManager::initializeGrid(int rows, int cols)
 
 void GridDataManager::swapCells(QPoint from, QPoint to)
 {
-    GlobalManager::taskScheduler()->scheduleMainThread(
+    GlobalManager::taskScheduler()->executeMainThread(
         QString("grid_swap"),
         [this, from, to]()
         {
@@ -224,7 +224,7 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
     QList<NetworkInfoPtr> usedInfos = allInfos.mid(0, getCapacity());
     QList<NetworkInfoPtr> unusedInfos = allInfos.mid(getCapacity());
 
-    GlobalManager::taskScheduler()->scheduleMainThread(
+    GlobalManager::taskScheduler()->executeMainThread(
         QString("model_creation"),
         [this, usedInfos]()
         {
@@ -250,7 +250,7 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
 
 void GridDataManager::showBestNetworkChangedMessage(NetworkInfoPtr newBest)
 {
-    GlobalManager::taskScheduler()->scheduleMainThread("bestNetworkChanged", [this, newBest]() {
+    GlobalManager::taskScheduler()->executeMainThread("bestNetworkChanged", [this, newBest]() {
         GlobalManager::messageBoxManager()->showDialog(
             "NewBestNetwork",
             "New Best Network Detected",
@@ -266,7 +266,7 @@ void GridDataManager::showBestNetworkChangedMessage(NetworkInfoPtr newBest)
 void GridDataManager::applyUpdates(const QVector<QPair<QPoint, NetworkInfoPtr>>& updates)
 {
     //TODO:mb instead of using main thread just simple mutex lock here?
-    GlobalManager::taskScheduler()->scheduleMainThread("gridUpdate", [this, updates]() {
+    GlobalManager::taskScheduler()->executeMainThread("gridUpdate", [this, updates]() {
         // Process removals first
         for(const auto& pair : updates)
         {

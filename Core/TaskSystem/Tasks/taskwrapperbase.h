@@ -10,7 +10,7 @@ class TaskWrapperBase : public QRunnable
 {
 public:
     explicit TaskWrapperBase(QThread::Priority priority = QThread::NormalPriority)
-        : m_priority(priority), m_mutex(nullptr)
+        : m_priority(priority)
     {
         setAutoDelete(true);
     }
@@ -22,7 +22,7 @@ public:
 
     virtual void executeTask() = 0;
 
-    void run() override
+    void run() override final//TODO:mb mutex lock higher in inheritance?
     {
         if(m_mutex)
         {
@@ -37,7 +37,7 @@ public:
 
 protected:
     QThread::Priority m_priority;
-    QMutex* m_mutex;
+    QMutex* m_mutex = nullptr;
 };
 
 #endif // TASKWRAPPERBASE_H

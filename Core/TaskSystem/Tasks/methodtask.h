@@ -4,7 +4,7 @@
 #include "taskwrapperbase.h"
 
 template<class Receiver, typename... Args>
-class MethodTask : public TaskWrapperBase
+class MethodTask : public TaskWrapperBase//TODO:mb remove this class
 {
 public:
     using Method = void (Receiver::*)(Args...);
@@ -23,6 +23,7 @@ public:
 
     void executeTask() override
     {
+
         if (m_receiver) {
             std::apply(
                 [this](auto&&... args) {
