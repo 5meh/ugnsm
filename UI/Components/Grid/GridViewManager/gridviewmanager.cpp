@@ -164,10 +164,6 @@ void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
         target.x() < 0 || target.x() >= gridRows() || target.y() < 0 || target.y() >= gridCols())
         return;
 
-    // Prevent self-swap
-    // if (source == target)//TODO:no need because checkin GridCellWidget
-    //     return;
-
     GridCellWidget* sourceWidget = cellAt(source.x(), source.y());
     GridCellWidget* targetWidget = cellAt(target.x(), target.y());
 
@@ -224,9 +220,33 @@ void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
 
     if (showDialog)
     {
-        auto result = GlobalManager::messageBoxManager()->showDialog(dialogId, title, message);
-        if(result == QMessageBox::No)
-            return;
+        QTimer::singleShot(0, this, [=]()
+                           {
+                               // This lambda now runs on the GUI thread,
+                               // *after* the DnD event has fully returned.
+
+                               // 3) Call the dialog synchronously on the GUI thread:
+                               auto result = GlobalManager::taskScheduler()
+                                                 ->executeMainThread(
+                                                     "blocked_dialog",
+                                                     [=]()
+                                                     {
+                                                         return GlobalManager::messageBoxManager()
+                                                         ->showDialog(
+                                                             dialogId,
+                                                             title,
+                                                             message,
+                                                             checkboxText
+                                                             );
+                                                     },
+                                                     QThread::HighPriority,
+                                                     Qt::SingleShotConnection
+                                                     );
+
+                               if (result == QMessageBox::Yes)
+                                   performSwap(source, target);
+                           });
+        return; // return immediately from the DnD handler
     }
 
     performSwap(source, target);

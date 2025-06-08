@@ -1,5 +1,7 @@
 #include "messageboxmanager.h"
 
+#include "../../globalmanager.h"
+
 #include <QCheckBox>
 #include <QCoreApplication>
 #include <QThread>
@@ -50,6 +52,9 @@ QMessageBox::StandardButtons MessageBoxManager::showDialog(
     int timeoutMs
     )//TODO:mb later somehow separate warning, info, critical message boxes
 {
+    if (GlobalManager::dragManager()->isDragging())
+        return QMessageBox::Cancel;
+
     bool shouldShow = false;
     {
         QMutexLocker locker(&m_mutex);
@@ -79,26 +84,13 @@ QMessageBox::StandardButtons MessageBoxManager::showDialog(
     connect(msgBox, &QMessageBox::finished, &loop, &QEventLoop::quit);
 
     QElapsedTimer timer;
-    timer.start();
+    timer.start();    
 
     if (timeoutMs > 0)
         QTimer::singleShot(timeoutMs, msgBox, &QMessageBox::reject);
 
     msgBox->show();
     loop.exec();
-
-    // while (msgBox->isVisible())
-    // {
-    //     QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-
-    //     if (timeoutMs > 0 && timer.elapsed() > timeoutMs)
-    //     {
-    //         msgBox->reject();
-    //         break;
-    //     }
-
-    //     QThread::msleep(50);
-    // }
 
     bool checkBoxChecked = msgBox->checkBox() && msgBox->checkBox()->isChecked();
     auto result = static_cast<QMessageBox::StandardButton>(msgBox->result());

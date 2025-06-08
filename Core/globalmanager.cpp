@@ -23,3 +23,9 @@ ComponentRegistry* GlobalManager::componentRegistry()
     QMutexLocker locker(&instance().mutex);
     return &instance().components;
 }
+
+DragManager *GlobalManager::dragManager()
+{
+    QMutexLocker locker(&instance().mutex);
+    return &instance().dragManager;
+}

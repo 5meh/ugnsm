@@ -1,6 +1,7 @@
 #include "gridcellwidget.h"
 
 #include "../GridViewManager/gridviewmanager.h"
+#include "../globalmanager.h"
 
 #include <QMouseEvent>
 #include <QDragEnterEvent>
@@ -47,6 +48,9 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
     if ((event->pos() - m_dragStartPos).manhattanLength() < QApplication::startDragDistance())
         return;
 
+    if (!GlobalManager::dragManager()->startDrag(getGridIndex()))
+        return;
+
     QPointer<GridViewManager> gridManager;
     if (QWidget* parent = parentWidget())
     {
@@ -55,7 +59,10 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
     }
 
     if (gridManager)
+    {
+        GlobalManager::dragManager()->startDrag(getGridIndex());
         gridManager->setUpdatesEnabled(false);
+    }
 
     QDrag *drag = new QDrag(this);
     QMimeData *mimeData = new QMimeData;
@@ -76,13 +83,21 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
 
     Qt::DropAction result = drag->exec(Qt::MoveAction);
 
-    if (gridManager)
-        gridManager->setUpdatesEnabled(true);
+    // QDragLeaveEvent dragEndEvent;
+    // QCoreApplication::sendEvent(this, &dragEndEvent);
 
     // If the drag was cancelled, ensure we clean up properly
     if (result == Qt::IgnoreAction)
     {
-        delete drag;
+        // Explicitly reset drag state
+        QDragLeaveEvent cancelEvent;
+        QCoreApplication::sendEvent(this, &cancelEvent);
+    }
+
+    if (gridManager)
+    {
+        GlobalManager::dragManager()->endDrag(getGridIndex());
+        gridManager->setUpdatesEnabled(true);
     }
 }
 
@@ -99,11 +114,13 @@ void GridCellWidget::dragEnterEvent(QDragEnterEvent *event)
 
 void GridCellWidget::dropEvent(QDropEvent *event)
 {
-    if (!event->mimeData()->hasFormat("application/x-grid-index"))
-    {
-        event->ignore();
-        return;
-    }
+    // if (!event->mimeData()->hasFormat("application/x-grid-index"))
+    // {
+    //     event->ignore();
+    //     return;
+    // }
+
+    event->acceptProposedAction();
 
     setProperty("dragOver", false);
     style()->polish(this);

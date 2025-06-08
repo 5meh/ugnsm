@@ -76,10 +76,13 @@ void PlaceHolderCellWidget::dragLeaveEvent(QDragLeaveEvent* event)
 
 void PlaceHolderCellWidget::dropEvent(QDropEvent* event)
 {
-    if (!event->mimeData()->hasFormat("application/x-grid-index")) {
-        event->ignore();
-        return;
-    }
+    // if (!event->mimeData()->hasFormat("application/x-grid-index")) {
+    //     event->ignore();
+    //     return;
+    // }
+
+    event->acceptProposedAction();
+
 
     setProperty("dragOver", false);
     style()->polish(this);

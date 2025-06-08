@@ -5,6 +5,7 @@
 #include "Settings/settingsmanager.h"
 #include "componentregistry.h"
 #include "../Utilities/MessageBoxManager/messageboxmanager.h"
+#include "Grid/Managment/dragmanager.h"
 
 #include <QCoreApplication>
 #include <QtCore/qglobalstatic.h>
@@ -16,6 +17,7 @@ public:
     static MessageBoxManager* messageBoxManager();
     static SettingsManager* settingsManager();
     static ComponentRegistry* componentRegistry();
+    static DragManager* dragManager();
 
 private:
     GlobalManager() = delete;
@@ -27,6 +29,7 @@ private:
         SettingsManager settings;
         ComponentRegistry components;
         MessageBoxManager messageBoxManager;
+        DragManager dragManager;
         QMutex mutex;
     };
 
