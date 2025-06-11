@@ -152,6 +152,9 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
             keyValModel->removeRow(row--);
         }
     }
+    keyValueTbl->resizeRowsToContents();
+    keyValueTbl->resizeColumnsToContents();
+    updateGeometry();
     //resizeKeyValTable();
     setUpdatesEnabled(true);
     keyValueTbl->setUpdatesEnabled(true);
@@ -194,34 +197,29 @@ void NetworkInfoViewWidget::setupTableView()
 
     keyValueTbl->setModel(keyValModel);
 
-    // Set up the LED indicator delegate
     LedIndicatorDelegate* ledDelegate = new LedIndicatorDelegate(this);
     keyValueTbl->setItemDelegateForColumn(2, ledDelegate);
 
-    // Configure table view properties
     keyValueTbl->setEditTriggers(QAbstractItemView::NoEditTriggers);
     keyValueTbl->setSelectionMode(QAbstractItemView::NoSelection);
     keyValueTbl->verticalHeader()->setVisible(false);
     keyValueTbl->horizontalHeader()->setVisible(false);
-    keyValueTbl->horizontalHeader()->setStretchLastSection(true);
+
+    keyValueTbl->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    keyValueTbl->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    keyValueTbl->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+
     keyValueTbl->setShowGrid(false);
     keyValueTbl->setFocusPolicy(Qt::NoFocus);
+    keyValueTbl->setAttribute(Qt::WA_TransparentForMouseEvents);
 
-    // Set the table view to use transparent background
     keyValueTbl->setAttribute(Qt::WA_TranslucentBackground);
     keyValueTbl->viewport()->setAttribute(Qt::WA_TranslucentBackground);
-
-    // Set up the table view's style
     keyValueTbl->setStyleSheet("QTableView { background: transparent; border: none; }");
 
     setKeyValueTbl();
     connectViewModel();
 
-    keyValueTbl->setColumnWidth(0, 120); // Parameter column
-    keyValueTbl->setColumnWidth(1, 150); // Value column
-    keyValueTbl->setColumnWidth(2, 30);  // LED indicator
-    // Install event filter for the viewport
-    keyValueTbl->viewport()->installEventFilter(this);
     layout()->addWidget(keyValueTbl);
 }
 
@@ -236,16 +234,20 @@ void NetworkInfoViewWidget::connectViewModel()
 
 bool NetworkInfoViewWidget::eventFilter(QObject *watched, QEvent *event)
 {
-    QTableView* table = qobject_cast<QTableView*>(watched->parent());
-    if(table && (table == keyValueTbl))
+    if (watched == keyValueTbl->viewport())
     {
-        // Only block unwanted interactions
+        // Block all mouse events
         switch(event->type())
         {
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonRelease:
+        case QEvent::MouseButtonDblClick:
+        case QEvent::MouseMove:
+        case QEvent::Wheel:
         case QEvent::ContextMenu:
             return true;
         default:
-            return false;
+            break;
         }
     }
     return GridCellWidget::eventFilter(watched, event);

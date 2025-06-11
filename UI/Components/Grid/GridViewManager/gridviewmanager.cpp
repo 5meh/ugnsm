@@ -19,6 +19,7 @@ GridViewManager::GridViewManager(QWidget* parent)
 {
     m_gridLayout->setSpacing(10);
     m_gridLayout->setContentsMargins(10, 10, 10, 10);
+    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     setLayout(m_gridLayout);
     setAcceptDrops(true);
 }
@@ -78,6 +79,14 @@ void GridViewManager::setCell(QPoint indx, GridCellWidget* widget)
 
     connect(widget, &GridCellWidget::swapRequested,
             this, &GridViewManager::handleSwapRequested);
+
+    widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+
+    //connect(widget, &GridCellWidget::dragStarted, this, &GridViewManager::handleDragStart);
+    //connect(widget, &GridCellWidget::dragEnded, this, &GridViewManager::handleDragEnd);
+
+    widget->setFocusPolicy(Qt::NoFocus);
+    widget->setAttribute(Qt::WA_TransparentForMouseEvents, false);
 }
 
 void GridViewManager::updateCell(QPoint indx, NetworkInfoModel* model)
@@ -151,7 +160,6 @@ GridCellWidget* GridViewManager::cellAt(int row, int col) const
 
 void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
 {
-    qDebug() << "Handle swap requested:" << source << "->" << target;
     if (!m_updatesEnabled)
     {
         // If updates are paused, queue the swap request

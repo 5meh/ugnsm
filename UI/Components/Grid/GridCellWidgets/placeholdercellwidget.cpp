@@ -12,17 +12,8 @@ PlaceHolderCellWidget::PlaceHolderCellWidget(QWidget* parent)
     : GridCellWidget(parent),
     m_infoLabel(new QLabel(this))
 {
-    //setProperty("isPlaceholder", true);
-    setAcceptDrops(true); // Allow drops but not drags
-
-    m_infoLabel->setAlignment(Qt::AlignCenter);
-    m_infoLabel->setStyleSheet("color: #888888; font-weight: bold;");
-    m_infoLabel->setWordWrap(true);
-
-    QVBoxLayout* layout = new QVBoxLayout(this);
-    layout->addWidget(m_infoLabel);
-    layout->setContentsMargins(5, 5, 5, 5);
-    setLayout(layout);
+    setAcceptDrops(true);
+    setupUI();
 }
 
 void PlaceHolderCellWidget::setGridIndex(QPoint newGridIndex)
@@ -31,12 +22,12 @@ void PlaceHolderCellWidget::setGridIndex(QPoint newGridIndex)
 
     if (newGridIndex == QPoint(0, 0))
     {
-        m_infoLabel->setText("No Active Network");
+        m_infoLabel->setText("No Active Network\nDrag networks here");
         setProperty("bestNetworkPlaceholder", true);
     }
     else
     {
-        m_infoLabel->setText("");
+        m_infoLabel->setText("Empty Slot\nDrag network here");
         setProperty("bestNetworkPlaceholder", false);
     }
 
@@ -46,13 +37,11 @@ void PlaceHolderCellWidget::setGridIndex(QPoint newGridIndex)
 
 void PlaceHolderCellWidget::mousePressEvent(QMouseEvent* event)
 {
-    // Don't start drag for placeholder cells
     Q_UNUSED(event);
 }
 
 void PlaceHolderCellWidget::mouseMoveEvent(QMouseEvent* event)
 {
-    // Don't allow dragging for placeholder cells
     Q_UNUSED(event);
 }
 
@@ -78,13 +67,7 @@ void PlaceHolderCellWidget::dragLeaveEvent(QDragLeaveEvent* event)
 
 void PlaceHolderCellWidget::dropEvent(QDropEvent* event)
 {
-    // if (!event->mimeData()->hasFormat("application/x-grid-index")) {
-    //     event->ignore();
-    //     return;
-    // }
-
     event->acceptProposedAction();
-
 
     setProperty("dragOver", false);
     style()->unpolish(this);
@@ -99,4 +82,17 @@ void PlaceHolderCellWidget::dropEvent(QDropEvent* event)
     event->acceptProposedAction();
 
     QFrame::dropEvent(event);
+}
+
+void PlaceHolderCellWidget::setupUI()
+{
+    m_infoLabel->setAlignment(Qt::AlignCenter);
+    m_infoLabel->setStyleSheet("color: #888888; font-weight: bold;");
+    m_infoLabel->setWordWrap(true);
+    m_infoLabel->setText("Empty Slot\nDrag network here");
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(m_infoLabel);
+    layout->setContentsMargins(5, 5, 5, 5);
+    setLayout(layout);
 }

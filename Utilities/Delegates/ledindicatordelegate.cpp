@@ -6,49 +6,53 @@
 #include <QDateTime>
 #include <QPainter>
 
-LedIndicatorDelegate::LedIndicatorDelegate(QObject* parent) : QStyledItemDelegate(parent)
+LedIndicatorDelegate::LedIndicatorDelegate(QObject* parent)
+    : QStyledItemDelegate(parent)
 {
-    QTimer *timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, [this]()
-            {
-                if (QTableView* view = qobject_cast<QTableView*>(this->parent()))
-                {
-                    view->viewport()->update();
-                }
-            });
-    timer->start(50);
+    // QTimer *timer = new QTimer(this);
+    // connect(timer, &QTimer::timeout, this, [this]()
+    //         {
+    //             if (QTableView* view = qobject_cast<QTableView*>(this->parent()))
+    //             {
+    //                 view->viewport()->update();
+    //             }
+    //         });
+    // timer->start(50);
 }
 
 void LedIndicatorDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     if (index.column() == 2)
     {
-        QModelIndex firstColIndex = index.sibling(index.row(), 0);
-        QModelIndex secondColIndex = index.sibling(index.row(), 1);
-        QVariant key = firstColIndex.data(Qt::DisplayRole);
-        QVariant value = secondColIndex.data(Qt::DisplayRole);
+        QVariant statusValue = index.data(Qt::UserRole + 1);
 
-        if (key.isValid() && value.isValid())
+        if (statusValue.isValid())
         {
-            if (key.toString().compare("Is Up:") == 0 || key.toString().compare("Is Running:") == 0)
-            {
-                int state = determineStateFromValue(value);
-                QColor color = getColorForState(state);
+            int state = statusValue.toInt();
+            QColor color = getColorForState(state);
 
-                // Draw the LED indicator
-                painter->save();
-                painter->setRenderHint(QPainter::Antialiasing);
-                painter->setBrush(color);
-                painter->setPen(Qt::NoPen);
+            // Draw LED with animation effect
+            painter->save();
+            painter->setRenderHint(QPainter::Antialiasing);
 
-                // Draw a circle for the LED
-                QRect rect = option.rect;
-                rect.adjust(5, 5, -5, -5); // Add some padding
-                painter->drawEllipse(rect);
+            // Create LED circle
+            int size = qMin(option.rect.width(), option.rect.height()) - 6;
+            QRect ledRect(option.rect.center().x() - size/2,
+                          option.rect.center().y() - size/2,
+                          size, size);
 
-                painter->restore();
-                return;
-            }
+            // Draw glow effect
+            QRadialGradient gradient(ledRect.center(), size/2);
+            gradient.setColorAt(0, color.lighter(150));
+            gradient.setColorAt(1, color.darker(150));
+            painter->setBrush(gradient);
+
+            // Draw LED circle
+            painter->setPen(QPen(Qt::black, 1));
+            painter->drawEllipse(ledRect);
+
+            painter->restore();
+            return;
         }
     }
 

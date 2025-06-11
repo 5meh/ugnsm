@@ -19,6 +19,8 @@ protected:
     void dragLeaveEvent(QDragLeaveEvent* event) override;
     void dropEvent(QDropEvent* event) override;
 private:
+    void setupUI();
+
     QLabel* m_infoLabel;
 };
 

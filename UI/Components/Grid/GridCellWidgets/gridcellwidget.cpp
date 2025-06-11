@@ -18,7 +18,8 @@ GridCellWidget::GridCellWidget(QWidget* parent)
     :QFrame(parent)
 {
     setAcceptDrops(true);
-    resize(sizeHint());
+    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    //resize(sizeHint());
 }
 
 GridCellWidget::~GridCellWidget()
@@ -26,10 +27,10 @@ GridCellWidget::~GridCellWidget()
 
 }
 
-QSize GridCellWidget::sizeHint() const
-{
-    return m_widgetSize;
-}
+// QSize GridCellWidget::sizeHint() const
+// {
+//     return m_widgetSize;
+// }
 
 void GridCellWidget::mousePressEvent(QMouseEvent *event)
 {

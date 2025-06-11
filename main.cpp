@@ -16,6 +16,7 @@ void configureSystem()
     GlobalManager::componentRegistry()->registerComponent<INetworkSortStrategy, SpeedSortStrategy>();
     GlobalManager::componentRegistry()->registerComponent<IParser, NetworkEthernetParser>();
 
+    Logger::instance().setLogLevel(Logger::Level::Debug);
     Logger::instance().log(Logger::Info, "Components registered", "MainWindow");
 }
 
