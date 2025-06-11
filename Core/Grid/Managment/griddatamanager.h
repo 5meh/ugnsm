@@ -37,8 +37,8 @@ public:
 
 signals:
     void gridDimensionsChanged();
-    void parsingFailed(const QStringList& warnings);
-    void networkHighlightChanged(int row, int col);
+    //void parsingFailed(const QStringList& warnings);
+    //void networkHighlightChanged(int row, int col);
     void cellChanged(QPoint indx, NetworkInfoModel*);
     void gridReset();
 
@@ -60,6 +60,7 @@ private:
     void incrementalUpdate(const QList<NetworkInfoPtr>& allInfos);
     void keepBestUpdate(const QList<NetworkInfoPtr>& allInfos);
     void updateGridWithData(const QList<NetworkInfoPtr>& allInfos);
+    void updateTrackedMacs();
 
     QAtomicInt m_refreshInProgress{0};
     NetworkMonitor* m_monitor;
@@ -67,6 +68,8 @@ private:
     std::shared_ptr<INetworkSortStrategy> m_sorter;
     QVector<QVector<NetworkInfoModel*>> m_data;
     QHash<QString, QPoint> m_macIndex;
+    QHash<QString, QString> m_interfaceToMac;
+
     size_t m_validDataCount;
     bool m_updatesPaused = false;
     QList<QList<NetworkInfoPtr>> m_queuedUpdates;

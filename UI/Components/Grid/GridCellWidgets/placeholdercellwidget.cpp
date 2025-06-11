@@ -40,7 +40,7 @@ void PlaceHolderCellWidget::setGridIndex(QPoint newGridIndex)
         setProperty("bestNetworkPlaceholder", false);
     }
 
-    //style()->unpolish(this);
+    style()->unpolish(this);
     style()->polish(this);
 }
 
@@ -61,6 +61,7 @@ void PlaceHolderCellWidget::dragEnterEvent(QDragEnterEvent* event)
     if (event->mimeData()->hasFormat("application/x-grid-index"))
     {
         setProperty("dragOver", true);
+        style()->unpolish(this);
         style()->polish(this);
         event->acceptProposedAction();
     }
@@ -70,6 +71,7 @@ void PlaceHolderCellWidget::dragEnterEvent(QDragEnterEvent* event)
 void PlaceHolderCellWidget::dragLeaveEvent(QDragLeaveEvent* event)
 {
     setProperty("dragOver", false);
+    style()->unpolish(this);
     style()->polish(this);
     QFrame::dragLeaveEvent(event);
 }
@@ -85,6 +87,7 @@ void PlaceHolderCellWidget::dropEvent(QDropEvent* event)
 
 
     setProperty("dragOver", false);
+    style()->unpolish(this);
     style()->polish(this);
 
     QByteArray receivedData = event->mimeData()->data("application/x-grid-index");

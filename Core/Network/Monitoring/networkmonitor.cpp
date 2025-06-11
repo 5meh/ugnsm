@@ -1,7 +1,10 @@
 #include "networkmonitor.h"
 
+#include "../globalmanager.h"
+
 #include <QFile>
 #include <QTextStream>
+#include <QNetworkInterface>
 #include <QDateTime>
 #include "../../../UI/Components/Grid/GridCellWidgets/networkinfoviewwidget.h"
 #include "../TaskSystem/taskscheduler.h"
@@ -19,55 +22,164 @@
 // Linux implementation
 #endif
 
-NetworkMonitor::NetworkMonitor(TaskScheduler* scheduler, QObject* parent)
-    :m_scheduler(scheduler),
-    QObject(parent)
+NetworkMonitor::NetworkMonitor(QObject* parent)
+    : QObject(parent)
 {
 }
 
 void NetworkMonitor::startMonitoring(int intervalMs)
 {
     m_interval = intervalMs;
-    m_scheduler->scheduleRepeating("network_monitoring", m_interval, this,
-                                   &NetworkMonitor::refreshStats,
-                                   QThread::NormalPriority);
+    GlobalManager::taskScheduler()->scheduleRepeating("network_monitoring", m_interval, this,
+                                                      &NetworkMonitor::refreshStats,
+                                                      QThread::NormalPriority);
     Logger::instance().log(Logger::Info,
                            QString("Network monitoring started (interval %1ms)").arg(m_interval), "Network");
 }
 
 void NetworkMonitor::stopMonitoring()
 {
-    //m_timer.stop();
+    m_running = 0;
+}
+
+void NetworkMonitor::initializeStats(const QSet<QString> &macs)
+{
+    m_trackedMacs = macs;
+    m_previousStats.clear();
+
+    // Get initial stats for all interfaces
+    QHash<QString, InterfaceStats> currentStats;
+    if (readRawInterfaceStats(currentStats))
+    {
+        qint64 now = QDateTime::currentMSecsSinceEpoch();
+
+        // Initialize all tracked MACs with zero stats
+        for (const QString& mac : m_trackedMacs)
+        {
+            InterfaceStats stats;
+            stats.lastUpdate = now;
+            m_previousStats[mac] = stats;
+        }
+        m_initialized = true;
+    }
+}
+
+void NetworkMonitor::updateTrackedMacs(const QSet<QString> &macs)
+{
+    for (const QString& mac : macs)
+    {
+        if (!m_trackedMacs.contains(mac))
+        {
+            // Initialize with zero stats
+            InterfaceStats stats;
+            stats.lastUpdate = QDateTime::currentMSecsSinceEpoch();
+            m_previousStats[mac] = stats;
+        }
+    }
+
+    // Remove untracked MACs
+    for (auto it = m_previousStats.begin(); it != m_previousStats.end(); )
+    {
+        if (!macs.contains(it.key()))
+            it = m_previousStats.erase(it);
+        else
+            ++it;
+    }
+
+    m_trackedMacs = macs;
 }
 
 void NetworkMonitor::refreshStats()
 {
-    QHash<QString, InterfaceStats> currentStats;
-    if(getInterfaceStats(currentStats))
+    if (!m_running.loadAcquire() || !m_initialized || m_trackedMacs.isEmpty())
+        return;
+
+    QHash<QString, InterfaceStats> interfaceStats;
+    if (!readRawInterfaceStats(interfaceStats))
+        return;
+
+    // Convert to MAC-based stats using Qt's interface list
+    QHash<QString, InterfaceStats> macStats;
+    for (const QNetworkInterface& interface: QNetworkInterface::allInterfaces())
     {
-        calculateSpeeds(currentStats);
-    }
-}
+        QString mac = interface.hardwareAddress();
+        QString name = interface.name();
 
-void NetworkMonitor::monitoringLoop()
-{
-
-}
-
-bool NetworkMonitor::getInterfaceStats(QHash<QString, InterfaceStats>& currentStats)
-{
-    if(!readRawInterfaceStats(currentStats))
-    {
-        return false;
+        if (interfaceStats.contains(name) && m_trackedMacs.contains(mac))
+        {
+            macStats[mac] = interfaceStats[name];
+        }
     }
 
     qint64 now = QDateTime::currentMSecsSinceEpoch();
-    for(auto& stats : currentStats)
-    {
-        stats.lastUpdate = now;
+
+    // Calculate speeds for each tracked MAC
+    for (const QString& mac : m_trackedMacs) {
+        if (macStats.contains(mac) && m_previousStats.contains(mac)) {
+            const InterfaceStats& current = macStats[mac];
+            const InterfaceStats& previous = m_previousStats[mac];
+            qint64 timeDelta = now - previous.lastUpdate;
+
+            if (timeDelta > 0) {
+                quint64 rxSpeed = (current.rxBytes - previous.rxBytes) * 1000 / timeDelta;
+                quint64 txSpeed = (current.txBytes - previous.txBytes) * 1000 / timeDelta;
+
+                emit statsUpdated(mac, rxSpeed, txSpeed);
+
+                // Update previous stats with current data
+                InterfaceStats updated = current;
+                updated.lastUpdate = now;
+                m_previousStats[mac] = updated;
+            }
+        }
     }
-    return true;
 }
+
+// bool NetworkMonitor::getInterfaceStats(QHash<QString, InterfaceStats>& currentStats)
+// {
+    // if (!m_running.loadAcquire() || !m_initialized || m_trackedMacs.isEmpty())
+    //     return;
+
+    // QHash<QString, InterfaceStats> interfaceStats;
+    // if (!readRawInterfaceStats(interfaceStats))
+    //     return;
+
+    // // Convert to MAC-based stats using Qt's interface list
+    // QHash<QString, InterfaceStats> macStats;
+    // foreach (const QNetworkInterface& interface, QNetworkInterface::allInterfaces())
+    // {
+    //     QString mac = interface.hardwareAddress();
+    //     QString name = interface.name();
+
+    //     if (interfaceStats.contains(name) && m_trackedMacs.contains(mac))
+    //     {
+    //         macStats[mac] = interfaceStats[name];
+    //     }
+    // }
+
+    // qint64 now = QDateTime::currentMSecsSinceEpoch();
+
+    // // Calculate speeds for each tracked MAC
+    // for (const QString& mac : m_trackedMacs) {
+    //     if (macStats.contains(mac) && m_previousStats.contains(mac)) {
+    //         const InterfaceStats& current = macStats[mac];
+    //         const InterfaceStats& previous = m_previousStats[mac];
+    //         qint64 timeDelta = now - previous.lastUpdate;
+
+    //         if (timeDelta > 0) {
+    //             quint64 rxSpeed = (current.rxBytes - previous.rxBytes) * 1000 / timeDelta;
+    //             quint64 txSpeed = (current.txBytes - previous.txBytes) * 1000 / timeDelta;
+
+    //             emit statsUpdated(mac, rxSpeed, txSpeed);
+
+    //             // Update previous stats with current data
+    //             InterfaceStats updated = current;
+    //             updated.lastUpdate = now;
+    //             m_previousStats[mac] = updated;
+    //         }
+    //     }
+    // }
+// }
 
 void NetworkMonitor::calculateSpeeds(const QHash<QString, InterfaceStats>& currentStats)
 {

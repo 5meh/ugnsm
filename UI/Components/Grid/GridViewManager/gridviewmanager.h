@@ -28,6 +28,7 @@ public:
 
 public slots:
     void updateCell(QPoint indx, NetworkInfoModel* model);
+
 signals:
     void cellSwapRequestToDataManager(QPoint from, QPoint to);
     void pauseGridUpdates(bool paused);
@@ -36,6 +37,7 @@ private slots:
     void handleSwapRequested(QPoint source, QPoint target);
 
 private:
+    void handleSwapRequestedImpl(QPoint source, QPoint target);
     void clearGrid();
     void highlightCell(int row, int col);
     void clearHighlight(int row, int col);

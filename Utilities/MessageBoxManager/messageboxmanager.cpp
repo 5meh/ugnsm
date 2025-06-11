@@ -52,7 +52,7 @@ QMessageBox::StandardButtons MessageBoxManager::showDialog(
     int timeoutMs
     )//TODO:mb later somehow separate warning, info, critical message boxes
 {
-    if (GlobalManager::dragManager()->isDragging())
+    if (!GlobalManager::dragManager()->isDragging())
         return QMessageBox::Cancel;
 
     bool shouldShow = false;

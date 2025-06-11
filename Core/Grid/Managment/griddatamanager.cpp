@@ -16,7 +16,7 @@
 #include <QCheckBox>
 
 GridDataManager::GridDataManager(QObject* parent)
-    :m_monitor{new NetworkMonitor{nullptr, this}},
+    :m_monitor{new NetworkMonitor{this}},
     m_sorter{GlobalManager::componentRegistry()->create<INetworkSortStrategy>(this)},
     m_parser{GlobalManager::componentRegistry()->create<IParser>(nullptr)},
     m_validDataCount(0),
@@ -206,6 +206,7 @@ void GridDataManager::clearGrid()//TODO:mb rework
 void GridDataManager::updateMacMap()
 {
     m_macIndex.clear();
+    m_interfaceToMac.clear();
     for (int r = 0; r < m_data.size(); ++r)
     {
         for (int c = 0; c < m_data[r].size(); ++c)
@@ -241,6 +242,21 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
                     emit cellChanged(QPoint(x,y), m_data[x][y]);
                 }
             }
+
+            QSet<QString> interfaces;
+
+            for (int r = 0; r < m_data.size(); ++r)
+            {
+                for (int c = 0; c < m_data[r].size(); ++c)
+                {
+                    NetworkInfoModel* model = m_data[r][c];
+                    if (model)
+                        interfaces.insert(model->getName());
+                }
+            }
+
+            m_monitor->initializeStats(interfaces);
+            m_monitor->startMonitoring(1000);
         },
         QThread::HighPriority
         );
@@ -248,7 +264,7 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
     unusedInfos.clear();//TODO:mb rework
 }
 
-void GridDataManager::showBestNetworkChangedMessage(NetworkInfoPtr newBest)
+void GridDataManager::showBestNetworkChangedMessage(NetworkInfoPtr newBest)//TODO: why we need this method?
 {
     GlobalManager::taskScheduler()->executeMainThread("bestNetworkChanged", [this, newBest]() {
         GlobalManager::messageBoxManager()->showDialog(
@@ -265,7 +281,6 @@ void GridDataManager::showBestNetworkChangedMessage(NetworkInfoPtr newBest)
 
 void GridDataManager::applyUpdates(const QVector<QPair<QPoint, NetworkInfoPtr>>& updates)
 {
-    //TODO:mb instead of using main thread just simple mutex lock here?
     GlobalManager::taskScheduler()->executeMainThread("gridUpdate", [this, updates]() {
         // Process removals first
         for(const auto& pair : updates)
@@ -450,4 +465,25 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
         incrementalUpdate(allInfos);
     else if(strategy == "KeepBestUpdate")
         keepBestUpdate(allInfos);
+
+    updateTrackedMacs();
+}
+
+void GridDataManager::updateTrackedMacs()
+{
+    QSet<QString> macs;
+
+    for (int r = 0; r < m_data.size(); ++r)
+    {
+        for (int c = 0; c < m_data[r].size(); ++c)
+        {
+            NetworkInfoModel* model = m_data[r][c];
+            if (model)
+            {
+                macs.insert(model->getMac());
+            }
+        }
+    }
+
+    m_monitor->updateTrackedMacs(macs);
 }

@@ -241,9 +241,6 @@ void NetworkInfoModel::connectModelSignals()
 void NetworkInfoModel::markPropertyChanged(const QString& property)
 {
     if(!m_changedProperties.contains(property))
-    {
         m_changedProperties.append(property);
         //emit propertyChanged(property);
-    }
-
 }

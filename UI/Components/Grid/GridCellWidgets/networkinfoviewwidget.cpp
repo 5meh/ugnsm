@@ -107,7 +107,7 @@ void NetworkInfoViewWidget::updateProperty(const QString& propertyName)
     QTimer::singleShot(150, this, [this]()
                        {
                            setProperty("updating", false);
-                           //style()->unpolish(this);
+                           style()->unpolish(this);
                            style()->polish(this);
                        });
 

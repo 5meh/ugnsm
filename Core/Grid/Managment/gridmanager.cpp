@@ -3,6 +3,8 @@
 #include "griddatamanager.h"
 #include "../Utilities/Logger/logger.h"
 #include "../TaskSystem/taskscheduler.h"
+#include "../globalmanager.h"
+#include "dragmanager.h"
 
 GridManager::GridManager(QObject* parent)
     : m_dataManager(new GridDataManager (this)),
@@ -69,6 +71,11 @@ void GridManager::setupConnections()
 
     connect(m_viewManager.get(), &GridViewManager::pauseGridUpdates,
             m_dataManager, &GridDataManager::setUpdatesPaused);
+
+    connect(GlobalManager::dragManager(), &DragManager::dragStarted,
+            m_dataManager, [this]() { m_dataManager->setUpdatesPaused(true);});
+    connect(GlobalManager::dragManager(), &DragManager::dragEnded,
+            m_dataManager, [this]() { m_dataManager->setUpdatesPaused(false); });
 }
 
 GridViewManager* GridManager::getView() const

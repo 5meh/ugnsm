@@ -48,21 +48,22 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
     if ((event->pos() - m_dragStartPos).manhattanLength() < QApplication::startDragDistance())
         return;
 
-    if (!GlobalManager::dragManager()->startDrag(getGridIndex()))
-        return;
+    // if (!GlobalManager::dragManager()->isDragging())
+    //     return;
 
-    QPointer<GridViewManager> gridManager;
-    if (QWidget* parent = parentWidget())
-    {
-        if (QWidget* grandParent = parent->parentWidget())
-            gridManager = qobject_cast<GridViewManager*>(grandParent);
-    }
+    // QPointer<GridViewManager> gridManager;
+    // if (QWidget* parent = parentWidget())
+    // {
+    //     if (QWidget* grandParent = parent->parentWidget())
+    //         gridManager = qobject_cast<GridViewManager*>(grandParent);
+    // }
 
-    if (gridManager)
-    {
-        GlobalManager::dragManager()->startDrag(getGridIndex());
-        gridManager->setUpdatesEnabled(false);
-    }
+    // if (gridManager)
+    // {
+    //     GlobalManager::dragManager()->tryStartDrag();
+    //     gridManager->setUpdatesEnabled(false);
+    // }
+    GlobalManager::dragManager()->tryStartDrag();
 
     QDrag *drag = new QDrag(this);
     QMimeData *mimeData = new QMimeData;
@@ -83,21 +84,18 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
 
     Qt::DropAction result = drag->exec(Qt::MoveAction);
 
-    // QDragLeaveEvent dragEndEvent;
-    // QCoreApplication::sendEvent(this, &dragEndEvent);
+    // if (gridManager)
+    // {
+    //     GlobalManager::dragManager()->endDrag();
+    //     gridManager->setUpdatesEnabled(true);
+    // }
+    GlobalManager::dragManager()->endDrag();
 
-    // If the drag was cancelled, ensure we clean up properly
     if (result == Qt::IgnoreAction)
     {
         // Explicitly reset drag state
         QDragLeaveEvent cancelEvent;
         QCoreApplication::sendEvent(this, &cancelEvent);
-    }
-
-    if (gridManager)
-    {
-        GlobalManager::dragManager()->endDrag(getGridIndex());
-        gridManager->setUpdatesEnabled(true);
     }
 }
 
@@ -106,6 +104,7 @@ void GridCellWidget::dragEnterEvent(QDragEnterEvent *event)
     if(event->mimeData()->hasFormat("application/x-grid-index"))
     {
         setProperty("dragOver", true);
+        style()->unpolish(this);
         style()->polish(this);
         event->acceptProposedAction();
     }
@@ -114,6 +113,9 @@ void GridCellWidget::dragEnterEvent(QDragEnterEvent *event)
 
 void GridCellWidget::dropEvent(QDropEvent *event)
 {
+
+    qDebug() << "Drop event at" << getGridIndex()
+    << "with data:" << event->mimeData()->data("application/x-grid-index");
     // if (!event->mimeData()->hasFormat("application/x-grid-index"))
     // {
     //     event->ignore();
@@ -123,6 +125,7 @@ void GridCellWidget::dropEvent(QDropEvent *event)
     event->acceptProposedAction();
 
     setProperty("dragOver", false);
+    style()->unpolish(this);
     style()->polish(this);
 
     QByteArray receivedData = event->mimeData()->data("application/x-grid-index");
@@ -131,7 +134,7 @@ void GridCellWidget::dropEvent(QDropEvent *event)
     stream >> sourceIndex;
     if(sourceIndex != getGridIndex())
         emit swapRequested(sourceIndex, getGridIndex());
-    event->acceptProposedAction();
+    //event->acceptProposedAction();
 
     QFrame::dropEvent(event);
 }
@@ -139,6 +142,7 @@ void GridCellWidget::dropEvent(QDropEvent *event)
 void GridCellWidget::dragLeaveEvent(QDragLeaveEvent *event)
 {
     setProperty("dragOver", false);
+    style()->unpolish(this);
     style()->polish(this);
     QFrame::dragLeaveEvent(event);
 }
@@ -160,12 +164,14 @@ void GridCellWidget::highlightCell()
 {
     clearHighlight();
     setProperty("highlighted", true);
+    style()->unpolish(this);
     style()->polish(this);
 }
 
 void GridCellWidget::clearHighlight()
 {
     setProperty("highlighted", false);
+    style()->unpolish(this);
     style()->polish(this);
 }
 

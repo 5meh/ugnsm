@@ -151,15 +151,21 @@ GridCellWidget* GridViewManager::cellAt(int row, int col) const
 
 void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
 {
+    qDebug() << "Handle swap requested:" << source << "->" << target;
     if (!m_updatesEnabled)
     {
         // If updates are paused, queue the swap request
-        QTimer::singleShot(0, this, [=]() {
+        QTimer::singleShot(0, this, [this, source, target]() {
             handleSwapRequested(source, target);
         });
         return;
     }
 
+    handleSwapRequestedImpl(source, target);
+}
+
+void GridViewManager::handleSwapRequestedImpl(QPoint source, QPoint target)
+{
     if (source.x() < 0 || source.x() >= gridRows() || source.y() < 0 || source.y() >= gridCols() ||
         target.x() < 0 || target.x() >= gridRows() || target.y() < 0 || target.y() >= gridCols())
         return;
@@ -220,33 +226,21 @@ void GridViewManager::handleSwapRequested(QPoint source, QPoint target)
 
     if (showDialog)
     {
-        QTimer::singleShot(0, this, [=]()
-                           {
-                               // This lambda now runs on the GUI thread,
-                               // *after* the DnD event has fully returned.
 
-                               // 3) Call the dialog synchronously on the GUI thread:
-                               auto result = GlobalManager::taskScheduler()
-                                                 ->executeMainThread(
-                                                     "blocked_dialog",
-                                                     [=]()
-                                                     {
-                                                         return GlobalManager::messageBoxManager()
-                                                         ->showDialog(
-                                                             dialogId,
-                                                             title,
-                                                             message,
-                                                             checkboxText
-                                                             );
-                                                     },
-                                                     QThread::HighPriority,
-                                                     Qt::SingleShotConnection
-                                                     );
+        auto result = GlobalManager::messageBoxManager()->showDialog(
+            dialogId,
+            title,
+            message,
+            checkboxText
+            );
 
-                               if (result == QMessageBox::Yes)
-                                   performSwap(source, target);
-                           });
-        return; // return immediately from the DnD handler
+
+        if (result == QMessageBox::Yes)
+        {
+            performSwap(source, target);
+            return;
+        }
+
     }
 
     performSwap(source, target);

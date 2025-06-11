@@ -2,22 +2,23 @@
 #define DRAGMANAGER_H
 
 #include <QObject>
-#include <QPoint>
-#include <QSet>
-#include <QMutex>
 
-class DragManager : public QObject//TODO:rewok process only one drag at time, remove QSet
+class DragManager : public QObject//TODO:fix semi Singletone later.
 {
     Q_OBJECT
 public:
-    bool startDrag(const QPoint& gridIndex);
-    void endDrag(const QPoint& gridIndex);
+    static DragManager* instance();
+    explicit DragManager(QObject* parent = nullptr);
+
+    void tryStartDrag();
+    void endDrag();
     bool isDragging() const;
 
+signals:
+    void dragStarted();
+    void dragEnded();
 private:
-    explicit DragManager(QObject* parent = nullptr);
-    QSet<QPoint> m_activeDrags;
-    mutable QMutex m_mutex;
+    QAtomicInteger<bool> m_dragActive{false};
 };
 
 #endif // DRAGMANAGER_H

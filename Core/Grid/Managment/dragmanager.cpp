@@ -1,27 +1,34 @@
 #include "dragmanager.h"
 
+DragManager* DragManager::instance()
+{
+    static DragManager instance;
+    return &instance;
+}
+
 DragManager::DragManager(QObject* parent)
     : QObject(parent)
 {
 }
 
-bool DragManager::startDrag(const QPoint& gridIndex)
+void DragManager::tryStartDrag()
 {
-    QMutexLocker locker(&m_mutex);
-    if (!m_activeDrags.isEmpty())
-        return false;
-    m_activeDrags.insert(gridIndex);
-    return true;
+    // Atomic operation to ensure only one drag at a time
+    // return !m_dragActive.testAndSetRelaxed(false, true);
+    if (!m_dragActive.testAndSetRelaxed(false, true))
+        return;
+    emit dragStarted();
 }
 
-void DragManager::endDrag(const QPoint& gridIndex)
+void DragManager::endDrag()
 {
-    QMutexLocker locker(&m_mutex);
-    m_activeDrags.remove(gridIndex);
+    //m_dragActive.storeRelaxed(false);
+    if (!m_dragActive.testAndSetRelaxed(true, false))
+        return;
+    emit dragEnded();
 }
 
 bool DragManager::isDragging() const
 {
-    QMutexLocker locker(&m_mutex);
-    return !m_activeDrags.isEmpty();
+    return m_dragActive.loadRelaxed();
 }
