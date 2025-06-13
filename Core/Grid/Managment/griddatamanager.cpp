@@ -28,7 +28,11 @@ GridDataManager::GridDataManager(QObject* parent)
             this, &GridDataManager::handleNetworkStats);
     GlobalManager::messageBoxManager()->addBlockingRelationship("BestNetworkMove","SwapWarning");
 
-    GlobalManager::taskScheduler()->scheduleRepeating("data_refresh", 5000, this,
+    int interval = GlobalManager::settingsManager()->getUpdateInterval();
+
+    GlobalManager::taskScheduler()->scheduleRepeating("data_refresh",
+                                                      interval,
+                                                      this,
                                                       &GridDataManager::refreshData,
                                                       QThread::NormalPriority);
 
@@ -67,6 +71,9 @@ int GridDataManager::getCapacity() const
 
 void GridDataManager::initializeGrid(int rows, int cols)
 {
+    Logger::instance().log(Logger::Info,
+                           QString("Initializing grid to %1x%2").arg(rows).arg(cols),
+                           "Grid");
     clearGrid();
     m_data.resize(rows);
     for(auto& row : m_data)
@@ -108,12 +115,11 @@ void GridDataManager::handleParsingCompleted(const QVariant& result)
 {
     QVariant resultCopy = result;
 
-    GlobalManager::taskScheduler()->scheduleAtomic(m_refreshInProgress,
-                                                   QString("data_processing"),
-                                                   this,
-                                                   &GridDataManager::handleParsingCompletedImpl,
-                                                   QThread::NormalPriority,
-                                                   std::move(resultCopy));
+    GlobalManager::taskScheduler()->executeMainThread(QString("data_processing"),
+                                                      [this, resultCopy = std::move(resultCopy)]() {
+                                                          // now we’re safely on the GUI thread:
+                                                          handleParsingCompletedImpl(std::move(resultCopy));
+                                                      });
 }
 
 void GridDataManager::handleNetworkStats(QString mac, quint64 rxSpeed, quint64 txSpeed)
@@ -135,8 +141,22 @@ void GridDataManager::refreshData()
                                                    &IParser::parse);
 }
 
+void GridDataManager::triggerRefresh()
+{
+    GlobalManager::taskScheduler()->scheduleAtomic(
+        m_refreshInProgress,
+        "data_refresh_manual",
+        m_parser.get(),
+        &IParser::parse
+        );
+}
+
 void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
 {
+    Logger::instance().log(Logger::Debug,
+                           QString("Swapping cells: (%1,%2) -> (%3,%4)").arg(from.x()).arg(from.y()).arg(to.x()).arg(to.y()),
+                           "Grid");
+
     if(from.x() < 0 || from.x() >= getRows() || from.y() < 0 || from.y() >= getCols() ||
         to.x() < 0 || to.x() >= getRows() || to.y() < 0 || to.y() >= getCols())
     {
@@ -221,7 +241,6 @@ void GridDataManager::updateMacMap()
 
 void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInfos)
 {
-
     QList<NetworkInfoPtr> usedInfos = allInfos.mid(0, getCapacity());
     QList<NetworkInfoPtr> unusedInfos = allInfos.mid(getCapacity());
 
@@ -239,7 +258,7 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
                     m_data[x][y] = new NetworkInfoModel(usedInfos[linearIndex], this);
                     m_macIndex[usedInfos[linearIndex]->getMac()] = QPoint(x,y);
                     ++m_validDataCount;
-                    emit cellChanged(QPoint(x,y), m_data[x][y]);
+                    //emit cellChanged(QPoint(x,y), m_data[x][y]);
                 }
             }
 
@@ -257,6 +276,17 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
 
             m_monitor->initializeStats(interfaces);
             m_monitor->startMonitoring(1000);
+
+            for(int x = 0; x < getRows(); x++)
+            {
+                for(int y = 0; y < getCols(); y++)
+                {
+                    if(m_data[x][y])
+                    {
+                        emit cellChanged(QPoint(x,y), m_data[x][y]);
+                    }
+                }
+            }
         },
         QThread::HighPriority
         );

@@ -35,17 +35,18 @@ public:
     void swapCells(QPoint from, QPoint to);
     void setUpdatesPaused(bool paused);
 
+public slots:
+    void refreshData();
+    void triggerRefresh();
+
 signals:
     void gridDimensionsChanged();
-    //void parsingFailed(const QStringList& warnings);
-    //void networkHighlightChanged(int row, int col);
     void cellChanged(QPoint indx, NetworkInfoModel*);
     void gridReset();
 
 private slots:
     void handleParsingCompleted(const QVariant& result);
     void handleNetworkStats(QString mac, quint64 rxSpeed, quint64 txSpeed);
-    void refreshData();
 
 private:
     void handleNetworkStatsImpl(QString mac, quint64 rxSpeed, quint64 txSpeed);

@@ -1,6 +1,8 @@
 #ifndef GRIDVIEWMANAGER_H
 #define GRIDVIEWMANAGER_H
 
+#include <functional>
+
 #include <QWidget>
 #include <QGridLayout>
 #include <QVector>
@@ -42,12 +44,13 @@ private:
     void highlightCell(int row, int col);
     void clearHighlight(int row, int col);
     QPoint getCellIndexFromPos(const QPoint& indx);
-    void updateCellContent(int row, int col, NetworkInfoModel* model);
+    //void updateCellContent(int row, int col, NetworkInfoModel* model);
     GridCellWidget* createCellWidgetForModel(NetworkInfoModel* model);
     bool isPlaceholder(GridCellWidget* widget) const;
     void performSwap(QPoint source, QPoint target);
 
     bool m_updatesEnabled = true;
+    std::function<void(QWidget*)> updateUI;
     QGridLayout* m_gridLayout;
     QVector<QVector<GridCellWidget*>> m_cells;
     GridCellWidget* m_highlightedCell = nullptr;

@@ -25,6 +25,7 @@ public:
     int getRows() const;
     int getCols() const;
     void setGridDimensions(int rows, int cols);
+    void refresh();
 
     GridViewManager* getView() const;
 

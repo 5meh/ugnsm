@@ -13,8 +13,6 @@ class SettingsManager : public QObject
     Q_PROPERTY(QString gridUpdateStrategy READ getGridUpdateStrategy WRITE setGridUpdateStrategy NOTIFY gridUpdateStrategyChanged)
     Q_PROPERTY(QString sortStrategy READ getSortStrategy WRITE setSortStrategy NOTIFY sortStrategyChanged)
     Q_PROPERTY(int updateInterval READ getUpdateInterval WRITE setUpdateInterval NOTIFY updateIntervalChanged)
-    Q_PROPERTY(int gridRows READ getGridRows WRITE setGridRows NOTIFY gridRowsChanged)
-    Q_PROPERTY(int gridCols READ getGridCols WRITE setGridCols NOTIFY gridColsChanged)
     Q_PROPERTY(bool showBestNetworkWarning READ getShowBestNetworkWarning WRITE setShowBestNetworkWarning NOTIFY showBestNetworkWarningChanged)
     Q_PROPERTY(QString dataUnits READ getDataUnits WRITE setDataUnits NOTIFY dataUnitsChanged)
     Q_PROPERTY(int decimalPrecision READ getDecimalPrecision WRITE setDecimalPrecision NOTIFY decimalPrecisionChanged)
@@ -26,8 +24,6 @@ public:
 
     QString getSortStrategy() const;
     int getUpdateInterval() const;
-    int getGridRows() const;
-    int getGridCols() const;
     bool getShowBestNetworkWarning() const;
     QString getDataUnits() const;
     int getDecimalPrecision() const;
@@ -37,8 +33,6 @@ public:
 
     void setSortStrategy(const QString& strategy);
     void setUpdateInterval(int interval);
-    void setGridRows(int rows);
-    void setGridCols(int cols);
     void setShowBestNetworkWarning(bool show);
     void setDataUnits(const QString& units);
     void setDecimalPrecision(int precision);
@@ -50,8 +44,6 @@ signals:
     void settingsChanged();
     void sortStrategyChanged(const QString& strategy);
     void updateIntervalChanged(int interval);
-    void gridRowsChanged(int rows);
-    void gridColsChanged(int cols);
     void showBestNetworkWarningChanged(bool show);
     void dataUnitsChanged(const QString& units);
     void decimalPrecisionChanged(int precision);

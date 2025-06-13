@@ -24,14 +24,13 @@ void LedIndicatorDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 {
     if (index.column() == 2)
     {
-        QVariant statusValue = index.data(Qt::UserRole + 1);
+        // Get LED state directly from model
+        int state = index.data(Qt::UserRole).toInt();
 
-        if (statusValue.isValid())
+        if (state >= 0)
         {
-            int state = statusValue.toInt();
             QColor color = getColorForState(state);
 
-            // Draw LED with animation effect
             painter->save();
             painter->setRenderHint(QPainter::Antialiasing);
 
@@ -41,14 +40,9 @@ void LedIndicatorDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
                           option.rect.center().y() - size/2,
                           size, size);
 
-            // Draw glow effect
-            QRadialGradient gradient(ledRect.center(), size/2);
-            gradient.setColorAt(0, color.lighter(150));
-            gradient.setColorAt(1, color.darker(150));
-            painter->setBrush(gradient);
-
             // Draw LED circle
             painter->setPen(QPen(Qt::black, 1));
+            painter->setBrush(color);
             painter->drawEllipse(ledRect);
 
             painter->restore();

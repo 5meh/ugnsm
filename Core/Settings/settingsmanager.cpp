@@ -1,5 +1,7 @@
 #include "settingsmanager.h"
 
+#include "../Utilities/Logger/logger.h"
+
 SettingsManager::SettingsManager(QObject* parent)
     : QObject(parent),
     m_settings("Pobeda4isto", "NetworkDashboard")
@@ -15,16 +17,6 @@ QString SettingsManager::getSortStrategy() const
 int SettingsManager::getUpdateInterval() const
 {
     return readSetting("UpdateInterval", 2000).toInt();
-}
-
-int SettingsManager::getGridRows() const
-{
-    return readSetting("GridRows", 3).toInt();
-}
-
-int SettingsManager::getGridCols() const
-{
-    return readSetting("GridCols", 3).toInt();
 }
 
 bool SettingsManager::getShowBestNetworkWarning() const
@@ -61,83 +53,68 @@ void SettingsManager::setSortStrategy(const QString& strategy)
 {
     writeSetting("SortStrategy", strategy);
     emit sortStrategyChanged(strategy);
-    emit settingsChanged();
+    //emit settingsChanged();
 }
 
 void SettingsManager::setUpdateInterval(int interval)
 {
     writeSetting("UpdateInterval", interval);
     emit updateIntervalChanged(interval);
-    emit settingsChanged();
-}
-
-void SettingsManager::setGridRows(int rows)
-{
-    writeSetting("GridRows", rows);
-    emit gridRowsChanged(rows);
-    emit settingsChanged();
-}
-
-void SettingsManager::setGridCols(int cols)
-{
-    writeSetting("GridCols", cols);
-    emit gridColsChanged(cols);
-    emit settingsChanged();
+    //emit settingsChanged();
 }
 
 void SettingsManager::setShowBestNetworkWarning(bool show)
 {
     writeSetting("ShowBestNetworkWarning", show);
     emit showBestNetworkWarningChanged(show);
-    emit settingsChanged();
+    //emit settingsChanged();
 }
 
 void SettingsManager::setDataUnits(const QString& units)
 {
     writeSetting("DataUnits", units);
     emit dataUnitsChanged(units);
-    emit settingsChanged();
+    //emit settingsChanged();
 }
 
 void SettingsManager::setDecimalPrecision(int precision)
 {
     writeSetting("DecimalPrecision", precision);
     emit decimalPrecisionChanged(precision);
-    emit settingsChanged();
+    //emit settingsChanged();
 }
 
 void SettingsManager::setAutoRefresh(bool enable)
 {
     writeSetting("AutoRefresh", enable);
     emit autoRefreshChanged(enable);
-    emit settingsChanged();
+    //emit settingsChanged();
 }
 
 void SettingsManager::setBestNetworkCriteria(const QString& criteria)
 {
     writeSetting("BestNetworkCriteria", criteria);
     emit bestNetworkCriteriaChanged(criteria);
-    emit settingsChanged();
+    //emit settingsChanged();
 }
 
 void SettingsManager::setGridUpdateStrategy(const QString &strategy)
 {
     writeSetting("GridUpdateStrategy", strategy);
     emit gridUpdateStrategyChanged(strategy);
-    emit settingsChanged();
+    //emit settingsChanged();
 }
 
 QVariant SettingsManager::readSetting(const QString& key, const QVariant& defaultValue) const
 {
-    //m_settings.beginGroup("Settings");
     QVariant value = m_settings.value(key, defaultValue);
-    //m_settings.endGroup();
     return value;
 }
 
 void SettingsManager::writeSetting(const QString& key, const QVariant& value)
 {
-   // m_settings.beginGroup("Settings");
     m_settings.setValue(key, value);
-    //m_settings.endGroup();
+    Logger::instance().log(Logger::Info,
+                           QString("Setting changed: %1 = %2").arg(key).arg(value.toString()),
+                           "Settings");
 }

@@ -17,6 +17,11 @@ GridViewManager::GridViewManager(QWidget* parent)
     : QWidget(parent),
     m_gridLayout(new QGridLayout(this))
 {
+    updateUI = [](QWidget* widget)
+    {
+        widget->style()->unpolish(widget);
+        widget->style()->polish(widget);
+    };
     m_gridLayout->setSpacing(10);
     m_gridLayout->setContentsMargins(10, 10, 10, 10);
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -93,6 +98,8 @@ void GridViewManager::updateCell(QPoint indx, NetworkInfoModel* model)
 {
     if (indx.x() < 0 || indx.x() >= gridRows() || indx.y() < 0 || indx.y() >= gridCols())
         return;
+
+    Q_ASSERT(QThread::currentThread() == qApp->thread());
 
     GridCellWidget* current = cellAt(indx.x(), indx.y());
     setUpdatesEnabled(false);
@@ -301,46 +308,46 @@ QPoint GridViewManager::getCellIndexFromPos(const QPoint& indx)
     return QPoint(-1, -1);
 }
 
-void GridViewManager::updateCellContent(int row, int col, NetworkInfoModel* model)
-{
-    GridCellWidget* current = cellAt(row, col);
+// void GridViewManager::updateCellContent(int row, int col, NetworkInfoModel* model)
+// {
+//     GridCellWidget* current = cellAt(row, col);
 
-    if (current && qobject_cast<NetworkInfoViewWidget*>(current))
-    {
-        NetworkInfoViewWidget* viewWidget = static_cast<NetworkInfoViewWidget*>(current);
+//     if (current && qobject_cast<NetworkInfoViewWidget*>(current))
+//     {
+//         NetworkInfoViewWidget* viewWidget = static_cast<NetworkInfoViewWidget*>(current);
 
-        if (viewWidget->getMac() != model->getMac())//TODO:rework
-        {
-            viewWidget->setUpdatesEnabled(false);
+//         if (viewWidget->getMac() != model->getMac())//TODO:rework
+//         {
+//             viewWidget->setUpdatesEnabled(false);
 
-            disconnect(viewWidget->getModel(), &NetworkInfoModel::propertyChanged,
-                       viewWidget, &NetworkInfoViewWidget::updateProperty);
+//             disconnect(viewWidget->getModel(), &NetworkInfoModel::propertyChanged,
+//                        viewWidget, &NetworkInfoViewWidget::updateProperty);
 
-            viewWidget->setViewModel(model);
-            connect(model, &NetworkInfoModel::propertyChanged,
-                    viewWidget, &NetworkInfoViewWidget::updateProperty,
-                    Qt::QueuedConnection);
+//             viewWidget->setViewModel(model);
+//             connect(viewWidget->getModel(), &NetworkInfoModel::propertyChanged,
+//                     viewWidget, &NetworkInfoViewWidget::updateProperty,
+//                     Qt::QueuedConnection);
 
-            viewWidget->setUpdatesEnabled(true);
-        }
-    }
-    else
-        setCell(QPoint(row,col), createCellWidgetForModel(model));
-}
+//             viewWidget->setUpdatesEnabled(true);
+//         }
+//     }
+//     else
+//         setCell(QPoint(row,col), createCellWidgetForModel(model));
+// }
 
 GridCellWidget* GridViewManager::createCellWidgetForModel(NetworkInfoModel* model)
 {
-    if (!model)
+    if (!model || model->getMac().isEmpty())
         return new PlaceHolderCellWidget(this);
 
     NetworkInfoViewWidget* widget = new NetworkInfoViewWidget(model);
-    widget->setUpdatesEnabled(false);
+    //widget->setUpdatesEnabled(false);
 
     connect(model, &NetworkInfoModel::propertyChanged,
             widget, &NetworkInfoViewWidget::updateProperty,
             Qt::QueuedConnection);
 
-    widget->setUpdatesEnabled(true);
+    //widget->setUpdatesEnabled(true);
     return widget;
 }
 
@@ -375,8 +382,9 @@ void GridViewManager::performSwap(QPoint source, QPoint target)
     {
         GridCellWidget* bestCell = cellAt(0, 0);
         bestCell->setProperty("bestNetwork", true);
-        bestCell->style()->unpolish(bestCell);
-        bestCell->style()->polish(bestCell);
+        updateUI(bestCell);
+        //bestCell->style()->unpolish(bestCell);
+        //bestCell->style()->polish(bestCell);
 
         if (!isPlaceholder(bestCell))
             highlightCell(0, 0);

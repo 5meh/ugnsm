@@ -2,6 +2,7 @@
 #include "UI/Components/Grid/GridViewManager/gridviewmanager.h"
 #include "Core/Grid/Managment/gridmanager.h"
 #include "UI/Components/DialogWindows/settingsdialog.h"
+#include "Core/globalmanager.h"
 
 
 #include <QResizeEvent>
@@ -9,39 +10,52 @@
 #include <QMessageBox>
 #include <QMenuBar>
 #include <QMenu>
+#include <QStyle>
+#include <QToolBar>
+#include <QScrollArea>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
+    m_toolbar(new QToolBar(this)),
     m_settingsDialog(new SettingsDialog (this))
 {
-    //setWindowIcon(QIcon(":/icons/app_icon"));
-
     m_gridManager.reset(new GridManager(this));
     setupUI();
     setupConnections();
-    updateWindowTitle();
 }
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow()
+{
+
+}
 
 void MainWindow::setupUI()
 {
-    QMenuBar* menuBar = this->menuBar();
-    QMenu* settingsMenu = menuBar->addMenu("Settings");
-    settingsMenu->addAction("Configure...", m_settingsDialog, &SettingsDialog::exec);
-    setMenuBar(menuBar);
+    QMenu* settingsMenu = menuBar()->addMenu(tr("Settings"));
+    settingsMenu->addAction(tr("Configure..."), m_settingsDialog, &SettingsDialog::exec);
+
+    m_toolbar = addToolBar(tr("Actions"));
+
+    QIcon reloadIcon = style()->standardIcon(QStyle::SP_BrowserReload);
+    m_manualRefreshAction = m_toolbar->addAction(reloadIcon, tr("Refresh Now"));
+
+    bool autoRefresh = GlobalManager::settingsManager()->getAutoRefresh();
+    m_toolbar->setVisible(!autoRefresh);
+    m_manualRefreshAction->setVisible(!autoRefresh);
 
     if (!m_gridManager || !m_gridManager->getView())
     {
         QMessageBox::critical(this, "Initialization Error",
                               "Failed to initialize grid system");
-        qFatal("Grid manager initialization failed");
     }
 
-    setCentralWidget(m_gridManager->getView());
+    m_scrollArea = new QScrollArea(this);
+    m_scrollArea->setWidgetResizable(true);
+    m_scrollArea->setWidget(m_gridManager->getView());
+    setCentralWidget(m_scrollArea);
+
     statusBar()->showMessage("Ready", 3000);
 
-    // Initial window setup
     const QSize initialSize(1280, 720);
     resize(initialSize);
     setMinimumSize(800, 600);
@@ -49,17 +63,14 @@ void MainWindow::setupUI()
 
 void MainWindow::setupConnections()
 {
-    connect(m_gridManager.data(), &GridManager::gridDimensionsChanged,
-            this, &MainWindow::handleGridDimensionsChanged);
-
     connect(m_settingsDialog, &SettingsDialog::settingsChanged,
             this, &MainWindow::handleSettingsChanged);
 
-    // connect(m_gridManager->getView(), &GridViewManager::cellClicked,
-    //         this, &MainWindow::handleCellClicked);
+    connect(GlobalManager::settingsManager(), &SettingsManager::autoRefreshChanged,
+            this, &MainWindow::handleAutoRefreshChanged);
 
-    // connect(m_gridManager.data(), &GridManager::errorOccurred,
-    //         this, &MainWindow::handleGridError);
+    connect(m_manualRefreshAction, &QAction::triggered,
+            this, &MainWindow::onManualRefresh);
 }
 
 void MainWindow::resizeEvent(QResizeEvent* event)
@@ -71,23 +82,6 @@ void MainWindow::resizeEvent(QResizeEvent* event)
     }
 }
 
-void MainWindow::handleGridDimensionsChanged()
-{
-    updateWindowTitle();
-    statusBar()->showMessage(
-        QString("Grid resized to %1x%2").arg(m_gridManager->getRows()).arg(m_gridManager->getCols()),
-        2000
-        );
-}
-
-void MainWindow::handleCellClicked(int row, int column)
-{
-    statusBar()->showMessage(
-        QString("Cell clicked at [%1,%2]").arg(row).arg(column),
-        1500
-        );
-}
-
 void MainWindow::handleGridError(const QString& errorMessage)
 {
     QMessageBox::warning(this, "Grid Error", errorMessage);
@@ -96,24 +90,25 @@ void MainWindow::handleGridError(const QString& errorMessage)
 
 void MainWindow::handleSettingsChanged()
 {
-    //TODO:rework this
-    // if(m_gridManager)
-    // {
-    //     QSettings settings;
-    //     settings.beginGroup("Settings");
-    //     m_gridManager->setGridDimensions(
-    //         settings.value("GridRows", 3).toInt(),
-    //         settings.value("GridCols", 3).toInt()
-    //         );
-    // }
+    m_gridManager->refresh();
+
+    statusBar()->showMessage(tr("Manual refresh triggered"), 1500);
 }
 
-void MainWindow::updateWindowTitle()
+void MainWindow::onManualRefresh()
 {
-    const QString dimensions = m_gridManager ?
-                                   QString(" [%1x%2]").arg(m_gridManager->getRows()).arg(m_gridManager->getCols()) : "";
+    if (m_gridManager && m_gridManager->getView())
+    {
+        GlobalManager::dragManager()->endDrag();
+    }
 
-    setWindowTitle(QString("Network Dashboard%1 - v%2")
-                       .arg(dimensions)
-                       .arg(QCoreApplication::applicationVersion()));
+    GlobalManager::taskScheduler()->cancelRepeating("data_refresh");
+    m_gridManager->refresh();
+    statusBar()->showMessage(tr("Manual refresh triggered"), 1500);
+}
+
+void MainWindow::handleAutoRefreshChanged(bool enabled)
+{
+    m_toolbar->setVisible(!enabled);
+    m_manualRefreshAction->setVisible(!enabled);
 }

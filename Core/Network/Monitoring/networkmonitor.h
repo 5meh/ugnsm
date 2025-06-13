@@ -34,7 +34,6 @@ private:
         qint64 lastUpdate = 0;
     };
 
-    //bool getInterfaceStats(QHash<QString, InterfaceStats>& currentStats);
     void calculateSpeeds(const QHash<QString, InterfaceStats>& currentStats);
 
     // Platform-specific implementation

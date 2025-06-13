@@ -5,9 +5,9 @@
 #include <QScopedPointer>
 
 class GridManager;
-class QResizeEvent;
 class SettingsDialog;
-//class ComponentSystem;
+QT_FORWARD_DECLARE_CLASS(QResizeEvent)
+QT_FORWARD_DECLARE_CLASS(QScrollArea)
 
 class MainWindow : public QMainWindow
 {
@@ -18,20 +18,25 @@ public:
 
     GridManager* gridManager() const { return m_gridManager.data(); }
 
+
 protected:
     void resizeEvent(QResizeEvent* event) override;
 
 private slots:
-    void handleGridDimensionsChanged();
-    void handleCellClicked(int row, int column);
+    //void handleGridDimensionsChanged();
     void handleGridError(const QString& errorMessage);
     void handleSettingsChanged();
+    void onManualRefresh();
+    void handleAutoRefreshChanged(bool enabled);
 
 private:
     void setupUI();
     void setupConnections();
-    void updateWindowTitle();
+    //void updateWindowTitle();
 
+    QScrollArea* m_scrollArea;
+    QToolBar* m_toolbar;
+    QAction*  m_manualRefreshAction;
     QScopedPointer<GridManager> m_gridManager;
     SettingsDialog* m_settingsDialog;
 };

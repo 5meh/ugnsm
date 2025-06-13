@@ -38,11 +38,6 @@ void SettingsDialog::setupUI()
     m_updateIntervalSpin->setSingleStep(500);
     m_updateIntervalSpin->setSuffix(" ms");
 
-    m_gridRowsSpin = new QSpinBox(this);
-    m_gridRowsSpin->setRange(1, 10);
-    m_gridColsSpin = new QSpinBox(this);
-    m_gridColsSpin->setRange(1, 10);
-
     m_showBestNetworkWarningCheck = new QCheckBox(this);
 
     m_dataUnitsCombo = new QComboBox(this);
@@ -64,8 +59,6 @@ void SettingsDialog::setupUI()
 
     layout->addRow("Sorting Strategy:", m_sortStrategyCombo);
     layout->addRow("Update Interval:", m_updateIntervalSpin);
-    layout->addRow("Grid Rows:", m_gridRowsSpin);
-    layout->addRow("Grid Columns:", m_gridColsSpin);
     layout->addRow("Show Best Network Warning:", m_showBestNetworkWarningCheck);
 
 
@@ -73,14 +66,6 @@ void SettingsDialog::setupUI()
         QDialogButtonBox::Ok | QDialogButtonBox::Apply | QDialogButtonBox::Cancel, this);
 
     layout->addRow(buttons);
-
-    setStyleSheet(
-        "QComboBox QAbstractItemView {"
-        "   background-color: white;"
-        "   selection-background-color: #3daee9;"
-        "   selection-color: black;"
-        "}"
-        );
 
     createConnections();
 }
@@ -98,8 +83,6 @@ void SettingsDialog::loadSettings()
     m_updateStrategyCombo->setCurrentText(GlobalManager::settingsManager()->getGridUpdateStrategy());
     m_sortStrategyCombo->setCurrentText(GlobalManager::settingsManager()->getSortStrategy());
     m_updateIntervalSpin->setValue(GlobalManager::settingsManager()->getUpdateInterval());
-    m_gridRowsSpin->setValue(GlobalManager::settingsManager()->getGridRows());
-    m_gridColsSpin->setValue(GlobalManager::settingsManager()->getGridCols());
     m_showBestNetworkWarningCheck->setChecked(GlobalManager::settingsManager()->getShowBestNetworkWarning());
     m_dataUnitsCombo->setCurrentText(GlobalManager::settingsManager()->getDataUnits());
     m_decimalPrecisionSpin->setValue(GlobalManager::settingsManager()->getDecimalPrecision());
@@ -112,8 +95,6 @@ void SettingsDialog::applySettings()
     GlobalManager::settingsManager()->setGridUpdateStrategy(m_updateStrategyCombo->currentData().toString());
     GlobalManager::settingsManager()->setSortStrategy(m_sortStrategyCombo->currentText());
     GlobalManager::settingsManager()->setUpdateInterval(m_updateIntervalSpin->value());
-    GlobalManager::settingsManager()->setGridRows(m_gridRowsSpin->value());
-    GlobalManager::settingsManager()->setGridCols(m_gridColsSpin->value());
     GlobalManager::settingsManager()->setDataUnits(m_dataUnitsCombo->currentData().toString());
     GlobalManager::settingsManager()->setDecimalPrecision(m_decimalPrecisionSpin->value());
     GlobalManager::settingsManager()->setShowBestNetworkWarning(m_showBestNetworkWarningCheck->isChecked());

@@ -86,7 +86,18 @@ public:
                 });
 
         timer->start();
-        m_repeatingTimers.append(timer);
+        m_repeatingTimers.emplace(resourceKey, timer);
+    }
+
+    void cancelRepeating(const QString& resourceKey)
+    {
+        QMutexLocker locker(&m_mapMutex);
+        if (m_repeatingTimers.contains(resourceKey))
+        {
+            QTimer* timer = m_repeatingTimers.take(resourceKey);
+            timer->stop();
+            timer->deleteLater();
+        }
     }
 
     template <typename Func>
@@ -114,6 +125,8 @@ public:
             return result;
         }
     }
+
+
 
     template <typename Func>
     QFuture<typename std::invoke_result_t<Func>> scheduleAsync(
@@ -191,7 +204,7 @@ private:
     QThreadPool* m_pool;
     QHash<QString, QMutex*> m_mutexes;
     QMutex m_mapMutex;
-    QList<QTimer*> m_repeatingTimers;
+    QHash<QString, QTimer*> m_repeatingTimers;
 };
 
 #endif // TASKSCHEDULER_H

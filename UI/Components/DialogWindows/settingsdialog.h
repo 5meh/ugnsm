@@ -33,8 +33,6 @@ private:
     QComboBox* m_updateStrategyCombo;
     QComboBox* m_sortStrategyCombo;
     QSpinBox* m_updateIntervalSpin;
-    QSpinBox* m_gridRowsSpin;
-    QSpinBox* m_gridColsSpin;
     QCheckBox* m_showBestNetworkWarningCheck;
     QComboBox* m_dataUnitsCombo;
     QSpinBox* m_decimalPrecisionSpin;

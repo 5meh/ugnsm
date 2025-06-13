@@ -12,6 +12,7 @@
 #include <QList>
 #include <QApplication>
 #include <QTimer>
+#include <QThread>
 
 #include "../../../../Utilities/Delegates/ledindicatordelegate.h"
 #include "../../../../Utilities/LedIndicator/ledindicator.h"
@@ -21,7 +22,6 @@
 NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfoModel *viewModel, QFrame *parent)
     : GridCellWidget(parent), m_viewModel(viewModel)
 {
-    //setGeometry(m_widgetSize);
     setupUI();
 
     m_propertyRowMap =
@@ -46,6 +46,8 @@ NetworkInfoViewWidget::~NetworkInfoViewWidget()
 
 void NetworkInfoViewWidget::setViewModel(NetworkInfoModel* model)
 {
+    Q_ASSERT(QThread::currentThread() == qApp->thread());
+
     if (m_viewModel == model)
         return;
 
@@ -124,6 +126,7 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
     if(!m_viewModel)
         return;
 
+    Q_ASSERT(QThread::currentThread() == qApp->thread());
     setUpdatesEnabled(false);
     keyValueTbl->setUpdatesEnabled(false);
 
