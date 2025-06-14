@@ -62,7 +62,7 @@ void GridManager::setupConnections()
 {
     connect(m_dataManager, &GridDataManager::cellChanged,
             m_viewManager.get(), &GridViewManager::updateCell,
-            Qt::QueuedConnection);
+            Qt::AutoConnection);
 
     connect(m_dataManager, &GridDataManager::gridDimensionsChanged,
             m_viewManager.get(), [this]()

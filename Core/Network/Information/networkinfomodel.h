@@ -3,6 +3,9 @@
 
 #include <QObject>
 #include <QHash>
+#include <QTimer>
+#include <QMutex>
+#include <QReadWriteLock>
 #include "networkinfo.h"
 
 class NetworkInfoModel : public QObject
@@ -58,12 +61,28 @@ signals:
 private:
     void connectModelSignals();
     void markPropertyChanged(const QString& property);
+    void flushPropertyChanges();
     QString formatTimestamp() const;
     QString formatSpeed(quint64 bytes) const;
 
+    QTimer m_updateTimer;  // Add batched update timer
+    const int UPDATE_THRESHOLD = 3;  // Batch when 3+ properties change
     NetworkInfoPtr m_model;
     QStringList m_changedProperties;
-    QHash<QString, QString> m_propertyMap;
+    const QHash<QString, QString> m_propertyMap =
+        {
+            {"name", "Interface"},
+            {"mac", "MAC Address"},
+            {"ipAddress", "IP Address"},
+            {"netmask", "Netmask"},
+            {"status", "Status"},
+            {"downloadSpeed", "Download Speed"},
+            {"uploadSpeed", "Upload Speed"},
+            {"totalSpeed", "Total Speed"},
+            {"lastUpdate", "Last Update"}
+        };
+    mutable QReadWriteLock m_rw_lock;
+    mutable QMutex m_mutex;
 };
 
 #endif // NETWORKINFOMODEL_H

@@ -19,7 +19,7 @@
 //#include "networkinfo.h"
 #include "../../../../Core/Network/Information/networkinfomodel.h"
 
-NetworkInfoViewWidget::NetworkInfoViewWidget(NetworkInfoModel *viewModel, QFrame *parent)
+NetworkInfoViewWidget::NetworkInfoViewWidget(QSharedPointer<NetworkInfoModel> viewModel, QFrame* parent)
     : GridCellWidget(parent), m_viewModel(viewModel)
 {
     setupUI();
@@ -44,33 +44,26 @@ NetworkInfoViewWidget::~NetworkInfoViewWidget()
         keyValModel->deleteLater();
 }
 
-void NetworkInfoViewWidget::setViewModel(NetworkInfoModel* model)
+void NetworkInfoViewWidget::setViewModel(QSharedPointer<NetworkInfoModel> model)
 {
-    Q_ASSERT(QThread::currentThread() == qApp->thread());
-
-    if (m_viewModel == model)
+    if (m_viewModel.data() == model.data() || !m_viewModel.data())
         return;
 
-    if (m_viewModel)
-        disconnect(m_viewModel, &NetworkInfoModel::propertiesChanged,
+        disconnect(m_viewModel.get(), &NetworkInfoModel::propertiesChanged,
                    this, &NetworkInfoViewWidget::handlePropertiesChanged);
 
     m_viewModel = model;
 
-    if (m_viewModel)
-    {
-        connect(m_viewModel, &NetworkInfoModel::propertiesChanged,
+        connect(m_viewModel.get(), &NetworkInfoModel::propertiesChanged,
                 this, &NetworkInfoViewWidget::handlePropertiesChanged);
-
-    }
 
     // Full UI refresh
     updateNetworkInfoDisplay();
 }
 
-const NetworkInfoModel *NetworkInfoViewWidget::getModel() const
+const QSharedPointer<NetworkInfoModel> NetworkInfoViewWidget::getModel() const
 {
-    return m_viewModel ? m_viewModel : nullptr;
+    return m_viewModel.get() ? m_viewModel : nullptr;
 }
 
 void NetworkInfoViewWidget::updateProperty(const QString& propertyName)
@@ -96,17 +89,10 @@ void NetworkInfoViewWidget::updateProperty(const QString& propertyName)
 
             break;
         }
-    }
-
-    if (propertyName == "downloadSpeed" ||
-        propertyName == "uploadSpeed" ||
-        propertyName == "totalSpeed")
-    {
-        updateSpeedIndicators();
-    }
+    }    
 
     setProperty("updating", true);
-    QTimer::singleShot(150, this, [this]()
+    QTimer::singleShot(150, this, [this]()//TODO:why we need this
                        {
                            setProperty("updating", false);
                            style()->unpolish(this);
@@ -126,7 +112,6 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
     if(!m_viewModel)
         return;
 
-    Q_ASSERT(QThread::currentThread() == qApp->thread());
     setUpdatesEnabled(false);
     keyValueTbl->setUpdatesEnabled(false);
 
@@ -157,18 +142,22 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
     }
     keyValueTbl->resizeRowsToContents();
     keyValueTbl->resizeColumnsToContents();
-    updateGeometry();
-    //resizeKeyValTable();
     setUpdatesEnabled(true);
     keyValueTbl->setUpdatesEnabled(true);
 }
 
 void NetworkInfoViewWidget::handlePropertiesChanged(const QStringList& propertiesList)
 {
-    for(const QString& prop: propertiesList)
+    for (const QString& property : propertiesList)
     {
-        updateProperty(prop);
+        if (property == "downloadSpeed" ||
+            property == "uploadSpeed" ||
+            property == "totalSpeed")
+            updateSpeedIndicators();
+        else
+            updateProperty(property);
     }
+    update();
 }
 
 void NetworkInfoViewWidget::addKeyValue(QPair<QString, QString> keyVal)
@@ -228,11 +217,11 @@ void NetworkInfoViewWidget::setupTableView()
 
 void NetworkInfoViewWidget::connectViewModel()
 {
-    connect(m_viewModel, &NetworkInfoModel::nameChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    connect(m_viewModel, &NetworkInfoModel::macChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    connect(m_viewModel, &NetworkInfoModel::ipAddressChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    connect(m_viewModel, &NetworkInfoModel::netmaskChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
-    connect(m_viewModel, &NetworkInfoModel::speedChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel.get(), &NetworkInfoModel::nameChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel.get(), &NetworkInfoModel::macChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel.get(), &NetworkInfoModel::ipAddressChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel.get(), &NetworkInfoModel::netmaskChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+    connect(m_viewModel.get(), &NetworkInfoModel::speedChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
 }
 
 bool NetworkInfoViewWidget::eventFilter(QObject *watched, QEvent *event)
@@ -271,6 +260,7 @@ void NetworkInfoViewWidget::updateStatusIndicator(QStandardItem *item, const QSt
 
 void NetworkInfoViewWidget::updateSpeedIndicators()
 {
+    setUpdatesEnabled(false);
     QPair<QString, QString> rxSpeed = m_viewModel->getKeyValue("RX Speed");
     QPair<QString, QString> txSpeed = m_viewModel->getKeyValue("TX Speed");
 
@@ -283,6 +273,7 @@ void NetworkInfoViewWidget::updateSpeedIndicators()
             valueItem->setText(paramItem->text() == "RX Speed" ? rxSpeed.second : txSpeed.second);
         }
     }
+    setUpdatesEnabled(true);
 }
 
 void NetworkInfoViewWidget::setupUI()

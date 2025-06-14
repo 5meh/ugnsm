@@ -8,6 +8,7 @@
 #include <QNetworkInterface>
 #include <QPoint>
 #include <QMessageBox>
+#include <QSharedPointer>
 
 #include "../Utilities/Parser/iparser.h"
 
@@ -26,7 +27,7 @@ class GridDataManager : public QObject
 public:
     explicit GridDataManager(QObject* parent = nullptr);
     virtual ~GridDataManager();
-    NetworkInfoModel* cellData(QPoint indx) const;
+    QSharedPointer<NetworkInfoModel> cellData(QPoint indx) const;
 
     int getRows() const;
     int getCols() const;
@@ -41,7 +42,7 @@ public slots:
 
 signals:
     void gridDimensionsChanged();
-    void cellChanged(QPoint indx, NetworkInfoModel*);
+    void cellChanged(QPoint indx, QSharedPointer<NetworkInfoModel>);
     void gridReset();
 
 private slots:
@@ -67,7 +68,7 @@ private:
     NetworkMonitor* m_monitor;
     std::shared_ptr<IParser> m_parser;
     std::shared_ptr<INetworkSortStrategy> m_sorter;
-    QVector<QVector<NetworkInfoModel*>> m_data;
+    QVector<QVector<QSharedPointer<NetworkInfoModel>>> m_data;
     QHash<QString, QPoint> m_macIndex;
     QHash<QString, QString> m_interfaceToMac;
 

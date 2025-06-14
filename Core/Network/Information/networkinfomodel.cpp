@@ -2,28 +2,32 @@
 
 #include "globalmanager.h"
 
+#include <QReadLocker>
+
 NetworkInfoModel::NetworkInfoModel(NetworkInfoPtr model, QObject *parent)
     : QObject(parent),
     m_model(model)
 {
-    m_propertyMap =
-        {
-            {"name", "Interface"},
-            {"mac", "MAC Address"},
-            {"ipAddress", "IP Address"},
-            {"netmask", "Netmask"},
-            {"status", "Status"},
-            {"downloadSpeed", "Download Speed"},
-            {"uploadSpeed", "Upload Speed"},
-            {"totalSpeed", "Total Speed"},
-            {"lastUpdate", "Last Update"}
-        };
-
+    // m_propertyMap =
+    //     {
+    //         {"name", "Interface"},
+    //         {"mac", "MAC Address"},
+    //         {"ipAddress", "IP Address"},
+    //         {"netmask", "Netmask"},
+    //         {"status", "Status"},
+    //         {"downloadSpeed", "Download Speed"},
+    //         {"uploadSpeed", "Upload Speed"},
+    //         {"totalSpeed", "Total Speed"},
+    //         {"lastUpdate", "Last Update"}
+    //     };
+    m_updateTimer.setSingleShot(true);
+    m_updateTimer.setInterval(50);  // Max 50ms delay for batched updates
     connectModelSignals();
 }
 
 QList<QPair<QString, QString>> NetworkInfoModel::getAllKeyValuesAsList() const
 {
+    QReadLocker lock(&m_rw_lock);
     return
         {
             {m_propertyMap["name"], getName()},
@@ -152,6 +156,7 @@ void NetworkInfoModel::updateSpeeds(quint64 rx, quint64 tx)
     markPropertyChanged("uploadSpeed");
     markPropertyChanged("totalSpeed");
     markPropertyChanged("lastUpdate");
+    flushPropertyChanges();
 }
 
 QString NetworkInfoModel::formatTimestamp() const
@@ -236,11 +241,41 @@ void NetworkInfoModel::connectModelSignals()
             {
                 markPropertyChanged("lastUpdate");
             });
+    connect(&m_updateTimer, &QTimer::timeout,
+            this, &NetworkInfoModel::flushPropertyChanges);
 }
 
 void NetworkInfoModel::markPropertyChanged(const QString& property)
 {
     if(!m_changedProperties.contains(property))
+    {
         m_changedProperties.append(property);
-        //emit propertyChanged(property);
+
+        // Trigger immediate update for speed-related properties
+        if (property == "downloadSpeed" ||
+            property == "uploadSpeed" ||
+            property == "totalSpeed")
+        {
+            flushPropertyChanges();
+        }
+        // Batch other properties when threshold reached or timer expires
+        else if (m_changedProperties.size() >= UPDATE_THRESHOLD)
+            flushPropertyChanges();
+        else
+            m_updateTimer.start();
+    }
+}
+
+void NetworkInfoModel::flushPropertyChanges()
+{
+    if (!m_changedProperties.isEmpty())
+    {
+        const auto changed = m_changedProperties;
+        m_changedProperties.clear();
+
+        QMetaObject::invokeMethod(this, [this, changed]() {
+            emit propertiesChanged(changed);
+        }, Qt::QueuedConnection);
+    }
+    m_updateTimer.stop();
 }

@@ -44,7 +44,7 @@ GridDataManager::~GridDataManager()
     clearGrid();
 }
 
-NetworkInfoModel* GridDataManager::cellData(QPoint indx) const
+QSharedPointer<NetworkInfoModel> GridDataManager::cellData(QPoint indx) const
 {
     if (indx.x() >= 0 && indx.x() < m_data.size() &&
         indx.y() >= 0 && indx.y() < m_data[indx.x()].size())
@@ -124,13 +124,15 @@ void GridDataManager::handleParsingCompleted(const QVariant& result)
 
 void GridDataManager::handleNetworkStats(QString mac, quint64 rxSpeed, quint64 txSpeed)
 {
-    GlobalManager::taskScheduler()->schedule(QString("stats_update"),
-                                             this,
-                                             &GridDataManager::handleNetworkStatsImpl,
-                                             QThread::LowPriority,
-                                             std::move(mac),
-                                             rxSpeed,
-                                             txSpeed);
+    GlobalManager::taskScheduler()->executeMainThread(
+        "stats_update",
+        this,
+        &GridDataManager::handleNetworkStatsImpl,
+        Qt::QueuedConnection,
+        std::move(mac),
+        rxSpeed,
+        txSpeed
+        );
 }
 
 void GridDataManager::refreshData()
@@ -207,16 +209,17 @@ void GridDataManager::handleNetworkStatsImpl(QString mac, quint64 rxSpeed, quint
 {
     if(m_macIndex.contains(mac))
     {
-        NetworkInfoModel* model = m_data[m_macIndex[mac].x()][m_macIndex[mac].y()];
+        QSharedPointer<NetworkInfoModel> model = m_data[m_macIndex[mac].x()][m_macIndex[mac].y()];
         model->updateSpeeds(rxSpeed, txSpeed);
     }
 }
 
 void GridDataManager::clearGrid()//TODO:mb rework
 {
-    for(auto& row : m_data)
+    for (auto& row : m_data)
     {
-        qDeleteAll(row);
+        for (auto& item : row)
+            item.clear();
         row.clear();
     }
     m_data.clear();
@@ -248,14 +251,14 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
         QString("model_creation"),
         [this, usedInfos]()
         {
-            for(size_t x = 0; x < getRows(); x++)
+            for(int x = 0; x < getRows(); x++)
             {
-                for(size_t y = 0; y < getCols(); y++)
+                for(int y = 0; y < getCols(); y++)
                 {
                     const int linearIndex = x * getCols() + y;
-                    if(linearIndex > usedInfos.size() - 1)
+                    if(linearIndex >= usedInfos.size())
                         continue;
-                    m_data[x][y] = new NetworkInfoModel(usedInfos[linearIndex], this);
+                    m_data[x][y] = QSharedPointer<NetworkInfoModel>::create(usedInfos[linearIndex], this);
                     m_macIndex[usedInfos[linearIndex]->getMac()] = QPoint(x,y);
                     ++m_validDataCount;
                     //emit cellChanged(QPoint(x,y), m_data[x][y]);
@@ -268,8 +271,8 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
             {
                 for (int c = 0; c < m_data[r].size(); ++c)
                 {
-                    NetworkInfoModel* model = m_data[r][c];
-                    if (model)
+                    QSharedPointer<NetworkInfoModel> model = m_data[r][c];
+                    if (!model.isNull())
                         interfaces.insert(model->getName());
                 }
             }
@@ -281,8 +284,9 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
             {
                 for(int y = 0; y < getCols(); y++)
                 {
-                    if(m_data[x][y])
+                    if(!m_data[x][y].isNull())
                     {
+                        qDebug() << "Emitter thread:" << QThread::currentThread();
                         emit cellChanged(QPoint(x,y), m_data[x][y]);
                     }
                 }
@@ -320,8 +324,7 @@ void GridDataManager::applyUpdates(const QVector<QPair<QPoint, NetworkInfoPtr>>&
                 QPoint pos = pair.first;
                 if(m_data[pos.x()][pos.y()])
                 {
-                    delete m_data[pos.x()][pos.y()];
-                    m_data[pos.x()][pos.y()] = nullptr;
+                    m_data[pos.x()][pos.y()].clear();
                     --m_validDataCount;
                     emit cellChanged(pos, nullptr);
                 }
@@ -338,7 +341,7 @@ void GridDataManager::applyUpdates(const QVector<QPair<QPoint, NetworkInfoPtr>>&
                     m_data[pos.x()][pos.y()]->updateFromNetworkInfo(info);
                 else
                 {
-                    m_data[pos.x()][pos.y()] = new NetworkInfoModel(info, this);
+                    m_data[pos.x()][pos.y()] = QSharedPointer<NetworkInfoModel>::create(info, this);
                     ++m_validDataCount;
                 }
                 emit cellChanged(pos, m_data[pos.x()][pos.y()]);
@@ -507,7 +510,7 @@ void GridDataManager::updateTrackedMacs()
     {
         for (int c = 0; c < m_data[r].size(); ++c)
         {
-            NetworkInfoModel* model = m_data[r][c];
+            QSharedPointer<NetworkInfoModel> model = m_data[r][c];
             if (model)
             {
                 macs.insert(model->getMac());

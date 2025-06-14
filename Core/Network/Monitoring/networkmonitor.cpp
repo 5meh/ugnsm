@@ -117,8 +117,10 @@ void NetworkMonitor::refreshStats()
     qint64 now = QDateTime::currentMSecsSinceEpoch();
 
     // Calculate speeds for each tracked MAC
-    for (const QString& mac : m_trackedMacs) {
-        if (macStats.contains(mac) && m_previousStats.contains(mac)) {
+    for (const QString& mac : m_trackedMacs)
+    {
+        if (macStats.contains(mac) && m_previousStats.contains(mac))
+        {
             const InterfaceStats& current = macStats[mac];
             const InterfaceStats& previous = m_previousStats[mac];
             qint64 timeDelta = now - previous.lastUpdate;
@@ -174,6 +176,8 @@ void NetworkMonitor::calculateSpeeds(const QHash<QString, InterfaceStats>& curre
 // Platform-specific implementations
 bool NetworkMonitor::readRawInterfaceStats(QHash<QString, InterfaceStats>& stats)
 {
+    static QMutex readMutex;  // Add static mutex for thread safety
+    QMutexLocker locker(&readMutex);
 #ifdef Q_OS_WIN
     PMIB_IF_TABLE2 ifTable;
     if(GetIfTable2Ex(MibIfTableNormal, &ifTable) != NO_ERROR)

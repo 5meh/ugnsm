@@ -15,11 +15,11 @@ class NetworkInfoViewWidget: public GridCellWidget
 {
     Q_OBJECT
 public:
-    explicit NetworkInfoViewWidget(NetworkInfoModel* viewModel, QFrame* parent = nullptr);
+    explicit NetworkInfoViewWidget(QSharedPointer<NetworkInfoModel> viewModel, QFrame* parent = nullptr);
     ~NetworkInfoViewWidget();
 
-    void setViewModel(NetworkInfoModel* model);//TODO:mb add Q_PROPERTY
-    const NetworkInfoModel* getModel()const;
+    void setViewModel(QSharedPointer<NetworkInfoModel> model);//TODO:mb add Q_PROPERTY
+    const QSharedPointer<NetworkInfoModel> getModel()const;
     void updateProperty(const QString& propertyName);
     QString getMac() const;
     Q_PROPERTY(bool updating READ isUpdating WRITE setUpdating NOTIFY updatingChanged)
@@ -48,7 +48,7 @@ private:
     void connectViewModel();
 
 
-    NetworkInfoModel* m_viewModel;
+    QSharedPointer<NetworkInfoModel> m_viewModel;
 
     QTableView* keyValueTbl;
     QStandardItemModel* keyValModel;

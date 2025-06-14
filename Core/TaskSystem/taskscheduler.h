@@ -126,6 +126,35 @@ public:
         }
     }
 
+    template<typename Obj, typename... MethodArgs, typename... CallArgs>
+    void executeMainThread(const QString&        /*resourceKey*/,
+                           Obj*                  receiver,
+                           void (Obj::*method)(MethodArgs...),
+                           Qt::ConnectionType    connectionType,
+                           CallArgs&&...         callArgs)
+    {
+        if (QThread::currentThread() == qApp->thread())
+        {
+            (receiver->*method)(std::forward<CallArgs>(callArgs)...);
+            return;
+        }
+
+        using TupleType = std::tuple<std::decay_t<CallArgs>...>;
+        auto argsTuple = std::make_shared<TupleType>(std::forward<CallArgs>(callArgs)...);
+
+        QMetaObject::invokeMethod(qApp,
+                                  [receiver, method, argsTuple]() {
+                                      std::apply(
+                                          [receiver, method](auto&&... unpacked) {
+                                              (receiver->*method)(std::forward<decltype(unpacked)>(unpacked)...);
+                                          },
+                                          *argsTuple
+                                          );
+                                  },
+                                  connectionType
+                                  );
+    }
+
 
 
     template <typename Func>
