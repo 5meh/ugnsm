@@ -1,254 +1,481 @@
 #include "networkmonitor.h"
-
 #include "../globalmanager.h"
-
-#include <QFile>
-#include <QTextStream>
-#include <QNetworkInterface>
-#include <QDateTime>
-#include "../../../UI/Components/Grid/GridCellWidgets/networkinfoviewwidget.h"
 #include "../TaskSystem/taskscheduler.h"
 #include "../../../Utilities/Logger/logger.h"
 
+#include <QNetworkInterface>
+#include <QFile>
+#include <QTextStream>
+#include <QDateTime>
+#include <QRegularExpression>
+#include <cmath>
+
 #ifdef Q_OS_WIN
-#include <winsock2.h>
-#include <iphlpapi.h>
-#pragma comment(lib, "iphlpapi.lib")
+#  include <winsock2.h>
+#  include <iphlpapi.h>
+#  pragma comment(lib, "iphlpapi.lib")
 #elif defined(Q_OS_MAC)
-#include <sys/sysctl.h>
-#include <net/if.h>
-#include <net/if_dl.h>
-#elif defined(Q_OS_LINUX)
-// Linux implementation
+#  include <sys/sysctl.h>
+#  include <net/if.h>
+#  include <net/if_dl.h>
 #endif
 
 NetworkMonitor::NetworkMonitor(QObject* parent)
-    : QObject(parent)
+    : QObject(parent),
+    m_interval(1000),
+    m_running(0),
+    m_initialized(false)
 {
+    Logger::instance().log(Logger::Debug, "NetworkMonitor instance created", "NetworkMonitor");
+}
+
+QString NetworkMonitor::normalizeMac(const QString& raw)
+{
+    QString clean;
+    for (QChar c : raw)
+    {
+        if (c.isLetterOrNumber())
+            clean += c.toUpper();
+    }
+
+    // Pad with zeros if needed
+    clean = clean.rightJustified(12, '0');
+
+    // Format with colons
+    QString formatted;
+    for (int i = 0; i < clean.length(); i += 2)
+    {
+        if (i > 0) formatted += ':';
+            formatted += clean.mid(i, 2);
+    }
+
+    Logger::instance().log(Logger::Trace,
+                           QString("Normalized MAC: %1 -> %2").arg(raw).arg(formatted),
+                           "NetworkMonitor");
+
+    return formatted;
 }
 
 void NetworkMonitor::startMonitoring(int intervalMs)
 {
-    m_interval = intervalMs;
-    GlobalManager::taskScheduler()->scheduleRepeating("network_monitoring", m_interval, this,
-                                                      &NetworkMonitor::refreshStats,
-                                                      QThread::NormalPriority);
-    Logger::instance().log(Logger::Info,
-                           QString("Network monitoring started (interval %1ms)").arg(m_interval), "Network");
+    if (m_running.testAndSetOrdered(0,1))
+    {
+        m_interval = intervalMs;
+        GlobalManager::taskScheduler()->cancelRepeating("network_monitoring");
+        GlobalManager::taskScheduler()->scheduleRepeating("network_monitoring",
+                                                          m_interval, this, &NetworkMonitor::refreshStats);
+        Logger::instance().log(Logger::Info,
+                               QString("Network monitoring started (interval %1 ms)").arg(m_interval),
+                               "NetworkMonitor");
+    }
 }
 
 void NetworkMonitor::stopMonitoring()
 {
-    m_running = 0;
+    if (m_running.testAndSetOrdered(1,0))
+    {
+        GlobalManager::taskScheduler()->cancelRepeating("network_monitoring");
+        Logger::instance().log(Logger::Info,
+                               "Network monitoring stopped",
+                               "NetworkMonitor");
+    }
 }
 
-void NetworkMonitor::initializeStats(const QSet<QString> &macs)
+void NetworkMonitor::initializeStats(const QSet<QString>& macs)
 {
-    m_trackedMacs = macs;
+    QMutexLocker locker(&m_interfaceMutex);
+    Logger::instance().log(Logger::Info,
+                           QString("Initializing stats for %1 MACs").arg(macs.size()),
+                           "NetworkMonitor");
+
+    m_trackedMacs.clear();
+    for (auto raw : macs)
+    {
+        QString normalized = normalizeMac(raw);
+        m_trackedMacs.insert(normalized);
+    }
+
     m_previousStats.clear();
-
-    // Get initial stats for all interfaces
-    QHash<QString, InterfaceStats> currentStats;
-    if (readRawInterfaceStats(currentStats))
+    qint64 now = QDateTime::currentMSecsSinceEpoch();
+    for (auto mac : m_trackedMacs)
     {
-        qint64 now = QDateTime::currentMSecsSinceEpoch();
-
-        // Initialize all tracked MACs with zero stats
-        for (const QString& mac : m_trackedMacs)
-        {
-            InterfaceStats stats;
-            stats.lastUpdate = now;
-            m_previousStats[mac] = stats;
-        }
-        m_initialized = true;
+        InterfaceStats s;
+        s.lastUpdate = now;
+        m_previousStats.insert(mac, s);
+        Logger::instance().log(Logger::Debug,
+                               QString("Tracking MAC: %1").arg(mac),
+                               "NetworkMonitor");
     }
+    m_initialized = true;
 }
 
-void NetworkMonitor::updateTrackedMacs(const QSet<QString> &macs)
+void NetworkMonitor::updateTrackedMacs(const QSet<QString>& macs)
 {
-    for (const QString& mac : macs)
+    QMutexLocker locker(&m_interfaceMutex);
+    QSet<QString> newSet;
+    for (QString raw : macs)
+        newSet.insert(normalizeMac(raw));
+
+    // Log changes
+    QSet<QString> added = newSet - m_trackedMacs;
+    QSet<QString> removed = m_trackedMacs - newSet;
+
+    if (!added.isEmpty())
+        Logger::instance().log(Logger::Info,
+                               QString("Adding %1 new MACs: %2").arg(added.size()).arg(added.values().join(", ")),
+                               "NetworkMonitor");
+    if (!removed.isEmpty())
+        Logger::instance().log(Logger::Info,
+                               QString("Removing %1 MACs: %2").arg(removed.size()).arg(removed.values().join(", ")),
+                               "NetworkMonitor");
+
+    // add any new
+    qint64 now = QDateTime::currentMSecsSinceEpoch();
+    for (QString mac : newSet)
     {
-        if (!m_trackedMacs.contains(mac))
+        if (!m_previousStats.contains(mac))
         {
-            // Initialize with zero stats
-            InterfaceStats stats;
-            stats.lastUpdate = QDateTime::currentMSecsSinceEpoch();
-            m_previousStats[mac] = stats;
+            m_previousStats[mac] = InterfaceStats{0,0,now};
+            Logger::instance().log(Logger::Debug,
+                                   QString("Added new MAC: %1").arg(mac),
+                                   "NetworkMonitor");
         }
     }
-
-    // Remove untracked MACs
+    // remove any old
     for (auto it = m_previousStats.begin(); it != m_previousStats.end(); )
     {
-        if (!macs.contains(it.key()))
+        if (!newSet.contains(it.key()))
+        {
+            Logger::instance().log(Logger::Debug,
+                                   QString("Removing MAC: %1").arg(it.key()),
+                                   "NetworkMonitor");
             it = m_previousStats.erase(it);
+        }
         else
             ++it;
     }
-
-    m_trackedMacs = macs;
+    m_trackedMacs = std::move(newSet);
 }
 
 void NetworkMonitor::refreshStats()
 {
-    if (!m_running.loadAcquire() || !m_initialized || m_trackedMacs.isEmpty())
+    if (!m_running.loadAcquire())
     {
-        Logger::instance().log(Logger::Debug, "Skipping refresh - monitor not running", "Network");
+        Logger::instance().log(Logger::Debug, "Skipping refresh - monitoring not running", "NetworkMonitor");
         return;
     }
 
-    QHash<QString, InterfaceStats> interfaceStats;
-    if (!readRawInterfaceStats(interfaceStats))
-        return;
-
-    // Convert to MAC-based stats using Qt's interface list
-    QHash<QString, InterfaceStats> macStats;
-    for (const QNetworkInterface& interface: QNetworkInterface::allInterfaces())
+    if (!m_initialized)
     {
-        QString mac = interface.hardwareAddress();
-        QString name = interface.name();
-
-        if (interfaceStats.contains(name) && m_trackedMacs.contains(mac))
-        {
-            macStats[mac] = interfaceStats[name];
-        }
+        Logger::instance().log(Logger::Debug, "Skipping refresh - not initialized", "NetworkMonitor");
+        return;
     }
 
-    qint64 now = QDateTime::currentMSecsSinceEpoch();
-
-    // Calculate speeds for each tracked MAC
-    for (const QString& mac : m_trackedMacs)
+    if (m_trackedMacs.isEmpty())
     {
-        if (macStats.contains(mac) && m_previousStats.contains(mac))
-        {
-            const InterfaceStats& current = macStats[mac];
-            const InterfaceStats& previous = m_previousStats[mac];
-            qint64 timeDelta = now - previous.lastUpdate;
+        Logger::instance().log(Logger::Debug, "Skipping refresh - no MACs to track", "NetworkMonitor");
+        return;
+    }
 
-            if (timeDelta > 0)
-            {
-                quint64 rxSpeed = (current.rxBytes - previous.rxBytes) * 1000 / timeDelta;
-                quint64 txSpeed = (current.txBytes - previous.txBytes) * 1000 / timeDelta;
-
-                // Update previous stats with current data
-                InterfaceStats updated = current;
-                updated.lastUpdate = now;
-                m_previousStats[mac] = updated;
-
-                emit statsUpdated(mac, rxSpeed, txSpeed);
-            }
-        }
+    QMutexLocker locker(&m_interfaceMutex);
+    QHash<QString, InterfaceStats> rawStats;
+    if (!readRawInterfaceStats(rawStats))
+    {
+        Logger::instance().log(Logger::Warning, "Failed to read raw interface stats", "NetworkMonitor");
+        return;
     }
 
     Logger::instance().log(Logger::Debug,
-                           QString("Updated stats for %1 interfaces").arg(macStats.size()),
-                           "Network");
-}
+                           QString("Read stats for %1 interfaces").arg(rawStats.size()),
+                           "NetworkMonitor");
 
-
-void NetworkMonitor::calculateSpeeds(const QHash<QString, InterfaceStats>& currentStats)
-{
-    qint64 now = QDateTime::currentMSecsSinceEpoch();
-
-    for(auto it = currentStats.constBegin(); it != currentStats.constEnd(); ++it)
+    // map interface-name → normalized MAC
+    QHash<QString, QString> name2mac;
+    for (QNetworkInterface& iface : QNetworkInterface::allInterfaces())
     {
-        const QString& interface = it.key();
-        const InterfaceStats& current = it.value();
+        auto mac = normalizeMac(iface.hardwareAddress());
+        name2mac[iface.name()] = mac;
+        Logger::instance().log(Logger::Trace,
+                               QString("Interface: %1 -> MAC: %2").arg(iface.name()).arg(mac),
+                               "NetworkMonitor");
+    }
 
-        if(m_previousStats.contains(interface))
+    // build per-MAC current readings
+    QHash<QString, InterfaceStats> current;
+    for (auto it = rawStats.constBegin(); it != rawStats.constEnd(); ++it)
+    {
+        auto name = it.key();
+        if (name2mac.contains(name) && m_trackedMacs.contains(name2mac[name]))
         {
-            const InterfaceStats& previous = m_previousStats[interface];
-            qint64 timeDelta = now - previous.lastUpdate;
-
-            if(timeDelta > 0)
-            {
-                quint64 rxSpeed = (current.rxBytes - previous.rxBytes) * 1000 / timeDelta;
-                quint64 txSpeed = (current.txBytes - previous.txBytes) * 1000 / timeDelta;
-
-                emit statsUpdated(interface, rxSpeed, txSpeed);
-            }
+            QString mac = name2mac[name];
+            current[mac] = it.value();
+            Logger::instance().log(Logger::Trace,
+                                   QString("Found tracked interface: %1 (MAC: %2)").arg(name).arg(mac),
+                                   "NetworkMonitor");
         }
     }
 
-    m_previousStats = currentStats;
-}
+    qint64 now = QDateTime::currentMSecsSinceEpoch();
+    const quint64 MAX_COUNTER = std::numeric_limits<quint64>::max();
+    int updatedCount = 0;
 
-// Platform-specific implementations
-bool NetworkMonitor::readRawInterfaceStats(QHash<QString, InterfaceStats>& stats)
-{
-    static QMutex readMutex;  // Add static mutex for thread safety
-    QMutexLocker locker(&readMutex);
-#ifdef Q_OS_WIN
-    PMIB_IF_TABLE2 ifTable;
-    if(GetIfTable2Ex(MibIfTableNormal, &ifTable) != NO_ERROR)
-        return false;
-
-    for(ULONG i = 0; i < ifTable->NumEntries; i++)
+    // compute delta
+    for (QString mac : m_trackedMacs)
     {
-        MIB_IF_ROW2* ifRow = &ifTable->Table[i];
-        QString name = QString::fromWCharArray(ifRow->Description);
+        if (!current.contains(mac))
+        {
+            Logger::instance().log(Logger::Debug,
+                                   QString("No current stats for MAC: %1").arg(mac),
+                                   "NetworkMonitor");
+            continue;
+        }
 
-        stats[name].rxBytes = ifRow->InOctets;
-        stats[name].txBytes = ifRow->OutOctets;
+        if (!m_previousStats.contains(mac))
+        {
+            Logger::instance().log(Logger::Warning,
+                                   QString("No previous stats for MAC: %1").arg(mac),
+                                   "NetworkMonitor");
+            continue;
+        }
+
+        auto& prev = m_previousStats[mac];
+        auto& cur  = current[mac];
+        qint64 dt = now - prev.lastUpdate;
+
+        // Skip invalid time intervals
+        if (dt <= 0)
+        {
+            Logger::instance().log(Logger::Warning,
+                                   QString("Invalid time delta %1 ms for MAC: %2").arg(dt).arg(mac),
+                                   "NetworkMonitor");
+            prev.lastUpdate = now;
+            continue;
+        }
+
+        if (dt > 10000)
+        {
+            Logger::instance().log(Logger::Debug,
+                                   QString("Large time delta %1 ms for MAC: %2 - skipping").arg(dt).arg(mac),
+                                   "NetworkMonitor");
+            prev = cur;
+            prev.lastUpdate = now;
+            continue;
+        }
+
+        // Handle counter wrap-around
+        quint64 rx_diff = (cur.rxBytes >= prev.rxBytes)
+                              ? (cur.rxBytes - prev.rxBytes)
+                              : (MAX_COUNTER - prev.rxBytes + cur.rxBytes);
+
+        quint64 tx_diff = (cur.txBytes >= prev.txBytes)
+                              ? (cur.txBytes - prev.txBytes)
+                              : (MAX_COUNTER - prev.txBytes + cur.txBytes);
+
+        // Calculate speeds in bytes per second
+        quint64 rx_bps = (rx_diff * 1000) / dt;
+        quint64 tx_bps = (tx_diff * 1000) / dt;
+
+        // Skip initial zero readings
+        if (prev.rxBytes == 0 || prev.txBytes == 0)
+        {
+            Logger::instance().log(Logger::Debug,
+                                   QString("Initial reading for MAC %1 - skipping calculation").arg(mac),
+                                   "NetworkMonitor");
+            prev = cur;
+            prev.lastUpdate = now;
+            continue;
+        }
+
+        // Log speed calculation details
+        Logger::instance().log(Logger::Debug,
+                               QString("MAC: %1 DT: %2ms RX: %3 bps TX: %4 bps (Diff: RX %5 TX %6)")
+                                   .arg(mac)
+                                   .arg(dt)
+                                   .arg(rx_bps)
+                                   .arg(tx_bps)
+                                   .arg(rx_diff)
+                                   .arg(tx_diff),
+                               "NetworkMonitor");
+
+        prev = cur;
+        prev.lastUpdate = now;
+        emit statsUpdated(mac, rx_bps, tx_bps);
+        updatedCount++;
     }
 
-    FreeMibTable(ifTable);
+    Logger::instance().log(Logger::Info,
+                           QString("Updated %1/%2 interfaces").arg(updatedCount).arg(m_trackedMacs.size()),
+                           "NetworkMonitor");
+}
+
+bool NetworkMonitor::readRawInterfaceStats(QHash<QString, InterfaceStats>& stats)
+{
+    static QMutex readLock;
+    QMutexLocker locker(&readLock);
+
+    Logger::instance().log(Logger::Debug, "Reading raw interface stats", "NetworkMonitor");
+
+#if defined(Q_OS_WIN)
+    PMIB_IF_TABLE2 table = nullptr;
+    DWORD result = GetIfTable2Ex(MibIfTableNormal, &table);
+
+    if (result != NO_ERROR)
+    {
+        Logger::instance().log(Logger::Error,
+                               QString("GetIfTable2Ex failed with error: %1").arg(result),
+                               "NetworkMonitor");
+        return false;
+    }
+
+    for (ULONG i = 0; i < table->NumEntries; ++i)
+    {
+        MIB_IF_ROW2* row = &table->Table[i];
+        QString name = QString::fromWCharArray(row->Description);
+
+        stats[name].rxBytes = row->InOctets;
+        stats[name].txBytes = row->OutOctets;
+
+        Logger::instance().log(Logger::Trace,
+                               QString("Interface: %1 RX: %2 TX: %3")
+                                   .arg(name)
+                                   .arg(row->InOctets)
+                                   .arg(row->OutOctets),
+                               "NetworkMonitor");
+    }
+
+    FreeMibTable(table);
     return true;
 
 #elif defined(Q_OS_MAC)
     int mib[] = {CTL_NET, PF_ROUTE, 0, 0, NET_RT_IFLIST2, 0};
-    size_t len;
-    if(sysctl(mib, 6, NULL, &len, NULL, 0) < 0)
-        return false;
+    size_t len = 0;
 
-    QByteArray buf(len, 0);
-    if(sysctl(mib, 6, buf.data(), &len, NULL, 0) < 0)
-        return false;
-
-    char* ptr = buf.data();
-    char* end = ptr + len;
-
-    while(ptr < end)
+    if (sysctl(mib, 6, nullptr, &len, nullptr, 0) < 0)
     {
-        struct if_msghdr* ifm = (struct if_msghdr*)ptr;
-        if(ifm->ifm_type == RTM_IFINFO2)
-        {
-            struct if_msghdr2* if2m = (struct if_msghdr2*)ifm;
-            QString name = QString::fromUtf8(if2m->ifm_data.ifi_name);
+        Logger::instance().log(Logger::Error,
+                               "sysctl failed to get buffer size", "NetworkMonitor");
+        return false;
+    }
 
-            stats[name].rxBytes = if2m->ifm_data.ifi_ibytes;
-            stats[name].txBytes = if2m->ifm_data.ifi_obytes;
+    QByteArray buf(static_cast<int>(len), 0);
+    if (sysctl(mib, 6, buf.data(), &len, nullptr, 0) < 0)
+    {
+        Logger::instance().log(Logger::Error,
+                               "sysctl failed to read interface data", "NetworkMonitor");
+        return false;
+    }
+
+    const char* ptr = buf.constData();
+    const char* end = ptr + len;
+
+    while (ptr < end)
+    {
+        const if_msghdr* ifm = reinterpret_cast<const if_msghdr*>(ptr);
+
+        if (ifm->ifm_type == RTM_IFINFO2)
+        {
+            const if_msghdr2* if2 = reinterpret_cast<const if_msghdr2*>(ptr);
+            const sockaddr_dl* sdl = reinterpret_cast<const sockaddr_dl*>(ifm + 1);
+
+            if (sdl->sdl_family == AF_LINK)
+            {
+                QString name = QString::fromLatin1(sdl->sdl_data, sdl->sdl_nlen);
+                stats[name].rxBytes = if2->ifm_data.ifi_ibytes;
+                stats[name].txBytes = if2->ifm_data.ifi_obytes;
+
+                Logger::instance().log(Logger::Trace,
+                                       QString("Interface: %1 RX: %2 TX: %3")
+                                           .arg(name)
+                                           .arg(if2->ifm_data.ifi_ibytes)
+                                           .arg(if2->ifm_data.ifi_obytes),
+                                       "NetworkMonitor");
+            }
         }
         ptr += ifm->ifm_msglen;
     }
     return true;
 
 #elif defined(Q_OS_LINUX)
-    QFile file("/proc/net/dev");
-    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return false;
-
-    QTextStream in(&file);
-    in.readLine(); // Skip header
-    in.readLine();
-
-    while(!in.atEnd())
+    QFile f("/proc/net/dev");
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        QString line = in.readLine().simplified();
-        QStringList parts = line.split(' ');
-
-        if(parts.size() < 10) continue;
-
-        QString interface = parts[0].replace(":", "");
-        quint64 rxBytes = parts[1].toULongLong();
-        quint64 txBytes = parts[9].toULongLong();
-
-        stats[interface].rxBytes = rxBytes;
-        stats[interface].txBytes = txBytes;
+        Logger::instance().log(Logger::Error,
+                               "Failed to open /proc/net/dev", "NetworkMonitor");
+        return false;
     }
+
+    QTextStream in(&f);
+    in.readLine(); // Skip header
+    in.readLine(); // Skip divider
+
+    int validCount = 0;
+    int skippedCount = 0;
+
+    while (!in.atEnd())
+    {
+        QString line = in.readLine().trimmed();
+        if (line.isEmpty()) continue;
+
+        // Find the interface name (ends with colon)
+        int colonPos = line.indexOf(':');
+        if (colonPos < 0)
+        {
+            skippedCount++;
+            continue;
+        }
+
+        QString iface = line.left(colonPos).trimmed();
+        QString data = line.mid(colonPos + 1).trimmed();
+
+        // Split data columns
+        auto parts = data.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+
+        if (parts.size() < 16)
+        {
+            Logger::instance().log(Logger::Warning,
+                                   QString("Skipping interface %1 with only %2 columns")
+                                       .arg(iface)
+                                       .arg(parts.size()),
+                                   "NetworkMonitor");
+            skippedCount++;
+            continue;
+        }
+
+        bool rxOk, txOk;
+        quint64 rxBytes = parts[0].toULongLong(&rxOk);
+        quint64 txBytes = parts[8].toULongLong(&txOk);
+
+        if (!rxOk || !txOk)
+        {
+            Logger::instance().log(Logger::Warning,
+                                   QString("Invalid numbers for interface %1: RX=%2 TX=%3")
+                                       .arg(iface)
+                                       .arg(parts[0])
+                                       .arg(parts[8]),
+                                   "NetworkMonitor");
+            skippedCount++;
+            continue;
+        }
+
+        stats[iface].rxBytes = rxBytes;
+        stats[iface].txBytes = txBytes;
+        validCount++;
+
+        Logger::instance().log(Logger::Trace,
+                               QString("Interface: %1 RX: %2 TX: %3")
+                                   .arg(iface)
+                                   .arg(rxBytes)
+                                   .arg(txBytes),
+                               "NetworkMonitor");
+    }
+
+    Logger::instance().log(Logger::Debug,
+                           QString("Parsed %1 interfaces, skipped %2").arg(validCount).arg(skippedCount),
+                           "NetworkMonitor");
     return true;
 
 #else
+    Logger::instance().log(Logger::Warning, "Unsupported platform", "NetworkMonitor");
     return false;
 #endif
 }

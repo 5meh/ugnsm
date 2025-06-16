@@ -8,18 +8,6 @@ NetworkInfoModel::NetworkInfoModel(NetworkInfoPtr model, QObject *parent)
     : QObject(parent),
     m_model(model)
 {
-    // m_propertyMap =
-    //     {
-    //         {"name", "Interface"},
-    //         {"mac", "MAC Address"},
-    //         {"ipAddress", "IP Address"},
-    //         {"netmask", "Netmask"},
-    //         {"status", "Status"},
-    //         {"downloadSpeed", "Download Speed"},
-    //         {"uploadSpeed", "Upload Speed"},
-    //         {"totalSpeed", "Total Speed"},
-    //         {"lastUpdate", "Last Update"}
-    //     };
     m_updateTimer.setSingleShot(true);
     m_updateTimer.setInterval(50);  // Max 50ms delay for batched updates
     connectModelSignals();
@@ -149,8 +137,8 @@ QString NetworkInfoModel::getLastUpdate() const
 
 void NetworkInfoModel::updateSpeeds(quint64 rx, quint64 tx)
 {
-    m_model->setRxSpeed(static_cast<qint64>(rx));
-    m_model->setTxSpeed(static_cast<qint64>(tx));
+    m_model->setRxSpeed(rx);
+    m_model->setTxSpeed(tx);
     m_model->setLastUpdateTime(QDateTime::currentMSecsSinceEpoch());
     markPropertyChanged("downloadSpeed");
     markPropertyChanged("uploadSpeed");
@@ -165,48 +153,69 @@ QString NetworkInfoModel::formatTimestamp() const
     .toString("hh:mm:ss.zzz");
 }
 
-QString NetworkInfoModel::formatSpeed(quint64 bytes) const
+QString NetworkInfoModel::formatSpeed(quint64 bytesPerSec) const
 {
-    QString unitSetting = GlobalManager::settingsManager()->getDataUnits();
-    int precision = GlobalManager::settingsManager()->getDecimalPrecision();
-    double value = bytes;
+    SettingsManager* settings = GlobalManager::settingsManager();
+    QString unitSetting = settings->getDataUnits();
+    int precision = settings->getDecimalPrecision();
+
+    double value = 0;
     QString unit;
 
-    if (unitSetting == "Bytes")
-        unit = "B";
-    else if (unitSetting == "KB")
+    if (unitSetting == "KB")
     {
+        value = bytesPerSec / 1024.0;
         unit = "KB";
-        value /= 1024.0;
     }
     else if (unitSetting == "MB")
     {
+        value = bytesPerSec / (1024.0 * 1024.0);
         unit = "MB";
-        value /= (1024.0 * 1024.0);
     }
     else if (unitSetting == "GB")
     {
+        value = bytesPerSec / (1024.0 * 1024.0 * 1024.0);
         unit = "GB";
-        value /= (1024.0 * 1024.0 * 1024.0);
     }
     else
     {
-        // Fallback to automatic scaling for unknown units
-        const QStringList units = {"B", "KB", "MB", "GB"};
-        int unitIndex = 0;
-        double speed = bytes;
-
-        while (speed >= 1024 && unitIndex < units.size() - 1)
-        {
-            speed /= 1024;
-            unitIndex++;
-        }
-        // Use settings precision for non-byte units
-        int displayPrecision = (unitIndex > 0) ? precision : 0;
-        return QString("%1 %2").arg(speed, 0, 'f', displayPrecision).arg(units[unitIndex]);
+        value = static_cast<double>(bytesPerSec);
+        unit = "B";
     }
 
-    return QString("%1 %2").arg(value, 0, 'f', precision).arg(unit);
+    // Handle very small values
+    if (value < 1 && value > 0)
+    {
+        // Switch to lower unit
+        if (unit == "GB" && value > 0.001)
+        {
+            value *= 1024;
+            unit = "MB";
+        }
+        else if (unit == "MB" && value > 0.001)
+        {
+            value *= 1024;
+            unit = "KB";
+        }
+        else if (unit == "KB" && value > 0.1)
+        {
+            value *= 1024;
+            unit = "B";
+        }
+    }
+
+    // Determine precision dynamically for small values
+    int actualPrecision = precision;
+    if (value < 1.0 && value > 0.0)
+    {
+        actualPrecision = qMin(4, precision + 2);
+    }
+    else if (value < 10.0)
+    {
+        actualPrecision = qMin(3, precision + 1);
+    }
+
+    return QString::number(value, 'f', actualPrecision) + " " + unit;
 }
 
 void NetworkInfoModel::connectModelSignals()

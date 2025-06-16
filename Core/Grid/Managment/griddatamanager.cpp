@@ -251,6 +251,7 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
         QString("model_creation"),
         [this, usedInfos]()
         {
+            QSet<QString> macsToTrack;
             for(int x = 0; x < getRows(); x++)
             {
                 for(int y = 0; y < getCols(); y++)
@@ -258,26 +259,30 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
                     const int linearIndex = x * getCols() + y;
                     if(linearIndex >= usedInfos.size())
                         continue;
-                    m_data[x][y] = QSharedPointer<NetworkInfoModel>::create(usedInfos[linearIndex], this);
-                    m_macIndex[usedInfos[linearIndex]->getMac()] = QPoint(x,y);
+
+                    auto networkInfo = usedInfos[linearIndex];
+                    QString mac = networkInfo->getMac();
+                    m_data[x][y] = QSharedPointer<NetworkInfoModel>::create(networkInfo, this);
+                    m_macIndex[mac] = QPoint(x,y);
+                    macsToTrack.insert(mac);
                     ++m_validDataCount;
                     //emit cellChanged(QPoint(x,y), m_data[x][y]);
                 }
             }
 
-            QSet<QString> interfaces;
+            // QSet<QString> interfaces;
 
-            for (int r = 0; r < m_data.size(); ++r)
-            {
-                for (int c = 0; c < m_data[r].size(); ++c)
-                {
-                    QSharedPointer<NetworkInfoModel> model = m_data[r][c];
-                    if (!model.isNull())
-                        interfaces.insert(model->getName());
-                }
-            }
+            // for (int r = 0; r < m_data.size(); ++r)
+            // {
+            //     for (int c = 0; c < m_data[r].size(); ++c)
+            //     {
+            //         QSharedPointer<NetworkInfoModel> model = m_data[r][c];
+            //         if (!model.isNull())
+            //             interfaces.insert(model->getName());
+            //     }
+            // }
 
-            m_monitor->initializeStats(interfaces);
+            m_monitor->initializeStats(macsToTrack);
             m_monitor->startMonitoring(1000);
 
             for(int x = 0; x < getRows(); x++)

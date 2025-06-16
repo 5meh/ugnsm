@@ -49,21 +49,6 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
     if ((event->pos() - m_dragStartPos).manhattanLength() < QApplication::startDragDistance())
         return;
 
-    // if (!GlobalManager::dragManager()->isDragging())
-    //     return;
-
-    // QPointer<GridViewManager> gridManager;
-    // if (QWidget* parent = parentWidget())
-    // {
-    //     if (QWidget* grandParent = parent->parentWidget())
-    //         gridManager = qobject_cast<GridViewManager*>(grandParent);
-    // }
-
-    // if (gridManager)
-    // {
-    //     GlobalManager::dragManager()->tryStartDrag();
-    //     gridManager->setUpdatesEnabled(false);
-    // }
     GlobalManager::dragManager()->tryStartDrag();
 
     QDrag *drag = new QDrag(this);
@@ -85,11 +70,6 @@ void GridCellWidget::mouseMoveEvent(QMouseEvent *event)
 
     Qt::DropAction result = drag->exec(Qt::MoveAction);
 
-    // if (gridManager)
-    // {
-    //     GlobalManager::dragManager()->endDrag();
-    //     gridManager->setUpdatesEnabled(true);
-    // }
     GlobalManager::dragManager()->endDrag();
 
     if (result == Qt::IgnoreAction)
@@ -117,11 +97,6 @@ void GridCellWidget::dropEvent(QDropEvent *event)
 
     qDebug() << "Drop event at" << getGridIndex()
     << "with data:" << event->mimeData()->data("application/x-grid-index");
-    // if (!event->mimeData()->hasFormat("application/x-grid-index"))
-    // {
-    //     event->ignore();
-    //     return;
-    // }
 
     event->acceptProposedAction();
 
@@ -135,7 +110,6 @@ void GridCellWidget::dropEvent(QDropEvent *event)
     stream >> sourceIndex;
     if(sourceIndex != getGridIndex())
         emit swapRequested(sourceIndex, getGridIndex());
-    //event->acceptProposedAction();
 
     QFrame::dropEvent(event);
 }

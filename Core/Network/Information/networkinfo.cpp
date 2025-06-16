@@ -152,7 +152,7 @@ void NetworkInfo::setLastTxBytes(quint64 newLastTxBytes)
     }
 }
 
-void NetworkInfo::setRxSpeed(qint64 newRxSpeed)
+void NetworkInfo::setRxSpeed(quint64 newRxSpeed)
 {
     if (m_rxSpeed != newRxSpeed)
     {
@@ -162,7 +162,7 @@ void NetworkInfo::setRxSpeed(qint64 newRxSpeed)
     }
 }
 
-void NetworkInfo::setTxSpeed(qint64 newTxSpeed)
+void NetworkInfo::setTxSpeed(quint64 newTxSpeed)
 {
     if (m_txSpeed != newTxSpeed)
     {

@@ -49,7 +49,6 @@ void GridManager::initializeView()
 void GridManager::initializeData()
 {
     m_dataManager->initializeGrid(GRID_ROWS_DEFAULT, GRID_COLUMNS_DEFAUT);
-    //QMetaObject::invokeMethod(m_dataManager, "refreshData", Qt::QueuedConnection);
 }
 
 void GridManager::setupGridManager()

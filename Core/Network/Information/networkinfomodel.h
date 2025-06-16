@@ -63,7 +63,7 @@ private:
     void markPropertyChanged(const QString& property);
     void flushPropertyChanges();
     QString formatTimestamp() const;
-    QString formatSpeed(quint64 bytes) const;
+    QString formatSpeed(quint64 bytesPerSec) const;
 
     QTimer m_updateTimer;  // Add batched update timer
     const int UPDATE_THRESHOLD = 3;  // Batch when 3+ properties change

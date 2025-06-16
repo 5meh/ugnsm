@@ -6,8 +6,9 @@
 #include <QTimer>
 #include <QMutex>
 #include <QSet>
+#include <QAtomicInt>
 
-class NetworkMonitor: public QObject
+class NetworkMonitor : public QObject
 {
     Q_OBJECT
 public:
@@ -34,18 +35,14 @@ private:
         qint64 lastUpdate = 0;
     };
 
-    void calculateSpeeds(const QHash<QString, InterfaceStats>& currentStats);
-
-    // Platform-specific implementation
+    static QString normalizeMac(const QString& raw);
     bool readRawInterfaceStats(QHash<QString, InterfaceStats>& stats);
-
-    QAtomicInt m_running{0};
-    int m_interval;
-
+    QAtomicInt   m_running{0};
+    int          m_interval = 1000;
     QHash<QString, InterfaceStats> m_previousStats;
-    QSet<QString> m_trackedMacs;
-    QMutex m_interfaceMutex;
-    bool m_initialized = false;
+    QSet<QString>                  m_trackedMacs;
+    QMutex        m_interfaceMutex;
+    bool          m_initialized = false;
 };
 
 #endif // NETWORKMONITOR_H

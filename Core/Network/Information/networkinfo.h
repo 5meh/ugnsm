@@ -43,8 +43,8 @@ public:
     bool isRunning() const { return m_isRunning; }
     quint64 getLastRxBytes() const { return m_lastRxBytes; }
     quint64 getLastTxBytes() const { return m_lastTxBytes; }
-    qint64 getRxSpeed() const { return m_rxSpeed; }
-    qint64 getTxSpeed() const { return m_txSpeed; }
+    quint64 getRxSpeed() const { return m_rxSpeed; }
+    quint64 getTxSpeed() const { return m_txSpeed; }
     quint64 getTotalSpeed() const { return static_cast<quint64>(m_rxSpeed + m_txSpeed); }
     qint64 getLastUpdateTime() const { return m_lastUpdateTime; }
 
@@ -58,8 +58,8 @@ public:
     void setIsRunning(bool newIsRunning);
     void setLastRxBytes(quint64 newLastRxBytes);
     void setLastTxBytes(quint64 newLastTxBytes);
-    void setRxSpeed(qint64 newRxSpeed);
-    void setTxSpeed(qint64 newTxSpeed);
+    void setRxSpeed(quint64 newRxSpeed);
+    void setTxSpeed(quint64 newTxSpeed);
     void setLastUpdateTime(qint64 newLastUpdateTime);
 
     void resetIpv4();
@@ -101,8 +101,8 @@ private:
     QDateTime m_timestamp;
     quint64 m_lastRxBytes;
     quint64 m_lastTxBytes;
-    qint64 m_rxSpeed;
-    qint64 m_txSpeed;
+    quint64 m_rxSpeed;
+    quint64 m_txSpeed;
     qint64 m_lastUpdateTime;
 };
 

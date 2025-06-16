@@ -87,9 +87,6 @@ void GridViewManager::setCell(QPoint indx, GridCellWidget* widget)
 
     widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
-    //connect(widget, &GridCellWidget::dragStarted, this, &GridViewManager::handleDragStart);
-    //connect(widget, &GridCellWidget::dragEnded, this, &GridViewManager::handleDragEnd);
-
     widget->setFocusPolicy(Qt::NoFocus);
     widget->setAttribute(Qt::WA_TransparentForMouseEvents, false);
 }
@@ -98,6 +95,12 @@ void GridViewManager::updateCell(QPoint indx, QSharedPointer<NetworkInfoModel> m
 {
     if (indx.x() < 0 || indx.x() >= gridRows() || indx.y() < 0 || indx.y() >= gridCols())
         return;
+
+    if (model.isNull())
+    {
+        clearCell(indx.x(), indx.y());
+        return;
+    }
 
     GridCellWidget* current = cellAt(indx.x(), indx.y());
     setUpdatesEnabled(false);
@@ -108,7 +111,7 @@ void GridViewManager::updateCell(QPoint indx, QSharedPointer<NetworkInfoModel> m
         if (networkWidget)
         {
             // Update existing widget if model is different
-            if (networkWidget->getModel().data() != model.data())
+            if (networkWidget->getModel().data() != model.data())//TODO:add proper comprasion, and check if it's happen "higher"
             {
                 networkWidget->setViewModel(model);
             }
@@ -119,14 +122,6 @@ void GridViewManager::updateCell(QPoint indx, QSharedPointer<NetworkInfoModel> m
             auto* newWidget = createCellWidgetForModel(model);
             newWidget->setGridIndex(indx);
             setCell(indx, newWidget);
-        }
-    }
-    else
-    {
-        // Replace with placeholder if not already one
-        if (!qobject_cast<PlaceHolderCellWidget*>(current))
-        {
-            clearCell(indx.x(), indx.y());
         }
     }
     setUpdatesEnabled(true);
