@@ -27,9 +27,7 @@ public:
     void setGridDimensions(int rows, int cols);
     void refresh();
 
-    //GridViewManager* getView() const;
-
-    QWidget *gridWidget() const;
+    QWidget *gridWidget() const;//lil hacky :)
 public slots:
     void handleAutoRefreshChanged(bool enabled);
     void handleUpdateIntervalChanged(int interval);

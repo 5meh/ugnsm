@@ -22,6 +22,17 @@ GridViewManager::GridViewManager(QWidget* parent)
         widget->style()->unpolish(widget);
         widget->style()->polish(widget);
     };
+
+    m_resizeTimer = new QTimer(this);
+    m_resizeTimer->setSingleShot(true);
+    connect(m_resizeTimer, &QTimer::timeout, this, [this]() {
+        if (m_needsSizeUpdate)
+        {
+            applyUniformCellSize();
+            m_needsSizeUpdate = false;
+        }
+    });
+
     m_gridLayout->setSpacing(10);
     m_gridLayout->setContentsMargins(10, 10, 10, 10);
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -66,6 +77,8 @@ void GridViewManager::setCell(QPoint indx, GridCellWidget* widget)
     }
 
     widget->setGridIndex(indx);
+    if (!m_maxCellSize.isEmpty())
+        widget->setFixedSize(m_maxCellSize);
 
     m_gridLayout->addWidget(widget, indx.x(), indx.y());
     m_cells[indx.x()][indx.y()] = widget;
@@ -125,6 +138,7 @@ void GridViewManager::updateCell(QPoint indx, QSharedPointer<NetworkInfoModel> m
             setCell(indx, newWidget);
         }
     }
+    m_resizeTimer->start(100);
     setUpdatesEnabled(true);
 }
 
@@ -304,12 +318,20 @@ QPoint GridViewManager::getCellIndexFromPos(const QPoint& indx)
 GridCellWidget* GridViewManager::createCellWidgetForModel(QSharedPointer<NetworkInfoModel> model)
 {
     NetworkInfoViewWidget* widget = new NetworkInfoViewWidget(model);
-    if(widget->size().width() > m_maxCellSize.width() &&  widget->size().height() > m_maxCellSize.height())
-    {
-        m_maxCellSize = widget->size();
-        //applyUniformCellSize();//TODO:fix later
 
+    widget->adjustSize();
+    QSize newSize = widget->size();
+
+    if (newSize.width() > m_maxCellSize.width() ||
+        newSize.height() > m_maxCellSize.height())
+    {
+        m_maxCellSize = newSize;
+        m_needsSizeUpdate = true;
+        m_resizeTimer->start(100); // Schedule resize in 100ms
     }
+
+     widget->setFixedSize(m_maxCellSize);
+
     connect(model.get(), &NetworkInfoModel::propertyChanged,
             widget, &NetworkInfoViewWidget::updateProperty,
             Qt::QueuedConnection);
@@ -363,6 +385,8 @@ void GridViewManager::performSwap(QPoint source, QPoint target)
             clearHighlight(0, 0);
     }
 
+    m_resizeTimer->start(100);
+
     sourceWidget->blockSignals(false);
     targetWidget->blockSignals(false);
 
@@ -371,6 +395,9 @@ void GridViewManager::performSwap(QPoint source, QPoint target)
 
 void GridViewManager::applyUniformCellSize()
 {
+    if (m_maxCellSize.isEmpty())
+        return;
+
     for (auto& row : m_cells)
         for (auto* cell : row)
             cell->setFixedSize(m_maxCellSize);

@@ -78,7 +78,7 @@ void MainWindow::resizeEvent(QResizeEvent* event)
     QMainWindow::resizeEvent(event);
     if(m_gridManager)
     {
-        m_gridManager->gridWidget()->update();
+        m_gridManager->updateGridDisplay();
     }
 }
 

@@ -50,6 +50,8 @@ private:
     void applyUniformCellSize();
 
     QSize m_maxCellSize;
+    bool m_needsSizeUpdate = false;
+    QTimer* m_resizeTimer = nullptr;
     bool m_updatesEnabled = true;
     std::function<void(QWidget*)> updateUI;//TODO:mb remove no need in it
     QGridLayout* m_gridLayout;
