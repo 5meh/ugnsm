@@ -9,15 +9,7 @@
 LedIndicatorDelegate::LedIndicatorDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
 {
-    // QTimer *timer = new QTimer(this);
-    // connect(timer, &QTimer::timeout, this, [this]()
-    //         {
-    //             if (QTableView* view = qobject_cast<QTableView*>(this->parent()))
-    //             {
-    //                 view->viewport()->update();
-    //             }
-    //         });
-    // timer->start(50);
+
 }
 
 void LedIndicatorDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const

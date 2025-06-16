@@ -40,23 +40,19 @@ private:
                                const QString& value);
 
     void updateSpeedIndicators();
-    //void resizeKeyValTable();
     void setupUI();
     void setKeyValueTbl();
     void addKeyValue(QPair<QString, QString>);
     void setupTableView();
     void connectViewModel();
-
+    void fitTableToContents();
 
     QSharedPointer<NetworkInfoModel> m_viewModel;
-
     QTableView* keyValueTbl;
     QStandardItemModel* keyValModel;
     QHash<QString, int> m_propertyRowMap;
 
-    QLabel crownLbl;
-    const QColor m_normalBorder = QColor(200, 200, 200);
-    const QColor m_dragBorder = QColor(100, 150, 250);
+    //QLabel crownLbl;
     bool m_updating;
 };
 

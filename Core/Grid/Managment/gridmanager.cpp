@@ -21,6 +21,17 @@ GridManager::~GridManager()
 
 }
 
+QWidget* GridManager::gridWidget() const
+{
+    return m_viewManager.get();
+}
+
+void GridManager::updateGridDisplay()
+{
+    if (m_viewManager)
+        m_viewManager->update();
+}
+
 int GridManager::getRows() const
 {
     return m_dataManager->getRows();
@@ -120,9 +131,60 @@ void GridManager::setupConnections()
                                                           &GridDataManager::refreshData,
                                                           QThread::NormalPriority);
     });
+    connect(settings, &SettingsManager::dataUnitsChanged,
+            this, refreshDisplay);
+    connect(settings, &SettingsManager::decimalPrecisionChanged,
+            this, refreshDisplay);
+
+    connect(GlobalManager::settingsManager(), &SettingsManager::autoRefreshChanged,
+            this, &GridManager::handleAutoRefreshChanged);
+
+    connect(GlobalManager::settingsManager(), &SettingsManager::updateIntervalChanged,
+            this, &GridManager::handleUpdateIntervalChanged);
 }
 
-GridViewManager* GridManager::getView() const
+void GridManager::updateRefreshTask()
 {
-    return m_viewManager.data();
+    GlobalManager::taskScheduler()->cancelRepeating("data_refresh");
+
+    if (GlobalManager::settingsManager()->getAutoRefresh())
+    {
+        int interval = GlobalManager::settingsManager()->getUpdateInterval();
+        GlobalManager::taskScheduler()->scheduleRepeating("data_refresh",
+                                                          interval,
+                                                          m_dataManager,
+                                                          &GridDataManager::refreshData,
+                                                          QThread::NormalPriority);
+
+        Logger::instance().log(Logger::Info,
+                               QString("Scheduled auto-refresh every %1 ms").arg(interval),
+                               "GridManager");
+    }
+    else
+    {
+        Logger::instance().log(Logger::Info, "Auto-refresh disabled", "GridManager");
+    }
 }
+
+void GridManager::handleAutoRefreshChanged(bool enabled)
+{
+    Logger::instance().log(Logger::Info,
+                           QString("Auto-refresh changed: %1").arg(enabled ? "Enabled" : "Disabled"),
+                           "GridManager");
+
+    updateRefreshTask();
+}
+
+void GridManager::handleUpdateIntervalChanged(int interval)
+{
+    Logger::instance().log(Logger::Info,
+                           QString("Update interval changed: %1 ms").arg(interval),
+                           "GridManager");
+
+    updateRefreshTask();
+}
+
+// GridViewManager* GridManager::getView() const
+// {
+//     return m_viewManager.data();
+// }

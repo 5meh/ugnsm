@@ -41,7 +41,10 @@ void SettingsDialog::setupUI()
     m_showBestNetworkWarningCheck = new QCheckBox(this);
 
     m_dataUnitsCombo = new QComboBox(this);
-    m_dataUnitsCombo->addItems({"Bytes", "KB", "MB", "GB"});
+    m_dataUnitsCombo->addItem("Bytes", "Bytes");
+    m_dataUnitsCombo->addItem("KB", "KB");
+    m_dataUnitsCombo->addItem("MB", "MB");
+    m_dataUnitsCombo->addItem("GB", "GB");
 
     m_decimalPrecisionSpin = new QSpinBox(this);
     m_decimalPrecisionSpin->setRange(0, 4);
@@ -49,7 +52,9 @@ void SettingsDialog::setupUI()
     m_autoRefreshCheck = new QCheckBox("Enable auto-refresh", this);
 
     m_bestNetworkCriteriaCombo = new QComboBox(this);
-    m_bestNetworkCriteriaCombo->addItems({"Speed", "Signal Strength", "Combined Score"});
+    m_bestNetworkCriteriaCombo->addItem("Speed", "Speed");
+    m_bestNetworkCriteriaCombo->addItem("Signal Strength", "SignalStrength");
+    m_bestNetworkCriteriaCombo->addItem("Combined Score", "CombinedScore");
 
     layout->insertRow(0, "Grid Update Strategy:", m_updateStrategyCombo);
     layout->insertRow(2, "Data Units:", m_dataUnitsCombo);
@@ -80,7 +85,12 @@ void SettingsDialog::createConnections()
 
 void SettingsDialog::loadSettings()
 {
-    m_updateStrategyCombo->setCurrentText(GlobalManager::settingsManager()->getGridUpdateStrategy());
+     QString updateStrategy = GlobalManager::settingsManager()->getGridUpdateStrategy();
+    int idx = m_updateStrategyCombo->findData(updateStrategy);
+    if (idx >= 0)
+        m_updateStrategyCombo->setCurrentIndex(idx);
+    else
+        m_updateStrategyCombo->setCurrentIndex(0); // default
     m_sortStrategyCombo->setCurrentText(GlobalManager::settingsManager()->getSortStrategy());
     m_updateIntervalSpin->setValue(GlobalManager::settingsManager()->getUpdateInterval());
     m_showBestNetworkWarningCheck->setChecked(GlobalManager::settingsManager()->getShowBestNetworkWarning());
@@ -95,11 +105,11 @@ void SettingsDialog::applySettings()
     GlobalManager::settingsManager()->setGridUpdateStrategy(m_updateStrategyCombo->currentData().toString());
     GlobalManager::settingsManager()->setSortStrategy(m_sortStrategyCombo->currentText());
     GlobalManager::settingsManager()->setUpdateInterval(m_updateIntervalSpin->value());
-    GlobalManager::settingsManager()->setDataUnits(m_dataUnitsCombo->currentData().toString());
+    GlobalManager::settingsManager()->setDataUnits(m_dataUnitsCombo->currentText());
     GlobalManager::settingsManager()->setDecimalPrecision(m_decimalPrecisionSpin->value());
     GlobalManager::settingsManager()->setShowBestNetworkWarning(m_showBestNetworkWarningCheck->isChecked());
-    GlobalManager::settingsManager()->setAutoRefresh(m_autoRefreshCheck->isChecked());
-    GlobalManager::settingsManager()->setBestNetworkCriteria(m_bestNetworkCriteriaCombo->currentData().toString());
+    GlobalManager::settingsManager()->setAutoRefresh(m_autoRefreshCheck->checkState());
+    GlobalManager::settingsManager()->setBestNetworkCriteria(m_bestNetworkCriteriaCombo->currentText());
 }
 
 void SettingsDialog::accept()

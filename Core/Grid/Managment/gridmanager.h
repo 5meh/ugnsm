@@ -27,14 +27,20 @@ public:
     void setGridDimensions(int rows, int cols);
     void refresh();
 
-    GridViewManager* getView() const;
+    //GridViewManager* getView() const;
 
+    QWidget *gridWidget() const;
+public slots:
+    void handleAutoRefreshChanged(bool enabled);
+    void handleUpdateIntervalChanged(int interval);
+    void updateGridDisplay();
 signals:
     void gridDimensionsChanged();
 
 private:
     void initializeView();
     void initializeData();
+    void updateRefreshTask();
     void setupGridManager();
     void setupConnections();
 

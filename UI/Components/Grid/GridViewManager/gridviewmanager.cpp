@@ -86,6 +86,7 @@ void GridViewManager::setCell(QPoint indx, GridCellWidget* widget)
             this, &GridViewManager::handleSwapRequested);
 
     widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    //widget->setMinimumSize(200, 150); // Set minimum size to match network widgets
 
     widget->setFocusPolicy(Qt::NoFocus);
     widget->setAttribute(Qt::WA_TransparentForMouseEvents, false);
@@ -303,12 +304,16 @@ QPoint GridViewManager::getCellIndexFromPos(const QPoint& indx)
 GridCellWidget* GridViewManager::createCellWidgetForModel(QSharedPointer<NetworkInfoModel> model)
 {
     NetworkInfoViewWidget* widget = new NetworkInfoViewWidget(model);
+    if(widget->size().width() > m_maxCellSize.width() &&  widget->size().height() > m_maxCellSize.height())
+    {
+        m_maxCellSize = widget->size();
+        //applyUniformCellSize();//TODO:fix later
 
+    }
     connect(model.get(), &NetworkInfoModel::propertyChanged,
             widget, &NetworkInfoViewWidget::updateProperty,
             Qt::QueuedConnection);
 
-    //widget->setUpdatesEnabled(true);
     return widget;
 }
 
@@ -347,6 +352,11 @@ void GridViewManager::performSwap(QPoint source, QPoint target)
         //bestCell->style()->unpolish(bestCell);
         //bestCell->style()->polish(bestCell);
 
+        if (auto* placeholder = qobject_cast<PlaceHolderCellWidget*>(bestCell))
+        {
+            placeholder->setGridIndex(QPoint(0, 0)); // Force text update
+        }
+
         if (!isPlaceholder(bestCell))
             highlightCell(0, 0);
         else
@@ -357,4 +367,11 @@ void GridViewManager::performSwap(QPoint source, QPoint target)
     targetWidget->blockSignals(false);
 
     emit cellSwapRequestToDataManager(source, target);
+}
+
+void GridViewManager::applyUniformCellSize()
+{
+    for (auto& row : m_cells)
+        for (auto* cell : row)
+            cell->setFixedSize(m_maxCellSize);
 }

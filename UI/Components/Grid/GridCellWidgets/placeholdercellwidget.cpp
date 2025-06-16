@@ -33,6 +33,7 @@ void PlaceHolderCellWidget::setGridIndex(QPoint newGridIndex)
 
     style()->unpolish(this);
     style()->polish(this);
+    //update();
 }
 
 void PlaceHolderCellWidget::mousePressEvent(QMouseEvent* event)

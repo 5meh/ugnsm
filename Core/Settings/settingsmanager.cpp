@@ -51,58 +51,66 @@ QString SettingsManager::getGridUpdateStrategy() const
 
 void SettingsManager::setSortStrategy(const QString& strategy)
 {
+    if (getSortStrategy() == strategy)
+        return;
     writeSetting("SortStrategy", strategy);
     emit sortStrategyChanged(strategy);
-    //emit settingsChanged();
 }
 
 void SettingsManager::setUpdateInterval(int interval)
 {
+    if (getUpdateInterval() == interval)
+        return;
     writeSetting("UpdateInterval", interval);
     emit updateIntervalChanged(interval);
-    //emit settingsChanged();
 }
 
 void SettingsManager::setShowBestNetworkWarning(bool show)
 {
+    if (getShowBestNetworkWarning() == show)
+        return;
     writeSetting("ShowBestNetworkWarning", show);
     emit showBestNetworkWarningChanged(show);
-    //emit settingsChanged();
 }
 
 void SettingsManager::setDataUnits(const QString& units)
 {
+    if (getDataUnits() == units)
+        return;
     writeSetting("DataUnits", units);
     emit dataUnitsChanged(units);
-    //emit settingsChanged();
 }
 
 void SettingsManager::setDecimalPrecision(int precision)
 {
+    if (getDecimalPrecision() == precision)
+        return;
     writeSetting("DecimalPrecision", precision);
     emit decimalPrecisionChanged(precision);
-    //emit settingsChanged();
 }
 
 void SettingsManager::setAutoRefresh(bool enable)
 {
+    if (getAutoRefresh() == enable)
+        return;
     writeSetting("AutoRefresh", enable);
     emit autoRefreshChanged(enable);
-    //emit settingsChanged();
 }
 
 void SettingsManager::setBestNetworkCriteria(const QString& criteria)
 {
+    if (getBestNetworkCriteria() == criteria)
+        return;
     writeSetting("BestNetworkCriteria", criteria);
     emit bestNetworkCriteriaChanged(criteria);
-    //emit settingsChanged();
 }
 
-void SettingsManager::setGridUpdateStrategy(const QString &strategy)
+void SettingsManager::setGridUpdateStrategy(const QString& strategy)
 {
+    if (getGridUpdateStrategy() == strategy)
+        return;
     writeSetting("GridUpdateStrategy", strategy);
     emit gridUpdateStrategyChanged(strategy);
-    //emit settingsChanged();
 }
 
 QVariant SettingsManager::readSetting(const QString& key, const QVariant& defaultValue) const

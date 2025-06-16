@@ -3,7 +3,7 @@
 #include "Core/Grid/Managment/gridmanager.h"
 #include "UI/Components/DialogWindows/settingsdialog.h"
 #include "Core/globalmanager.h"
-
+#include "Utilities/Logger/logger.h"
 
 #include <QResizeEvent>
 #include <QStatusBar>
@@ -43,7 +43,7 @@ void MainWindow::setupUI()
     m_toolbar->setVisible(!autoRefresh);
     m_manualRefreshAction->setVisible(!autoRefresh);
 
-    if (!m_gridManager || !m_gridManager->getView())
+    if (!m_gridManager)
     {
         QMessageBox::critical(this, "Initialization Error",
                               "Failed to initialize grid system");
@@ -51,7 +51,7 @@ void MainWindow::setupUI()
 
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
-    m_scrollArea->setWidget(m_gridManager->getView());
+    m_scrollArea->setWidget(m_gridManager->gridWidget());
     setCentralWidget(m_scrollArea);
 
     statusBar()->showMessage("Ready", 3000);
@@ -76,9 +76,9 @@ void MainWindow::setupConnections()
 void MainWindow::resizeEvent(QResizeEvent* event)
 {
     QMainWindow::resizeEvent(event);
-    if(m_gridManager && m_gridManager->getView())
+    if(m_gridManager)
     {
-        m_gridManager->getView()->update();
+        m_gridManager->gridWidget()->update();
     }
 }
 
@@ -97,18 +97,27 @@ void MainWindow::handleSettingsChanged()
 
 void MainWindow::onManualRefresh()
 {
-    if (m_gridManager && m_gridManager->getView())
+    if (m_gridManager)
     {
         GlobalManager::dragManager()->endDrag();
     }
 
-    GlobalManager::taskScheduler()->cancelRepeating("data_refresh");
+    if (GlobalManager::settingsManager()->getAutoRefresh())
+        GlobalManager::taskScheduler()->cancelRepeating("data_refresh");
+
     m_gridManager->refresh();
     statusBar()->showMessage(tr("Manual refresh triggered"), 1500);
+
+    Logger::instance().log(Logger::Info, "Manual refresh triggered", "MainWindow");
 }
 
 void MainWindow::handleAutoRefreshChanged(bool enabled)
 {
     m_toolbar->setVisible(!enabled);
     m_manualRefreshAction->setVisible(!enabled);
+
+    m_gridManager->handleAutoRefreshChanged(enabled);
+    Logger::instance().log(Logger::Info,
+                           QString("Auto-refresh changed: %1").arg(enabled ? "Enabled" : "Disabled"),
+                           "GridDataManager");
 }

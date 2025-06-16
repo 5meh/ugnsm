@@ -63,6 +63,7 @@ private:
     void keepBestUpdate(const QList<NetworkInfoPtr>& allInfos);
     void updateGridWithData(const QList<NetworkInfoPtr>& allInfos);
     void updateTrackedMacs();
+    //void updateRefreshTask();
 
     QAtomicInt m_refreshInProgress{0};
     NetworkMonitor* m_monitor;

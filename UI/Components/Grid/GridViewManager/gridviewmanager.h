@@ -47,12 +47,14 @@ private:
     GridCellWidget* createCellWidgetForModel(QSharedPointer<NetworkInfoModel> model);
     bool isPlaceholder(GridCellWidget* widget) const;
     void performSwap(QPoint source, QPoint target);
+    void applyUniformCellSize();
 
+    QSize m_maxCellSize;
     bool m_updatesEnabled = true;
     std::function<void(QWidget*)> updateUI;//TODO:mb remove no need in it
     QGridLayout* m_gridLayout;
     QVector<QVector<GridCellWidget*>> m_cells;
-    GridCellWidget* m_highlightedCell = nullptr;
+    GridCellWidget* m_highlightedCell = nullptr;    
 };
 
 #endif // GRIDVIEWMANAGER_H

@@ -252,6 +252,12 @@ void NetworkInfoModel::connectModelSignals()
             });
     connect(&m_updateTimer, &QTimer::timeout,
             this, &NetworkInfoModel::flushPropertyChanges);
+
+    SettingsManager* settings = GlobalManager::settingsManager();
+    connect(settings, &SettingsManager::dataUnitsChanged,
+            this, &NetworkInfoModel::onUnitsChanged);
+    connect(settings, &SettingsManager::decimalPrecisionChanged,
+            this, &NetworkInfoModel::onUnitsChanged);
 }
 
 void NetworkInfoModel::markPropertyChanged(const QString& property)
@@ -287,4 +293,13 @@ void NetworkInfoModel::flushPropertyChanges()
         }, Qt::QueuedConnection);
     }
     m_updateTimer.stop();
+}
+
+void NetworkInfoModel::onUnitsChanged()
+{
+    // Force refresh of speed-related properties
+    markPropertyChanged("downloadSpeed");
+    markPropertyChanged("uploadSpeed");
+    markPropertyChanged("totalSpeed");
+    flushPropertyChanges();
 }

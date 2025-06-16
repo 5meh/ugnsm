@@ -15,8 +15,6 @@ public:
     explicit GridCellWidget(QWidget* parent = nullptr);
     virtual ~GridCellWidget();
 
-    //QSize sizeHint() const override;
-
     QPoint getGridIndex() const;
     void setGridIndex(QPoint newGridIndex);
     void highlightCell();
@@ -33,7 +31,6 @@ protected:
     virtual void dropEvent(QDropEvent* event) override;
     virtual void dragLeaveEvent(QDragLeaveEvent* event) override;
 
-    //const QSize m_widgetSize = QSize(400, 400);
     QPoint m_gridIndex;
     QPoint m_dragStartPos;
 private:

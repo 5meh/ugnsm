@@ -16,11 +16,13 @@
 
 #include "../../../../Utilities/Delegates/ledindicatordelegate.h"
 #include "../../../../Utilities/LedIndicator/ledindicator.h"
+#include "../../../../Utilities/Logger/logger.h"
 //#include "networkinfo.h"
 #include "../../../../Core/Network/Information/networkinfomodel.h"
 
 NetworkInfoViewWidget::NetworkInfoViewWidget(QSharedPointer<NetworkInfoModel> viewModel, QFrame* parent)
-    : GridCellWidget(parent), m_viewModel(viewModel)
+    : GridCellWidget(parent),
+    m_viewModel(viewModel)
 {
     setupUI();
 
@@ -140,8 +142,7 @@ void NetworkInfoViewWidget::updateNetworkInfoDisplay()
             keyValModel->removeRow(row--);
         }
     }
-    keyValueTbl->resizeRowsToContents();
-    keyValueTbl->resizeColumnsToContents();
+    fitTableToContents();
     setUpdatesEnabled(true);
     keyValueTbl->setUpdatesEnabled(true);
 }
@@ -168,10 +169,10 @@ void NetworkInfoViewWidget::addKeyValue(QPair<QString, QString> keyVal)
 
     QStandardItem *ledItem = new QStandardItem();
 
-    if(keyVal.first == "Is Up:" || keyVal.first == "Is Running:")
+    if(keyVal.first == "Status")
     {
-        bool state = (keyVal.second.compare("True", Qt::CaseInsensitive) == 0);
-        ledItem->setData(state ? 1 : 0, Qt::UserRole); // 1=green, 0=red
+        bool state = (keyVal.second.compare("Connected", Qt::CaseInsensitive) == 0);
+        ledItem->setData(state ? 2 : 0, Qt::UserRole); // 1=green, 0=red
     }
     else
     {
@@ -199,7 +200,7 @@ void NetworkInfoViewWidget::setupTableView()
 
     keyValueTbl->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     keyValueTbl->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    keyValueTbl->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    keyValueTbl->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
 
     keyValueTbl->setShowGrid(false);
     keyValueTbl->setFocusPolicy(Qt::NoFocus);
@@ -207,9 +208,10 @@ void NetworkInfoViewWidget::setupTableView()
 
     keyValueTbl->setAttribute(Qt::WA_TranslucentBackground);
     keyValueTbl->viewport()->setAttribute(Qt::WA_TranslucentBackground);
-    keyValueTbl->setStyleSheet("QTableView { background: transparent; border: none; }");
+    keyValueTbl->viewport()->installEventFilter(this);
 
     setKeyValueTbl();
+    fitTableToContents();
     connectViewModel();
 
     layout()->addWidget(keyValueTbl);
@@ -222,6 +224,22 @@ void NetworkInfoViewWidget::connectViewModel()
     connect(m_viewModel.get(), &NetworkInfoModel::ipAddressChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
     connect(m_viewModel.get(), &NetworkInfoModel::netmaskChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
     connect(m_viewModel.get(), &NetworkInfoModel::speedChanged, this, &NetworkInfoViewWidget::updateNetworkInfoDisplay);
+}
+
+void NetworkInfoViewWidget::fitTableToContents()
+{
+    keyValueTbl->resizeRowsToContents();
+    keyValueTbl->resizeColumnsToContents();
+
+    int totalWidth = keyValueTbl->verticalHeader()->width();
+    for (int c = 0; c < keyValModel->columnCount(); ++c)
+        totalWidth += keyValueTbl->columnWidth(c);
+
+    int totalHeight = keyValueTbl->horizontalHeader()->height();
+    for (int r = 0; r < keyValModel->rowCount(); ++r)
+        totalHeight += keyValueTbl->rowHeight(r);
+
+    keyValueTbl->setFixedSize(totalWidth, totalHeight - 150);//TODO:magic number, cause currently can't fix it
 }
 
 bool NetworkInfoViewWidget::eventFilter(QObject *watched, QEvent *event)
@@ -261,16 +279,23 @@ void NetworkInfoViewWidget::updateStatusIndicator(QStandardItem *item, const QSt
 void NetworkInfoViewWidget::updateSpeedIndicators()
 {
     setUpdatesEnabled(false);
-    QPair<QString, QString> rxSpeed = m_viewModel->getKeyValue("RX Speed");
-    QPair<QString, QString> txSpeed = m_viewModel->getKeyValue("TX Speed");
+    QString downloadKey = m_propertyRowMap.key(5);  // "Download Speed"
+    QString uploadKey = m_propertyRowMap.key(6);    // "Upload Speed"
+
+    QPair<QString, QString> rxSpeed = m_viewModel->getKeyValue(downloadKey);
+    QPair<QString, QString> txSpeed = m_viewModel->getKeyValue(uploadKey);
 
     for(int row = 0; row < keyValModel->rowCount(); ++row)
     {
         QStandardItem* paramItem = keyValModel->item(row, 0);
-        if(paramItem->text() == "RX Speed" || paramItem->text() == "TX Speed")
+        if(paramItem->text() == downloadKey || paramItem->text() == uploadKey)
         {
             QStandardItem* valueItem = keyValModel->item(row, 1);
-            valueItem->setText(paramItem->text() == "RX Speed" ? rxSpeed.second : txSpeed.second);
+            valueItem->setText(paramItem->text() == downloadKey ? rxSpeed.second : txSpeed.second);
+            Logger::instance().log(Logger::Debug,
+                                   QString("Updating speeds: RX=%1, TX=%2")
+                                       .arg(rxSpeed.second).arg(txSpeed.second),
+                                   "NetworkView");
         }
     }
     setUpdatesEnabled(true);
@@ -288,8 +313,7 @@ void NetworkInfoViewWidget::setupUI()
     // crownLbl.setFixedHeight(50);
     // layout()->addWidget(&crownLbl);
 
-    layout()->setSpacing(0);
-    keyValueTbl->viewport()->installEventFilter(this);
+    //layout()->setSpacing(5);
 }
 
 void NetworkInfoViewWidget::setKeyValueTbl()

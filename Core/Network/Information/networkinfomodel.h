@@ -61,6 +61,7 @@ signals:
 private:
     void connectModelSignals();
     void markPropertyChanged(const QString& property);
+    void onUnitsChanged();
     void flushPropertyChanges();
     QString formatTimestamp() const;
     QString formatSpeed(quint64 bytesPerSec) const;

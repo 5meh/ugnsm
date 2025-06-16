@@ -27,14 +27,8 @@ GridDataManager::GridDataManager(QObject* parent)
     connect(m_monitor, &NetworkMonitor::statsUpdated,
             this, &GridDataManager::handleNetworkStats);
     GlobalManager::messageBoxManager()->addBlockingRelationship("BestNetworkMove","SwapWarning");
-
-    int interval = GlobalManager::settingsManager()->getUpdateInterval();
-
-    GlobalManager::taskScheduler()->scheduleRepeating("data_refresh",
-                                                      interval,
-                                                      this,
-                                                      &GridDataManager::refreshData,
-                                                      QThread::NormalPriority);
+    
+    //updateRefreshTask();
 
     Logger::instance().log(Logger::Info, "GridDataManager initialized", "Grid");
 }
@@ -80,7 +74,7 @@ void GridDataManager::initializeGrid(int rows, int cols)
     {
         row.resize(cols);
     }
-
+    
     refreshData();
     emit gridDimensionsChanged();
 }
@@ -100,7 +94,7 @@ void GridDataManager::swapCells(QPoint from, QPoint to)
 void GridDataManager::setUpdatesPaused(bool paused)
 {
     m_updatesPaused = paused;
-
+    
     // Apply queued updates when unpausing
     if (!paused && !m_queuedUpdates.isEmpty())
     {
@@ -114,7 +108,7 @@ void GridDataManager::setUpdatesPaused(bool paused)
 void GridDataManager::handleParsingCompleted(const QVariant& result)
 {
     QVariant resultCopy = result;
-
+    
     GlobalManager::taskScheduler()->executeMainThread(QString("data_processing"),
                                                       [this, resultCopy = std::move(resultCopy)]() {
                                                           // now we’re safely on the GUI thread:
@@ -158,18 +152,18 @@ void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
     Logger::instance().log(Logger::Debug,
                            QString("Swapping cells: (%1,%2) -> (%3,%4)").arg(from.x()).arg(from.y()).arg(to.x()).arg(to.y()),
                            "Grid");
-
+    
     if(from.x() < 0 || from.x() >= getRows() || from.y() < 0 || from.y() >= getCols() ||
         to.x() < 0 || to.x() >= getRows() || to.y() < 0 || to.y() >= getCols())
     {
         Logger::instance().log(Logger::Warning, "Invalid swap coordinates", "Grid");
         return;
     }
-
+    
     if(to == QPoint{0,0})
     {
         const QString dialogId = "BestNetworkMove";
-
+        
         auto result = GlobalManager::messageBoxManager()->showDialog(
             dialogId,
             "Network Change",
@@ -179,10 +173,10 @@ void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
         if(result == QMessageBox::No)
             return;
     }
-
+    
     std::swap(m_data[from.x()][from.y()], m_data[to.x()][to.y()]);
     updateMacMap();
-
+    
     emit cellChanged(from, m_data[from.x()][from.y()]);
     emit cellChanged(to, m_data[to.x()][to.y()]);
 }
@@ -190,15 +184,15 @@ void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
 void GridDataManager::handleParsingCompletedImpl(QVariant result)
 {
     QList<NetworkInfo*> parsedInfoList = result.value<QList<NetworkInfo*>>();
-
+    
     QList<NetworkInfoPtr> allInfos;
     allInfos.reserve(parsedInfoList.size());
     std::transform(parsedInfoList.begin(), parsedInfoList.end(),
                    std::back_inserter(allInfos),
                    [](NetworkInfo* ptr){ return NetworkInfoPtr(ptr); });
-
+    
     m_sorter->sort(allInfos);
-
+    
     if (m_validDataCount == 0)
         initializeGridWithData(allInfos);
     else
@@ -246,7 +240,7 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
 {
     QList<NetworkInfoPtr> usedInfos = allInfos.mid(0, getCapacity());
     QList<NetworkInfoPtr> unusedInfos = allInfos.mid(getCapacity());
-
+    
     GlobalManager::taskScheduler()->executeMainThread(
         QString("model_creation"),
         [this, usedInfos]()
@@ -259,7 +253,7 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
                     const int linearIndex = x * getCols() + y;
                     if(linearIndex >= usedInfos.size())
                         continue;
-
+                    
                     auto networkInfo = usedInfos[linearIndex];
                     QString mac = networkInfo->getMac();
                     m_data[x][y] = QSharedPointer<NetworkInfoModel>::create(networkInfo, this);
@@ -269,9 +263,9 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
                     //emit cellChanged(QPoint(x,y), m_data[x][y]);
                 }
             }
-
+            
             // QSet<QString> interfaces;
-
+            
             // for (int r = 0; r < m_data.size(); ++r)
             // {
             //     for (int c = 0; c < m_data[r].size(); ++c)
@@ -281,10 +275,10 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
             //             interfaces.insert(model->getName());
             //     }
             // }
-
+            
             m_monitor->initializeStats(macsToTrack);
             m_monitor->startMonitoring(1000);
-
+            
             for(int x = 0; x < getRows(); x++)
             {
                 for(int y = 0; y < getCols(); y++)
@@ -299,7 +293,7 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
         },
         QThread::HighPriority
         );
-
+    
     unusedInfos.clear();//TODO:mb rework
 }
 
@@ -341,7 +335,7 @@ void GridDataManager::applyUpdates(const QVector<QPair<QPoint, NetworkInfoPtr>>&
             {
                 QPoint pos = pair.first;
                 NetworkInfoPtr info = pair.second;
-
+                
                 if(m_data[pos.x()][pos.y()])
                     m_data[pos.x()][pos.y()]->updateFromNetworkInfo(info);
                 else
@@ -352,7 +346,7 @@ void GridDataManager::applyUpdates(const QVector<QPair<QPoint, NetworkInfoPtr>>&
                 emit cellChanged(pos, m_data[pos.x()][pos.y()]);
             }
         }
-
+        
         // Rebuild MAC index
         m_macIndex.clear();
         for(int r = 0; r < getRows(); ++r)
@@ -370,7 +364,7 @@ void GridDataManager::fullGridUpdate(const QList<NetworkInfoPtr>& allInfos)
 {
     QVector<QPair<QPoint, NetworkInfoPtr>> updates;
     const int capacity = getCapacity();
-
+    
     for(int r = 0; r < getRows(); ++r)
     {
         for(int c = 0; c < getCols(); ++c)
@@ -379,16 +373,16 @@ void GridDataManager::fullGridUpdate(const QList<NetworkInfoPtr>& allInfos)
                 updates.append({QPoint(r, c), nullptr});
         }
     }
-
+    
     for(int i = 0; i < qMin(capacity, allInfos.size()); ++i)
     {
         const int r = i / getCols();
         const int c = i % getCols();
         updates.append({QPoint(r, c), allInfos[i]});
     }
-
+    
     applyUpdates(updates);
-
+    
     if(!allInfos.isEmpty() && m_data[0][0])
     {
         const QString currentBest = m_data[0][0]->getMac();
@@ -401,17 +395,17 @@ void GridDataManager::incrementalUpdate(const QList<NetworkInfoPtr>& allInfos)
 {
     QVector<QPair<QPoint, NetworkInfoPtr>> updates;
     QHash<QString, NetworkInfoPtr> newMacs;
-
+    
     for(NetworkInfoPtr info : allInfos)
         newMacs.insert(info->getMac(), info);
-
+    
     // Identify removed networks
     for(auto it = m_macIndex.begin(); it != m_macIndex.end(); ++it)
     {
         if(!newMacs.contains(it.key()))
             updates.append({it.value(), nullptr});
     }
-
+    
     // Identify changed or new networks
     QList<QPoint> emptySlots;
     for(int r = 0; r < getRows(); ++r)
@@ -422,12 +416,12 @@ void GridDataManager::incrementalUpdate(const QList<NetworkInfoPtr>& allInfos)
                 emptySlots.append(QPoint(r, c));
         }
     }
-
+    
     for(auto it = newMacs.begin(); it != newMacs.end(); ++it)
     {
         const QString& mac = it.key();
         NetworkInfoPtr info = it.value();
-
+        
         if(m_macIndex.contains(mac))
             // Update existing
             updates.append({m_macIndex[mac], info});
@@ -435,7 +429,7 @@ void GridDataManager::incrementalUpdate(const QList<NetworkInfoPtr>& allInfos)
             // Add to first empty slot
             updates.append({emptySlots.takeFirst(), info});
     }
-
+    
     applyUpdates(updates);
 }
 
@@ -443,7 +437,7 @@ void GridDataManager::keepBestUpdate(const QList<NetworkInfoPtr>& allInfos)
 {
     QVector<QPair<QPoint, NetworkInfoPtr>> updates;
     NetworkInfoPtr currentBest = m_data[0][0] ? m_data[0][0]->getNetworkInfo() : nullptr;
-
+    
     bool bestExists = false;
     for(NetworkInfoPtr info : allInfos)
     {
@@ -453,22 +447,22 @@ void GridDataManager::keepBestUpdate(const QList<NetworkInfoPtr>& allInfos)
             break;
         }
     }
-
+    
     if(!bestExists)
     {
         fullGridUpdate(allInfos);
         return;
     }
-
+    
     updates.append({QPoint(0, 0), currentBest});
-
+    
     QList<NetworkInfoPtr> otherInfos;
     for(NetworkInfoPtr info : allInfos)
     {
         if(!currentBest || info->getMac() != currentBest->getMac())
             otherInfos.append(info);
     }
-
+    
     m_sorter->sort(otherInfos);
     int index = 0;
     for(int r = 0; r < getRows(); ++r)
@@ -477,14 +471,14 @@ void GridDataManager::keepBestUpdate(const QList<NetworkInfoPtr>& allInfos)
         {
             if(r == 0 && c == 0)
                 continue; // Skip best position
-
+            
             if(index < otherInfos.size())
                 updates.append({QPoint(r, c), otherInfos[index++]});
             else if(m_data[r][c])
                 updates.append({QPoint(r, c), nullptr});
         }
     }
-
+    
     applyUpdates(updates);
 }
 
@@ -496,21 +490,21 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
         return;
     }
     const QString strategy = GlobalManager::settingsManager()->getGridUpdateStrategy();
-
+    
     if(strategy == "FullUpdate")
         fullGridUpdate(allInfos);
     else if(strategy == "IncrementalUpdate")
         incrementalUpdate(allInfos);
     else if(strategy == "KeepBestUpdate")
         keepBestUpdate(allInfos);
-
+    
     updateTrackedMacs();
 }
 
 void GridDataManager::updateTrackedMacs()
 {
     QSet<QString> macs;
-
+    
     for (int r = 0; r < m_data.size(); ++r)
     {
         for (int c = 0; c < m_data[r].size(); ++c)
@@ -522,6 +516,29 @@ void GridDataManager::updateTrackedMacs()
             }
         }
     }
-
+    
     m_monitor->updateTrackedMacs(macs);
 }
+
+// void GridDataManager::updateRefreshTask()
+// {
+//     GlobalManager::taskScheduler()->cancelRepeating("data_refresh");
+
+//     if (GlobalManager::settingsManager()->getAutoRefresh())
+//     {
+//         int interval = GlobalManager::settingsManager()->getUpdateInterval();
+//         GlobalManager::taskScheduler()->scheduleRepeating("data_refresh",
+//                                                           interval,
+//                                                           this,
+//                                                           &GridDataManager::refreshData,
+//                                                           QThread::NormalPriority);
+
+//         Logger::instance().log(Logger::Info,
+//                                QString("Scheduled auto-refresh every %1 ms").arg(interval),
+//                                "GridDataManager");
+//     }
+//     else
+//     {
+//         Logger::instance().log(Logger::Info, "Auto-refresh disabled", "GridDataManager");
+//     }
+// }
