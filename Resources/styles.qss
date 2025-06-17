@@ -23,32 +23,27 @@ QMenu::item:selected {
     color: #000000;
 }
 
+/* ======== DRAG OVER STYLES ======== */
+/* Apply to all cell types during drag over */
 PlaceHolderCellWidget[dragOver="true"],
 NetworkInfoViewWidget[dragOver="true"],
 GridCellWidget[dragOver="true"] {
-    background-color: rgba(0, 255, 0, 50);
-    border: 2px dashed darkgreen;
+    background-color: rgba(0, 255, 0, 50) !important;
+    border: 2px dashed darkgreen !important;
 }
 
+/* Special case: Best position placeholder during drag over */
+PlaceHolderCellWidget[bestNetworkPlaceholder="true"][dragOver="true"] {
+    background-color: rgba(0, 255, 0, 50) !important;
+    border: 2px dashed darkgreen !important;
+}
+
+/* ======== PLACEHOLDER STYLES ======== */
+/* Default placeholder style */
 PlaceHolderCellWidget {
     background-color: #f8f9fa;
     border: 2px dashed #dee2e6;
     border-radius: 6px;
-}
-
-PlaceHolderCellWidget[highlighted="true"] {
-    border-color: #4CAF50;
-    background-color: #e8f5e9;
-}
-
-GridCellWidget[highlighted="true"] {
-    border: 2px solid #ff9900;
-    background-color: #fff4e6;
-}
-
-GridCellWidget[bestNetwork="true"] {
-    border: 3px solid #4CAF50;
-    background-color: #e8f5e9;
 }
 
 /* Placeholder at best position (red border) */
@@ -63,17 +58,14 @@ PlaceHolderCellWidget[bestNetworkPlaceholder="true"] QLabel {
     font-size: 12px;
 }
 
-/* Update existing highlight styles */
-GridCellWidget[highlighted="true"] {
-    border: 2px solid #ff9900;
-    background-color: #fff4e6;
-}
-
+/* Placeholder highlight style */
 PlaceHolderCellWidget[highlighted="true"] {
-    border: 2px dashed #4CAF50;
+    border-color: #4CAF50;
     background-color: #e8f5e9;
 }
 
+/* ======== NETWORK WIDGET STYLES ======== */
+/* Normal network widget */
 NetworkInfoViewWidget {
     background-color: #ffffff;
     border: 1px solid #dddddd;
@@ -81,6 +73,19 @@ NetworkInfoViewWidget {
     padding: 8px;
 }
 
+/* Network widget at best position */
+GridCellWidget[bestNetwork="true"] {
+    border: 3px solid #4CAF50;
+    background-color: #e8f5e9;
+}
+
+/* Network widget highlight style */
+GridCellWidget[highlighted="true"] {
+    border: 2px solid #ff9900;
+    background-color: #fff4e6;
+}
+
+/* ======== TABLE STYLES ======== */
 NetworkInfoViewWidget QTableView {
     background: transparent;
     border: none;
@@ -96,12 +101,6 @@ NetworkInfoViewWidget QTableView::item:selected {
     background: transparent;
 }
 
-LedIndicator {
-    qproperty-onColor: #4CAF50;
-    qproperty-offColor: #f44336;
-    qproperty-borderColor: #cccccc;
-}
-
 QTableView {
     qproperty-verticalScrollBarPolicy: 1;
     qproperty-horizontalScrollBarPolicy: 1;
@@ -109,6 +108,25 @@ QTableView {
     qproperty-horizontalScrollMode: 1;
 }
 
+/* ======== SPECIAL STATES ======== */
 NetworkInfoViewWidget[updating="true"] {
     opacity: 0.7;
+}
+
+LedIndicator {
+    qproperty-onColor: #4CAF50;
+    qproperty-offColor: #f44336;
+    qproperty-borderColor: #cccccc;
+}
+
+/* ======== ADDITIONAL HIGHLIGHT STYLES ======== */
+/* These seem redundant with above definitions, keeping for compatibility */
+GridCellWidget[highlighted="true"] {
+    border: 2px solid #ff9900;
+    background-color: #fff4e6;
+}
+
+PlaceHolderCellWidget[highlighted="true"] {
+    border: 2px dashed #4CAF50;
+    background-color: #e8f5e9;
 }

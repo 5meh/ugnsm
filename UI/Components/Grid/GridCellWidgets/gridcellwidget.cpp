@@ -143,4 +143,3 @@ void GridCellWidget::clearHighlight()
     style()->unpolish(this);
     style()->polish(this);
 }
-

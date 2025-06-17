@@ -97,12 +97,6 @@ void NetworkInfoViewWidget::updateProperty(const QString& propertyName)
     style()->unpolish(this);
     style()->polish(this);
     adjustSize();
-    // QTimer::singleShot(150, this, [this]()//TODO:why we need this
-    //                    {
-    //                        setProperty("updating", false);
-    //                        style()->unpolish(this);
-    //                        style()->polish(this);
-    //                    });
 
     setUpdatesEnabled(true);
 }

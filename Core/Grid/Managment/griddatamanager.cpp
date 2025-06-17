@@ -27,8 +27,6 @@ GridDataManager::GridDataManager(QObject* parent)
     connect(m_monitor, &NetworkMonitor::statsUpdated,
             this, &GridDataManager::handleNetworkStats);
     GlobalManager::messageBoxManager()->addBlockingRelationship("BestNetworkMove","SwapWarning");
-    
-    //updateRefreshTask();
 
     Logger::instance().log(Logger::Info, "GridDataManager initialized", "Grid");
 }

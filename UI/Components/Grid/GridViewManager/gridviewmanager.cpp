@@ -99,8 +99,6 @@ void GridViewManager::setCell(QPoint indx, GridCellWidget* widget)
             this, &GridViewManager::handleSwapRequested);
 
     widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    //widget->setMinimumSize(200, 150); // Set minimum size to match network widgets
-
     widget->setFocusPolicy(Qt::NoFocus);
     widget->setAttribute(Qt::WA_TransparentForMouseEvents, false);
 }
@@ -368,23 +366,32 @@ void GridViewManager::performSwap(QPoint source, QPoint target)
 
     if (source == QPoint(0, 0) || target == QPoint(0, 0))
     {
-        GridCellWidget* bestCell = cellAt(0, 0);
-        bestCell->setProperty("bestNetwork", true);
-        updateUI(bestCell);
-        //bestCell->style()->unpolish(bestCell);
-        //bestCell->style()->polish(bestCell);
+        GridCellWidget* oldBest = (source == QPoint(0, 0)) ? sourceWidget : targetWidget;
 
-        if (auto* placeholder = qobject_cast<PlaceHolderCellWidget*>(bestCell))
+        GridCellWidget* newBest = cellAt(0, 0);
+
+        if (auto* oldPlaceholder = qobject_cast<PlaceHolderCellWidget*>(oldBest))
         {
-            placeholder->setGridIndex(QPoint(0, 0)); // Force text update
+            oldPlaceholder->setGridIndex(oldBest->getGridIndex());
+        }
+        else
+        {
+            oldBest->setProperty("bestNetwork", false);
+            updateUI(oldBest);
+            oldBest->clearHighlight();
         }
 
-        if (!isPlaceholder(bestCell))
-            highlightCell(0, 0);
-        else
-            clearHighlight(0, 0);
-    }
 
+        if (auto* newPlaceholder = qobject_cast<PlaceHolderCellWidget*>(newBest))
+            newPlaceholder->setGridIndex(QPoint(0, 0));
+        else
+        {
+            newBest->setProperty("bestNetwork", true);
+            updateUI(newBest);
+            if (!isPlaceholder(newBest))
+                newBest->highlightCell();
+        }
+    }
     m_resizeTimer->start(100);
 
     sourceWidget->blockSignals(false);
