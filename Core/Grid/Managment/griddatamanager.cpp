@@ -161,15 +161,20 @@ void GridDataManager::swapCellsImpl(QPoint from, QPoint to)
     if(to == QPoint{0,0})
     {
         const QString dialogId = "BestNetworkMove";
+
+        bool isPlaceholder = m_data[to.x()][to.y()] == nullptr;
         
-        auto result = GlobalManager::messageBoxManager()->showDialog(
-            dialogId,
-            "Network Change",
-            "New best network detected. Move to primary position?",
-            "Do not show this message again"
-            );
-        if(result == QMessageBox::No)
-            return;
+        if (!isPlaceholder)
+        {
+            auto result = GlobalManager::messageBoxManager()->showDialog(
+                dialogId,
+                "Network Change",
+                "New best network detected. Move to primary position?",
+                "Do not show this message again"
+                );
+            if(result == QMessageBox::No)
+                return;
+        }
     }
     
     std::swap(m_data[from.x()][from.y()], m_data[to.x()][to.y()]);
@@ -261,18 +266,6 @@ void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInf
                     //emit cellChanged(QPoint(x,y), m_data[x][y]);
                 }
             }
-            
-            // QSet<QString> interfaces;
-            
-            // for (int r = 0; r < m_data.size(); ++r)
-            // {
-            //     for (int c = 0; c < m_data[r].size(); ++c)
-            //     {
-            //         QSharedPointer<NetworkInfoModel> model = m_data[r][c];
-            //         if (!model.isNull())
-            //             interfaces.insert(model->getName());
-            //     }
-            // }
             
             m_monitor->initializeStats(macsToTrack);
             m_monitor->startMonitoring(1000);
