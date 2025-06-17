@@ -4,7 +4,7 @@
 
 This project provides a **Qt 6.8** application written in **C++17**, along with shell scripts to simulate and test network interfaces using QEMU and Linux TAP bridges. It consists of:
 
-1. **Qt Application (**``**)**
+1. **Qt Application (**\`\`**)**
    - Displays network interface statistics via a grid of `NetworkInfoViewWidget` widgets.
    - Organized into subdirectories: `Core`, `UI`, `Utilities`, and `Resources`.
 2. **Test Scripts**
@@ -92,6 +92,20 @@ ugnsm
 
 ---
 
+## Script Dependencies
+
+Before running the test scripts, ensure the following tools and kernel features are installed on your system:
+
+- **QEMU** with AArch64 support (`qemu-system-aarch64`)
+- **iproute2** utilities (`ip`, `tc`, `ip tuntap`) for managing bridges and TAP interfaces
+- **socat** for UDP traffic generation
+- **ping** (from `iputils`) for ICMP traffic
+- **bash** (GNU Bash) for the script interpreter
+- **ebtables** (optional) if your cleanup script flushes Ethernet bridge tables
+- **iperf3** (optional) if you plan to benchmark with the cleanup script
+
+And, of course, you must run the scripts as root (or via `sudo`) so they can create and configure network devices.
+
 ## Testing Network Environment
 
 All scripts must be run as **root** (or via `sudo`) since they create TAP interfaces and apply traffic control.
@@ -142,30 +156,30 @@ sudo ./cleanup-network.sh
 
 ## Detailed Script Analysis
 
-- ``:
+- \`\`:
 
-  1. ``: Ensures proper teardown on exit/trap.
-  2. ``:
+  1. \`\`: Ensures proper teardown on exit/trap.
+  2. \`\`:
      - Creates bridge `br-jetson` with IP `192.168.100.1/24`.
      - For each TAP (`tap0`–`tap3`): assigns a static MAC (`52:54:00:12:34:56`–`59`), enables promiscuous mode, and enslaves to the bridge.
-  3. ``: Launches QEMU with:
+  3. \`\`: Launches QEMU with:
      - `virt` machine, `cortex-a57` CPU, 4 cores, 4 GB RAM.
      - Tegra DTB and rootfs image for Jetson Nano.
      - Four `virtio-net-pci` NICs linked to TAP devices.
      - Background/demo traffic loop with `ping` and `socat`.
 
-- ``:
+- \`\`:
 
   1. **Argument parsing** for interfaces, rates, latencies, jitters, duration, packet size.
-  2. ``: Adds missing TAPs and brings them up.
-  3. ``: Converts Mbps → Bps → packets/sec.
-  4. ``:
+  2. \`\`: Adds missing TAPs and brings them up.
+  3. \`\`: Converts Mbps → Bps → packets/sec.
+  4. \`\`:
      - Applies `tc qdisc add dev <iface> root netem delay Xms Yms rate Zmbit`.
      - Spawns continuous `ping` and `socat` UDP broadcasts.
   5. **Main loop**: Iterates each interface, sets up TC + traffic, sleeps or waits based on `DURATION`.
-  6. ``: Removes `tc` rules and kills child processes on exit.
+  6. \`\`: Removes `tc` rules and kills child processes on exit.
 
-- ``:
+- \`\`:
 
   - Kills QEMU & traffic processes via `pkill`.
   - Deletes TAPs, bridges, VLANs, resets TC qdiscs and `ebtables`.
