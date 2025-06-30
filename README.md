@@ -182,7 +182,7 @@ cp ../sd-blob-b01.img scripts/rootfs/
 
 ## License
 
-This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. See the `LICENSE` file for full terms.
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. See the [License](./LICENSE) file for full terms.
 
 ---
 
