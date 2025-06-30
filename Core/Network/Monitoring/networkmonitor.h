@@ -3,16 +3,26 @@
 
 #include <QObject>
 #include <QHash>
-#include <QTimer>
-#include <QMutex>
 #include <QSet>
+#include <QMutex>
 #include <QAtomicInt>
+#include <QDateTime>
 
 class NetworkMonitor : public QObject
 {
     Q_OBJECT
 public:
-    explicit NetworkMonitor(QObject* parent = nullptr);
+    struct InterfaceStats {
+        quint64 rxBytes = 0;
+        quint64 txBytes = 0;
+        qint64 lastUpdate = 0;
+        bool initialized = false;
+    };
+
+    explicit NetworkMonitor(QObject *parent = nullptr);
+    ~NetworkMonitor() = default;
+
+    static QString normalizeMac(const QString& raw);
 
     void startMonitoring(int intervalMs = 1000);
     void stopMonitoring();
@@ -20,29 +30,21 @@ public:
     void updateTrackedMacs(const QSet<QString>& macs);
 
 signals:
-    void statsUpdated(const QString& mac,
-                      quint64 downloadSpeedBps,
-                      quint64 uploadSpeedBps);
+    void statsUpdated(QString mac, quint64 rxSpeed, quint64 txSpeed);
 
 private slots:
     void refreshStats();
 
 private:
-    struct InterfaceStats
-    {
-        quint64 rxBytes = 0;
-        quint64 txBytes = 0;
-        qint64 lastUpdate = 0;
-    };
-
-    static QString normalizeMac(const QString& raw);
     bool readRawInterfaceStats(QHash<QString, InterfaceStats>& stats);
-    QAtomicInt   m_running{0};
-    int          m_interval = 1000;
+
+    QAtomicInt m_running;
+    int m_interval;
+    QMutex m_interfaceMutex;
+    bool m_initialized;
+
+    QSet<QString> m_trackedMacs;
     QHash<QString, InterfaceStats> m_previousStats;
-    QSet<QString>                  m_trackedMacs;
-    QMutex        m_interfaceMutex;
-    bool          m_initialized = false;
 };
 
 #endif // NETWORKMONITOR_H

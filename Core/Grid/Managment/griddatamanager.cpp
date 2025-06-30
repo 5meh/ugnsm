@@ -209,6 +209,12 @@ void GridDataManager::handleNetworkStatsImpl(QString mac, quint64 rxSpeed, quint
         QSharedPointer<NetworkInfoModel> model = m_data[m_macIndex[mac].x()][m_macIndex[mac].y()];
         model->updateSpeeds(rxSpeed, txSpeed);
     }
+    else
+    {
+        Logger::instance().log(Logger::Warning,
+                               "Unknown MAC: " + mac, "GridDataManager");
+    }
+
 }
 
 void GridDataManager::clearGrid()//TODO:mb rework
@@ -226,17 +232,18 @@ void GridDataManager::clearGrid()//TODO:mb rework
 void GridDataManager::updateMacMap()
 {
     m_macIndex.clear();
-    m_interfaceToMac.clear();
     for (int r = 0; r < m_data.size(); ++r)
     {
         for (int c = 0; c < m_data[r].size(); ++c)
         {
-            if (m_data[r][c] && !m_data[r][c]->getMac().isEmpty())
+            if (auto model = m_data[r][c])
             {
-                m_macIndex.insert(m_data[r][c]->getMac(), QPoint(r, c));
+                QString normalized = normalizeMac(model->getMac());
+                m_macIndex.insert(normalized, QPoint(r, c));
             }
         }
     }
+
 }
 
 void GridDataManager::initializeGridWithData(const QList<NetworkInfoPtr>& allInfos)
@@ -495,20 +502,23 @@ void GridDataManager::updateGridWithData(const QList<NetworkInfoPtr>& allInfos)
 void GridDataManager::updateTrackedMacs()
 {
     QSet<QString> macs;
-    
     for (int r = 0; r < m_data.size(); ++r)
     {
         for (int c = 0; c < m_data[r].size(); ++c)
         {
-            QSharedPointer<NetworkInfoModel> model = m_data[r][c];
-            if (model)
+            if (auto model = m_data[r][c])
             {
-                macs.insert(model->getMac());
+                macs.insert(model->getMac().toLower().remove(':'));
             }
         }
     }
     
     m_monitor->updateTrackedMacs(macs);
+}
+
+QString GridDataManager::normalizeMac(const QString &raw)
+{
+    return NetworkMonitor::normalizeMac(raw);
 }
 
 // void GridDataManager::updateRefreshTask()

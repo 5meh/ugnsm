@@ -155,41 +155,6 @@ public:
                                   );
     }
 
-
-
-    template <typename Func>
-    QFuture<typename std::invoke_result_t<Func>> scheduleAsync(
-        const QString& taskId,
-        Func&& func,
-        QThread::Priority priority = QThread::NormalPriority)
-    {
-        using ResultType = typename std::invoke_result_t<Func>;
-        QPromise<ResultType> promise;
-        QFuture<ResultType> future = promise.future();
-
-        connect(this, &TaskScheduler::taskCompleted,
-                [promise = std::move(promise), taskId](const QString& completedId, const QVariant& result) mutable {
-                    if (completedId == taskId)
-                    {
-                        promise.start();
-                        promise.addResult(result.value<ResultType>());
-                        promise.finish();
-                    }
-                });
-
-        schedule(taskId, [this, taskId, func = std::forward<Func>(func)] {
-            if constexpr (std::is_void_v<ResultType>)
-            {
-                func();
-                emit taskCompleted(taskId, QVariant());//just empty ret value
-            }
-            else
-                emit taskCompleted(taskId, QVariant::fromValue(func()));
-        }, priority);
-
-        return future;
-    }
-
     template<typename Functor>
     void scheduleMainThread(const QString& resourceKey,
                             Functor&& func,

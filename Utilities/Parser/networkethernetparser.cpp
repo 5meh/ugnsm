@@ -18,7 +18,9 @@ void NetworkEthernetParser::parse()
     const QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
     for (const QNetworkInterface& interface : interfaces)
     {
-        if (interface.type() == QNetworkInterface::Ethernet &&
+        if ((interface.type() == QNetworkInterface::Ethernet ||
+             interface.type() == QNetworkInterface::Virtual ||
+             interface.name().startsWith("tap")) &&
             !interface.flags().testFlag(QNetworkInterface::IsLoopBack))
         {
             parseInterface(interface, results);

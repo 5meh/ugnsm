@@ -63,6 +63,7 @@ private:
     void keepBestUpdate(const QList<NetworkInfoPtr>& allInfos);
     void updateGridWithData(const QList<NetworkInfoPtr>& allInfos);
     void updateTrackedMacs();
+    QString normalizeMac(const QString& raw);
     //void updateRefreshTask();
 
     QAtomicInt m_refreshInProgress{0};
